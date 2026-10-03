@@ -5,14 +5,15 @@
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"
-		:aria-label="$t('activityTracking.statColumn.viewDetails', { domain: domain.domain })"
+		:aria-label="$t('activityTracking.statColumn.viewDetails', { domain: name })"
+		:data-key="domain.key"
 		@click="handleClick"
 		@keydown.enter="handleClick"
 		@keydown.space.prevent="handleClick"
 	>
 		<VCardTitle class="text-center pb-2">
 			<VTooltip
-				:text="domain.domain"
+				:text="name"
 				location="top"
 			>
 				<template #activator="{ props: tooltipProps }">
@@ -20,7 +21,7 @@
 						v-bind="tooltipProps"
 						class="domain-name"
 					>
-						{{ domain.domain }}
+						{{ name }}
 					</div>
 				</template>
 			</VTooltip>
@@ -75,18 +76,22 @@
 
 	const props = defineProps<{
 		domain: SummaryCardsData
+		/** The label as disambiguated among its sibling cards (`distinctLabels`); `domain.label` if absent. */
+		displayName?: string
 		selected?: boolean
 	}>()
 
 	const emit = defineEmits<{
-		(e: 'click', domain: string): void
+		(e: 'click', key: string): void
 	}>()
+
+	const name = computed(() => props.displayName ?? props.domain.label)
 
 	const showActive = computed(() => props.domain.active !== null && props.domain.active.seconds > 0)
 	const showBackground = computed(() => props.domain.background !== null && props.domain.background.seconds > 0)
 
 	function handleClick() {
-		emit('click', props.domain.domain)
+		emit('click', props.domain.key)
 	}
 </script>
 

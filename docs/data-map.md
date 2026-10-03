@@ -93,8 +93,8 @@ of its fields is `spent` on the planner's own screens, so it is not in the 121. 
 
 - `FocusBlock.startedAt`, `.endedAt` · unread (derived), 2 fields. When the longest unbroken block happened. The focus
   strip states the block's length only. "1h 40m, 09:10–10:50" tells the user when they focus best.
-- `DesktopProcessSummaryDto.processName`, `AndroidAppSummaryDto.packageName`, `DesktopTimelineSession.processName`,
-  `AndroidTimelineSession.packageName` · unread (derived), 4 fields. The stable identifier, dropped by each view's `to*`
+- ~~`DesktopProcessSummaryDto.processName`, `AndroidAppSummaryDto.packageName`, `DesktopTimelineSession.processName`,
+  `AndroidTimelineSession.packageName`~~ Spent 2026-10-03 by OP11, through G4's `key`. Was: unread (derived), 4 fields. The stable identifier, dropped by each view's `to*`
   mapper. Selection, `?selected=` and the details lookup are therefore keyed on the display name, and two desktop
   processes that share a product name collide (`DesktopPieChartSection.vue:175`). The server's `Key`/`Label` pair (G4)
   exists to fix exactly this.
@@ -188,7 +188,7 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
 - **G2. `TodoListResponse.text`** (todo). The list description, lost in both directions (see the backlog).
 - **G3. `AppUserDataResponse.weatherLocation`** (account). Copied through untyped, never read, never sent. It is the only
   input to the leisure weather fit (C8).
-- **G4. `Key`, `Label` on every per-source tracking item** (tracking): `SummaryCardsData`, `DesktopProcessSummaryDto`,
+- ~~**G4. `Key`, `Label` on every per-source tracking item**~~ Parsed and spent 2026-10-03 by OP11. Was (tracking): `SummaryCardsData`, `DesktopProcessSummaryDto`,
   `AndroidAppSummaryDto`, `DomainPieData`, `DesktopProcessPieData`, `AndroidAppPieData`, `WindowActivity`,
   `DesktopWindowActivity`, `AndroidWindowApp`, `TimelineSessionDto`, `DesktopTimelineSession`, `AndroidTimelineSession`.
   The server added them (`IDashboardItem.cs`) so the client would stop selecting on six differently named fields. The
@@ -487,8 +487,8 @@ Counts are fields after the corrections below. "derived" figures are already ins
 - planner-day inventory and usecase imply *Show details panel by default* takes effect. No view reads it.
 - tracking-dashboards: `DayTotals.totalVisits` is not "unpopulated in this seed". No backend member exists.
   `DomainDetailsResponse` is "fetched": it is never fetched.
-- tracking-dashboards: dashboards are "keyed on `processName` / `packageName`". The client keys selection on the display
-  name.
+- ~~tracking-dashboards: dashboards are "keyed on `processName` / `packageName`". The client keys selection on the
+  display name.~~ True since OP11 (2026-10-03).
 
 **History capture changed shape** (the docs predate the timer-session work): sub-minute length is discarded at capture,
 not left unread. `endedAutomatically` became `outcome`, which is sent and spent. Timer and pomodoro now write

@@ -117,7 +117,6 @@
 	import { PieChartRequest } from '@/core/activityTracking/dto/request/PieChartRequest.ts'
 	import { StackedBarsRequest } from '@/core/activityTracking/dto/request/StackedBarsRequest.ts'
 	import { TimelineRequest } from '@/core/activityTracking/dto/request/TimelineRequest.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		type ActivityDashboardFetchers,
 		useActivityDashboard,
@@ -129,10 +128,10 @@
 			windowStart: window.windowStart,
 			windowEnd: window.windowEnd,
 			items: window.activities.map(a => ({
-				name: a.domain,
+				key: a.key,
+				label: a.label,
 				activeSeconds: a.activeSeconds,
 				backgroundSeconds: a.backgroundSeconds,
-				color: getDomainColor(a.domain),
 				url: a.url,
 			})),
 		}

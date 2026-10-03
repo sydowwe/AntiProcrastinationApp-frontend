@@ -80,7 +80,7 @@
 					class="pb-3"
 				>
 					<AndroidPieChartSection
-						v-model:selectedAppLabel="selectedItem"
+						v-model:selectedPackageName="selectedItem"
 						:apps="pieChartData?.apps ?? []"
 						:totals="pieChartData?.totals"
 						:loading="pieChartLoading"
@@ -110,7 +110,6 @@
 	import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		getAndroidFocusMetrics,
 		getAndroidPieChart,
@@ -134,8 +133,10 @@
 	} from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	// --- Response → view-model mapping ---
+	// Every panel keys on the package name and prints the app label, through the server's
+	// `key`/`label` pair — so `?selected=` holds a package name (OP11).
 	function toSummaryCardsData(app: AndroidAppSummaryDto): SummaryCardsData {
-		return new SummaryCardsData(app.appLabel, app.stat, null, app.stat?.seconds ?? 0, app.isNew)
+		return new SummaryCardsData(app.key, app.label, app.stat, null, app.stat?.seconds ?? 0, app.isNew)
 	}
 
 	function toStackedBarsWindow(window: AndroidStackedBarsWindow): StackedBarsInputWindow {
@@ -143,10 +144,10 @@
 			windowStart: window.windowStart,
 			windowEnd: window.windowEnd,
 			items: window.apps.map(a => ({
-				name: a.appLabel,
+				key: a.key,
+				label: a.label,
 				activeSeconds: a.seconds,
 				backgroundSeconds: 0,
-				color: getDomainColor(a.packageName),
 			})),
 		}
 	}
@@ -154,7 +155,8 @@
 	function toTimelineSession(session: AndroidTimelineSession): TimelineSessionDto {
 		return new TimelineSessionDto(
 			session.id,
-			session.appLabel,
+			session.key,
+			session.label,
 			session.startedAt,
 			session.endedAt,
 			session.durationSeconds,

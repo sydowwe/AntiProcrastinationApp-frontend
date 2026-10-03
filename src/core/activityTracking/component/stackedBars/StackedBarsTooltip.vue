@@ -31,6 +31,7 @@
 	import { useI18n } from 'vue-i18n'
 	import type { TooltipData } from '@/core/activityTracking/component/stackedBars/dto/TooltipData.ts'
 	import type { Position } from '@/core/activityTracking/dto/Position.ts'
+	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 
 	const props = defineProps<{
 		data: TooltipData
@@ -40,7 +41,7 @@
 	const { t } = useI18n()
 
 	const displayDomain = computed(() => {
-		return props.data.domain === '_other' ? t('activityTracking.common.other') : props.data.domain
+		return props.data.key === OTHER_DOMAIN ? t('activityTracking.common.other') : props.data.label
 	})
 
 	const truncatedUrl = computed(() => {

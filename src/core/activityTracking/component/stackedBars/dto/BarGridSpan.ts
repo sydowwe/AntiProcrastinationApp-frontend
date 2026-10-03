@@ -4,7 +4,7 @@ export class BarGridSpan {
 	constructor(
 		public windowIndex: number,
 		public activityIndex: number,
-		public domain: string,
+		public key: string,
 		public gridColumnStart: number,
 		public gridColumnEnd: number,
 		public gridRowStart: number,

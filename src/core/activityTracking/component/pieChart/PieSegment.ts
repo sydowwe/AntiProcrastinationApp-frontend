@@ -10,7 +10,9 @@ export const OTHER_DOMAIN = '_other'
 
 export class PieSegment {
 	constructor(
-		public domain: string,
+		/** The item's identity (`DashboardItem.key`) — what selection and the fold's `keep` compare. */
+		public key: string,
+		public label: string,
 		public seconds: number,
 		public percent: number,
 		public color: string,
@@ -52,11 +54,11 @@ export function foldPieTail(
 
 	const withPercent = rows.map(d => ({ ...d, percent: (d.seconds / total) * 100 }))
 	function isTail(d: PieSegment) {
-		return d.domain === OTHER_DOMAIN || (d.domain !== keep && d.percent < thresholdPercent)
+		return d.key === OTHER_DOMAIN || (d.key !== keep && d.percent < thresholdPercent)
 	}
 
 	const tail = withPercent.filter(isTail)
-	const foldedCount = tail.filter(d => d.domain !== OTHER_DOMAIN).length
+	const foldedCount = tail.filter(d => d.key !== OTHER_DOMAIN).length
 	const foldsNothing = tail.length === 0 || (tail.length === 1 && foldedCount === 1)
 	if (foldsNothing) {
 		return { segments: withPercent.sort((a, b) => b.seconds - a.seconds), foldedCount: 0 }
@@ -65,7 +67,8 @@ export function foldPieTail(
 	const otherSeconds = tail.reduce((sum, d) => sum + d.seconds, 0)
 	const segments = withPercent.filter(d => !isTail(d))
 	segments.push({
-		domain: OTHER_DOMAIN,
+		key: OTHER_DOMAIN,
+		label: OTHER_DOMAIN,
 		seconds: otherSeconds,
 		percent: (otherSeconds / total) * 100,
 		color: otherColor,

@@ -1,5 +1,9 @@
-export class AndroidAppPieData {
+import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
+
+export class AndroidAppPieData implements DashboardItem {
 	constructor(
+		public key: string,
+		public label: string,
 		public packageName: string,
 		public appLabel: string,
 		public seconds: number,
@@ -7,6 +11,7 @@ export class AndroidAppPieData {
 	) {}
 
 	static fromJson(json: any): AndroidAppPieData {
-		return new AndroidAppPieData(json.packageName, json.appLabel, json.seconds, json.totalSeconds)
+		const { key, label } = readDashboardItem(json, json.packageName)
+		return new AndroidAppPieData(key, label, json.packageName, json.appLabel, json.seconds, json.totalSeconds)
 	}
 }

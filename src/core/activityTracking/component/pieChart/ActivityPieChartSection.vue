@@ -107,9 +107,10 @@
 		const metric = viewMode.value
 
 		const data = props.domains.map(d => ({
-			domain: d.domain,
+			key: d.key,
+			label: d.label,
 			seconds: metric === 'total' ? d.totalSeconds : metric === 'active' ? d.activeSeconds : d.backgroundSeconds,
-			color: getDomainColor(d.domain),
+			color: getDomainColor(d.key),
 		}))
 
 		return foldPieTail(data, '#9e9e9e', {
@@ -121,14 +122,11 @@
 	const selectedDomainDetails = computed(() => {
 		if (!selectedDomain.value) return null
 
-		const domain = props.domains.find(d => d.domain === selectedDomain.value)
+		const domain = props.domains.find(d => d.key === selectedDomain.value)
 		if (!domain) return null
 
 		return {
-			domain: domain.domain,
-			totalSeconds: domain.totalSeconds,
-			activeSeconds: domain.activeSeconds,
-			backgroundSeconds: domain.backgroundSeconds,
+			...domain,
 			entries: domain.entries ?? 0,
 			pages: domain.pages ?? [],
 		}

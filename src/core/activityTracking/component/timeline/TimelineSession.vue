@@ -3,7 +3,7 @@
 		class="timeline-session"
 		:class="[`session-${laneType}`, { 'session-mini': isMini }]"
 		:style="sessionStyle"
-		:title="session.domain"
+		:title="fullName"
 		role="button"
 		tabindex="0"
 		:aria-label="ariaLabel"
@@ -46,7 +46,7 @@
 		click: []
 	}>()
 
-	const domainColor = computed(() => getDomainColor(props.session.domain))
+	const domainColor = computed(() => getDomainColor(props.session.key))
 
 	const sessionStyle = computed(() => {
 		const stackOffset = props.stackLevel * props.baseHeight
@@ -87,15 +87,23 @@
 	})
 
 	const truncatedDomain = computed(() => {
-		const domain = props.session.domain
-		if (domain.length > 15) {
-			return domain.substring(0, 12) + '...'
+		const label = props.session.label
+		if (label.length > 15) {
+			return label.substring(0, 12) + '...'
 		}
-		return domain
+		return label
 	})
 
+	// The block itself only has room for the label; hover and the accessible name also carry the key
+	// wherever it differs, so two processes sharing a product name can be told apart on the block.
+	const fullName = computed(() =>
+		props.session.key === props.session.label
+			? props.session.label
+			: `${props.session.label} (${props.session.key})`,
+	)
+
 	const ariaLabel = computed(() => {
-		return `${props.session.domain} session from ${formatTime(props.session.startedAt)} to ${formatTime(props.session.endedAt)}, duration ${fromSeconds(props.session.durationSeconds)}`
+		return `${fullName.value} session from ${formatTime(props.session.startedAt)} to ${formatTime(props.session.endedAt)}, duration ${fromSeconds(props.session.durationSeconds)}`
 	})
 
 	function formatTime(date: Date): string {

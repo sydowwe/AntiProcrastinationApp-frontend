@@ -51,7 +51,7 @@
 						v-model:showTail="showTail"
 						:domains="pie.segments"
 						:foldedCount="pie.foldedCount"
-						:selectedDomain="selectedAppLabel ?? ''"
+						:selectedDomain="selectedPackageName ?? ''"
 						:showViewMode="false"
 						@segmentClick="onSegmentClick"
 					/>
@@ -133,7 +133,7 @@
 		(e: 'widenWindow'): void
 	}>()
 
-	const selectedAppLabel = defineModel<string | null>('selectedAppLabel', { default: null })
+	const selectedPackageName = defineModel<string | null>('selectedPackageName', { default: null })
 
 	// Always 'total' — the DTO has no Active/Background split, so the radio is hidden (F48); the ref
 	// only satisfies `ActivityPieChart`'s required model.
@@ -144,12 +144,13 @@
 	const pie = computed(() =>
 		foldPieTail(
 			props.apps.map(a => ({
-				domain: a.appLabel,
+				key: a.key,
+				label: a.label,
 				seconds: a.totalSeconds,
-				color: getDomainColor(a.packageName),
+				color: getDomainColor(a.key),
 			})),
 			'#9e9e9e',
-			{ thresholdPercent: showTail.value ? 0 : undefined, keep: selectedAppLabel.value },
+			{ thresholdPercent: showTail.value ? 0 : undefined, keep: selectedPackageName.value },
 		),
 	)
 
@@ -157,7 +158,7 @@
 	// panel is never blank while `app-details` is in flight. The folded tail (`_other`) needs no guard —
 	// `ActivityPieChart` refuses to select it, so it never reaches here.
 	const selectedDetails = computed(() =>
-		selectedAppLabel.value ? (props.apps.find(a => a.appLabel === selectedAppLabel.value) ?? null) : null,
+		selectedPackageName.value ? (props.apps.find(a => a.key === selectedPackageName.value) ?? null) : null,
 	)
 
 	const appDetails = ref<AndroidAppDetailsResponse | null>(null)
@@ -178,7 +179,7 @@
 		detailsLoading.value = true
 		try {
 			appDetails.value = await getAndroidAppDetails(
-				app.packageName,
+				app.key,
 				props.from.toISOString(),
 				props.to.toISOString(),
 				{ startMinutes: props.timeFrom.getInMinutes, endMinutes: props.timeTo.getInMinutes },
@@ -197,20 +198,20 @@
 		}
 	}
 
-	// Keyed on the package and the envelope, not the label: a range change with the same app selected
-	// must re-fetch, and a label change with no matching row must clear.
-	watch(() => [selectedDetails.value?.packageName, props.from.getTime(), props.to.getTime()], fetchAppDetails, {
+	// Keyed on the package and the envelope: a range change with the same app selected must re-fetch,
+	// and a selection with no matching row must clear.
+	watch(() => [selectedDetails.value?.key, props.from.getTime(), props.to.getTime()], fetchAppDetails, {
 		immediate: true,
 	})
 
 	onBeforeUnmount(() => detailsController?.abort())
 
-	function onSegmentClick(appLabel: string | null) {
-		selectedAppLabel.value = selectedAppLabel.value === appLabel ? null : appLabel
+	function onSegmentClick(packageName: string | null) {
+		selectedPackageName.value = selectedPackageName.value === packageName ? null : packageName
 	}
 
 	function onClose() {
-		selectedAppLabel.value = null
+		selectedPackageName.value = null
 	}
 </script>
 

@@ -93,6 +93,7 @@ const messages = {
 		groupTail: `Zoskupiť malé položky`,
 		shareOfSpan: `Podiel na období:`,
 		packageName: `Balík:`,
+		processName: `Proces:`,
 		meanSession: `Priemerná relácia:`,
 		longestSession: `Najdlhšia relácia:`,
 		firstUse: `Prvé použitie:`,

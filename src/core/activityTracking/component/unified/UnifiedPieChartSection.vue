@@ -211,7 +211,8 @@
 
 	const pie = computed(() => {
 		const data = items.map(item => ({
-			domain: item.label,
+			key: item.label,
+			label: item.label,
 			seconds:
 				viewMode.value === 'total'
 					? item.totalSeconds

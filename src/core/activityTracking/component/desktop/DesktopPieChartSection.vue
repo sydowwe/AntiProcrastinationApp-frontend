@@ -51,7 +51,7 @@
 						v-model:showTail="showTail"
 						:domains="pie.segments"
 						:foldedCount="pie.foldedCount"
-						:selectedDomain="selectedProductName ?? ''"
+						:selectedDomain="selectedProcessName ?? ''"
 						@segmentClick="onSegmentClick"
 					/>
 				</div>
@@ -144,7 +144,7 @@
 		(e: 'widenWindow'): void
 	}>()
 
-	const selectedProductName = defineModel<string | null>('selectedProductName', { default: null })
+	const selectedProcessName = defineModel<string | null>('selectedProcessName', { default: null })
 
 	const viewMode = ref<'total' | 'active' | 'background'>('total')
 	const processDetails = ref<DesktopProcessDetailsResponse | null>(null)
@@ -156,29 +156,32 @@
 		const metric = viewMode.value
 
 		const data = props.processes.map(p => ({
-			domain: p.productName,
+			key: p.key,
+			label: p.label,
 			seconds: metric === 'total' ? p.totalSeconds : metric === 'active' ? p.activeSeconds : p.backgroundSeconds,
-			color: getDomainColor(p.processName),
+			color: getDomainColor(p.key),
 		}))
 
 		return foldPieTail(data, '#9e9e9e', {
 			thresholdPercent: showTail.value ? 0 : undefined,
-			keep: selectedProductName.value,
+			keep: selectedProcessName.value,
 		})
 	})
 
-	watch(selectedProductName, async productName => {
-		if (!productName) {
+	// Looked up by process name, which is the key: a product name is shared by every process that ships
+	// under it, so looking up by it opened whichever of them came first (OP11).
+	watch(selectedProcessName, async processName => {
+		if (!processName) {
 			processDetails.value = null
 			return
 		}
-		const proc = props.processes.find(p => p.productName === productName)
+		const proc = props.processes.find(p => p.key === processName)
 		if (!proc) return
 
 		detailsLoading.value = true
 		try {
 			processDetails.value = await getDesktopProcessDetails(
-				proc.processName,
+				proc.key,
 				props.from.toISOString(),
 				props.to.toISOString(),
 				{ startMinutes: props.timeFrom.getInMinutes, endMinutes: props.timeTo.getInMinutes },
@@ -188,12 +191,12 @@
 		}
 	})
 
-	function onSegmentClick(productName: string | null) {
-		selectedProductName.value = selectedProductName.value === productName ? null : productName
+	function onSegmentClick(processName: string | null) {
+		selectedProcessName.value = selectedProcessName.value === processName ? null : processName
 	}
 
 	function onClose() {
-		selectedProductName.value = null
+		selectedProcessName.value = null
 	}
 </script>
 

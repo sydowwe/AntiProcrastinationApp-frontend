@@ -223,6 +223,11 @@ export function useActivityDashboard<TPieChart>(
 	}
 
 	// --- Shared State, also seeded from the URL ---
+	/**
+	 * An item's `key` (`DashboardItem`) — a domain, a process name, a package name, or the unified
+	 * dashboard's merged label — never a per-source display name. Every panel selects and compares on
+	 * it, so `?selected=` names exactly one item even where two share a display name.
+	 */
 	const selectedItem = ref<string | null>(firstQueryValue(route.query[SELECTED_PARAM]) ?? null)
 	const selectedBaseline = ref<BaselineType>(
 		parseBaseline(firstQueryValue(route.query[BASELINE_PARAM])) ?? DEFAULT_BASELINE,
@@ -716,8 +721,8 @@ export function useActivityDashboard<TPieChart>(
 	}
 
 	/** Selecting the already-selected item clears the selection. */
-	function handleItemSelect(name: string) {
-		selectedItem.value = selectedItem.value === name ? null : name
+	function handleItemSelect(key: string) {
+		selectedItem.value = selectedItem.value === key ? null : key
 	}
 
 	function handleWindowSizeChange(size: number) {
@@ -726,12 +731,12 @@ export function useActivityDashboard<TPieChart>(
 		fetchStackedBars()
 	}
 
-	function handleActivityClick(_window: StackedBarsInputWindow, name: string) {
-		handleItemSelect(name)
+	function handleActivityClick(_window: StackedBarsInputWindow, key: string) {
+		handleItemSelect(key)
 	}
 
 	function handleSessionClick(session: TimelineSessionDto) {
-		handleItemSelect(session.domain)
+		handleItemSelect(session.key)
 	}
 
 	return {

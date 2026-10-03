@@ -78,7 +78,8 @@ export function calculateWaterfallStack(sessions: TimelineSessionDto[]): Stacked
 
 		return new StackedSession(
 			session.id,
-			session.domain,
+			session.key,
+			session.label,
 			session.startedAt,
 			session.endedAt,
 			session.durationSeconds,

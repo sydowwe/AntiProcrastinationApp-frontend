@@ -1,7 +1,7 @@
 <template>
 	<VCard variant="outlined">
 		<VCardTitle class="d-flex align-center justify-space-between">
-			<span>{{ details.productName }}</span>
+			<span>{{ details.productName || details.processName }}</span>
 			<VBtn
 				icon="fas fa-xmark"
 				variant="text"
@@ -43,6 +43,17 @@
 				<div class="detail-row">
 					<span class="text-medium-emphasis">{{ $t('activityTracking.common.entries') }}</span>
 					<span>{{ details.entries }}</span>
+				</div>
+				<!-- The identity the panel was opened by: several processes can share the title's product name. -->
+				<div class="detail-row">
+					<span class="text-medium-emphasis">{{ $t('activityTracking.pieChart.processName') }}</span>
+					<span
+						class="text-caption"
+						style="font-family: monospace"
+						data-testid="process-details-process-name"
+					>
+						{{ details.processName }}
+					</span>
 				</div>
 			</div>
 

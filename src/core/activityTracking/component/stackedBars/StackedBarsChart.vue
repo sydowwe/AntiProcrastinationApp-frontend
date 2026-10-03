@@ -17,7 +17,7 @@
 			>
 				<div
 					v-for="item in legendItems"
-					:key="item.name"
+					:key="item.key"
 					class="legend-item d-flex align-center ga-1"
 				>
 					<div
@@ -95,6 +95,8 @@
 	import { ProcessedWindow } from './dto/ProcessedWindow'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import { distinctLabels } from '@/core/activityTracking/dto/DashboardItem.ts'
+	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 
 	const {
@@ -124,7 +126,8 @@
 
 	const emit = defineEmits<{
 		windowSizeChange: [size: number]
-		activityClick: [window: StackedBarsInputWindow, name: string]
+		/** `key` is the clicked item's `StackedBarsInputItem.key`, never its label. */
+		activityClick: [window: StackedBarsInputWindow, key: string]
 		retry: []
 	}>()
 
@@ -211,19 +214,23 @@
 		return d.getHours() * 60 + d.getMinutes()
 	}
 
-	function resolveColor(name: string, color?: string): string {
-		return color ?? getDomainColor(name)
+	function resolveColor(key: string, color?: string): string {
+		return color ?? getDomainColor(key)
 	}
+
+	// Over every window at once, so a bar's tooltip and the legend name an item the same way.
+	const labelsByKey = computed(() => distinctLabels(windows.flatMap(w => w.items)))
 
 	function toColumnData(item: StackedBarsInputItem): ColumnData {
 		return {
-			domain: item.name,
+			key: item.key,
+			label: labelsByKey.value.get(item.key) ?? item.label,
 			activeSeconds: item.activeSeconds,
 			backgroundSeconds: item.backgroundSeconds,
 			activeMinutes: Math.ceil(item.activeSeconds / 60),
 			backgroundMinutes: Math.ceil(item.backgroundSeconds / 60),
 			url: item.url,
-			color: resolveColor(item.name, item.color),
+			color: resolveColor(item.key, item.color),
 		}
 	}
 
@@ -251,7 +258,8 @@
 		return [
 			...top.map(toColumnData),
 			{
-				domain: '_other',
+				key: OTHER_DOMAIN,
+				label: OTHER_DOMAIN,
 				activeSeconds: otherActiveSeconds,
 				backgroundSeconds: otherBackgroundSeconds,
 				activeMinutes: Math.ceil(otherActiveSeconds / 60),
@@ -428,15 +436,15 @@
 
 	// Legend items
 	const legendItems = computed(() => {
-		const nameMap = new Map<string, { name: string; label: string; color: string }>()
+		const nameMap = new Map<string, { key: string; label: string; color: string }>()
 
 		for (const w of windows) {
 			for (const item of w.items) {
-				if (!nameMap.has(item.name)) {
-					nameMap.set(item.name, {
-						name: item.name,
-						label: item.name,
-						color: resolveColor(item.name, item.color),
+				if (!nameMap.has(item.key)) {
+					nameMap.set(item.key, {
+						key: item.key,
+						label: labelsByKey.value.get(item.key) ?? item.label,
+						color: resolveColor(item.key, item.color),
 					})
 				}
 			}
@@ -445,11 +453,11 @@
 		// Check for "Other" bucket in processed windows
 		for (const w of processedWindows.value) {
 			for (const col of w.columns) {
-				if (col.domain === '_other' && !nameMap.has('_other')) {
-					nameMap.set('_other', {
-						name: '_other',
+				if (col.key === OTHER_DOMAIN && !nameMap.has(OTHER_DOMAIN)) {
+					nameMap.set(OTHER_DOMAIN, {
+						key: OTHER_DOMAIN,
 						label: t('activityTracking.common.other'),
-						color: getDomainColor('_other'),
+						color: getDomainColor(OTHER_DOMAIN),
 					})
 				}
 			}
@@ -465,7 +473,7 @@
 		const start = processedWindows.value[bar.windowIndex]?.windowStart.getTime()
 		const window = windows.find(w => w.windowStart.getTime() === start)
 		if (!window) throw new Error('Window not found')
-		emit('activityClick', window, bar.domain)
+		emit('activityClick', window, bar.key)
 	}
 </script>
 

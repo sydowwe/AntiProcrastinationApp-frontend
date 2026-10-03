@@ -3,7 +3,13 @@
 		class="timeline-tooltip"
 		:style="positionStyle"
 	>
-		<div class="tooltip-domain">{{ data.domain }}</div>
+		<div class="tooltip-domain">{{ data.label }}</div>
+		<div
+			v-if="data.key !== data.label"
+			class="tooltip-key"
+		>
+			{{ data.key }}
+		</div>
 		<VDivider class="my-1" />
 		<div class="tooltip-row">
 			<span>{{ $t('activityTracking.timeline.start') }}</span>
@@ -81,6 +87,12 @@
 		font-weight: 600;
 		font-size: 14px;
 		color: rgb(var(--v-theme-on-surface));
+	}
+
+	.tooltip-key {
+		font-size: 11px;
+		font-family: monospace;
+		color: rgba(var(--v-theme-on-surface), 0.6);
 	}
 
 	.tooltip-row {

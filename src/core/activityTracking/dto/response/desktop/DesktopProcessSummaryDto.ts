@@ -1,7 +1,10 @@
 import { ActivityStat } from '@/core/activityTracking/dto/response/topDomains/ActivityStat.ts'
+import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
 
-export class DesktopProcessSummaryDto {
+export class DesktopProcessSummaryDto implements DashboardItem {
 	constructor(
+		public key: string,
+		public label: string,
 		public processName: string,
 		public productName: string,
 		public isNew: boolean,
@@ -10,7 +13,10 @@ export class DesktopProcessSummaryDto {
 	) {}
 
 	static fromJson(json: any): DesktopProcessSummaryDto {
+		const { key, label } = readDashboardItem(json, json.processName)
 		return new DesktopProcessSummaryDto(
+			key,
+			label,
 			json.processName,
 			json.productName,
 			json.isNew ?? false,

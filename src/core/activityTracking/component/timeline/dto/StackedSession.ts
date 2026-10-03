@@ -3,7 +3,8 @@ import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timelin
 export class StackedSession extends TimelineSessionDto {
 	constructor(
 		id: number,
-		domain: string,
+		key: string,
+		label: string,
 		startedAt: Date,
 		endedAt: Date,
 		durationSeconds: number,
@@ -11,6 +12,6 @@ export class StackedSession extends TimelineSessionDto {
 		public stackLevel: number, // 0 = first row, 1 = second row, etc.
 		url?: string,
 	) {
-		super(id, domain, startedAt, endedAt, durationSeconds, totalSeconds, url)
+		super(id, key, label, startedAt, endedAt, durationSeconds, totalSeconds, url)
 	}
 }

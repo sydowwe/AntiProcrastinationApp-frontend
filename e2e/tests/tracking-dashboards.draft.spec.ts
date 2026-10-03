@@ -97,6 +97,96 @@ test.describe('Desktop dashboard (/activity-tracking/desktop)', () => {
 	})
 })
 
+// OP11. The fixture has no two processes sharing a product name, and desktop rows can only be posted
+// with an extension-role token, so the collision is served by route mocks. The mocks carry the
+// server's real shape — `key`/`label` beside `processName`/`productName` (`IDashboardItem`).
+test.describe('Desktop dashboard, two processes under one product name (/activity-tracking/desktop)', () => {
+	const PRODUCT = 'Microsoft Teams'
+	const PROCESSES = [
+		{ processName: 'Teams.exe', seconds: 1800 },
+		{ processName: 'ms-teams.exe', seconds: 1200 },
+	]
+
+	test.beforeEach(async ({ authenticatedPage }) => {
+		await authenticatedPage.route('**/api/activity-tracking/desktop/summary-cards', route =>
+			route.fulfill({
+				json: PROCESSES.map(p => ({
+					processName: p.processName,
+					productName: PRODUCT,
+					key: p.processName,
+					label: PRODUCT,
+					active: { seconds: p.seconds, averageSeconds: p.seconds, percentChange: 0 },
+					background: null,
+					isNew: false,
+				})),
+			}),
+		)
+		await authenticatedPage.route('**/api/activity-tracking/desktop/pie-chart', route =>
+			route.fulfill({
+				json: {
+					processes: PROCESSES.map(p => ({
+						processName: p.processName,
+						productName: PRODUCT,
+						key: p.processName,
+						label: PRODUCT,
+						activeSeconds: p.seconds,
+						backgroundSeconds: 0,
+						totalSeconds: p.seconds,
+						windowTitles: [],
+						entries: 10,
+					})),
+					totals: {
+						totalSeconds: 3000,
+						activeSeconds: 3000,
+						backgroundSeconds: 0,
+						totalProcesses: 2,
+						totalWindowTitles: 0,
+						totalEntries: 20,
+					},
+				},
+			}),
+		)
+		// Echoes the process it was asked for, so the panel shows which one the click resolved to.
+		await authenticatedPage.route('**/api/activity-tracking/desktop/process-details?*', route => {
+			const processName = new URL(route.request().url()).searchParams.get('processName')
+			return route.fulfill({
+				json: {
+					processName,
+					productName: PRODUCT,
+					totalSeconds: 1200,
+					activeSeconds: 1200,
+					backgroundSeconds: 0,
+					fullscreenSeconds: 0,
+					soundSeconds: 0,
+					monitorBreakdown: [],
+					entries: 10,
+					windowTitles: [],
+				},
+			})
+		})
+		await authenticatedPage.goto('/activity-tracking/desktop')
+		await authenticatedPage.getByRole('heading', { name: 'Desktop Activity' }).waitFor({ state: 'visible' })
+	})
+
+	test('each process gets its own card, named by its process', async ({ authenticatedPage }) => {
+		for (const { processName } of PROCESSES) {
+			await expect(
+				authenticatedPage.getByRole('button', { name: `View details for ${PRODUCT} (${processName})` }),
+			).toBeVisible()
+		}
+	})
+
+	test('selecting the second one selects and opens that process, not the first', async ({ authenticatedPage }) => {
+		const requestPromise = authenticatedPage.waitForRequest(/\/desktop\/process-details/)
+		await authenticatedPage.getByRole('button', { name: `View details for ${PRODUCT} (ms-teams.exe)` }).click()
+
+		const request = await requestPromise
+		expect(new URL(request.url()).searchParams.get('processName')).toBe('ms-teams.exe')
+		await expect(authenticatedPage).toHaveURL(/[?&]selected=ms-teams\.exe(&|$)/)
+		await expect(authenticatedPage.getByTestId('process-details-process-name')).toHaveText('ms-teams.exe')
+	})
+})
+
 test.describe('Android dashboard (/activity-tracking/android)', () => {
 	test.beforeEach(async ({ authenticatedPage }) => {
 		await authenticatedPage.goto('/activity-tracking/android')
@@ -128,13 +218,19 @@ test.describe('Android dashboard (/activity-tracking/android)', () => {
 		const appLabel = (await firstCard.getAttribute('aria-label'))!.replace(/^View details for /, '')
 		await firstCard.click()
 
-		await expect(authenticatedPage).toHaveURL(new RegExp(`[?&]selected=${encodeURIComponent(appLabel)}`))
 		const closeButton = authenticatedPage.getByRole('button', { name: 'Close details' })
 		await expect(closeButton).toBeVisible()
 		// Scoped to #app: the panel title is the same text as the card and the pie legend.
 		await expect(authenticatedPage.locator('#app').getByText('Share of period:')).toBeVisible()
 		await expect(authenticatedPage.getByTestId('app-details-sessions')).toHaveText(/^\d+$/)
 		expect(detailRequests).toHaveLength(1)
+
+		// OP11: the selection is the package name the details were fetched by, not the printed label —
+		// two apps can share a label, never a package.
+		const packageName = new URL(detailRequests[0]!).searchParams.get('packageName')
+		expect(packageName).toBeTruthy()
+		expect(packageName).not.toBe(appLabel)
+		expect(new URL(authenticatedPage.url()).searchParams.get('selected')).toBe(packageName)
 
 		await closeButton.click()
 		await expect(authenticatedPage).not.toHaveURL(/[?&]selected=/)

@@ -5,10 +5,10 @@ import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timelin
  * are the three trackers, not the active/detail/background split the per-source timelines use.
  *
  * Sessions come back on the unified contract's `label`, not on `domain` / `productName` / `appLabel`,
- * so `fromJson` maps them here rather than reusing `TimelineSessionDto.fromJson` (which reads
- * `json.domain`). The view-model stays `TimelineSessionDto` so `ActivityTimeline` consumes it
- * unchanged; its `domain` field holds the merged label. See `UnifiedActivityItem` on why there is one
- * identity string.
+ * so `fromJson` maps them here rather than reusing `TimelineSessionDto.fromJson` (which reads the
+ * per-source `key`/`label` pair). The view-model stays `TimelineSessionDto` so `ActivityTimeline`
+ * consumes it unchanged; both its `key` and its `label` hold the merged label. See
+ * `UnifiedActivityItem` on why there is one identity string.
  *
  * Sessions are already de-overlapped, so a lane holds only the time its source was credited with —
  * the three lanes never claim the same minute twice, and reading them top to bottom is a picture of
@@ -42,6 +42,7 @@ function sessionsFromObjects(objects: any): TimelineSessionDto[] {
 		(session: any) =>
 			new TimelineSessionDto(
 				session.id,
+				session.label,
 				session.label,
 				new Date(session.startedAt),
 				new Date(session.endedAt),

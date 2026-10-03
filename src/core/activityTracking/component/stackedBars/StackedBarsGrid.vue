@@ -237,7 +237,7 @@
 						new BarGridSpan(
 							windowIndex,
 							colIndex,
-							col.domain,
+							col.key,
 							currentCol,
 							currentCol + BAR_COLS,
 							gridRowStart,
@@ -502,7 +502,8 @@
 	// Tooltip handlers
 	function showTooltip(event: MouseEvent, bar: BarGridSpan) {
 		tooltipData.value = {
-			domain: bar.data.domain,
+			key: bar.data.key,
+			label: bar.data.label,
 			activeMinutes: bar.data.activeMinutes,
 			backgroundMinutes: bar.data.backgroundMinutes,
 			totalMinutes: bar.data.activeMinutes + bar.data.backgroundMinutes,

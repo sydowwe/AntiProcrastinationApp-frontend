@@ -39,6 +39,7 @@
 	import type { ColumnData } from '@/core/activityTracking/component/stackedBars/dto/ColumnData.ts'
 	import { lightenColor } from '@/_common/utils/colorUtils.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
+	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 
 	const props = defineProps<{
 		data: ColumnData
@@ -61,10 +62,10 @@
 
 	const { t } = useI18n()
 
-	const domainColor = computed(() => props.data.color ?? getDomainColor(props.data.domain))
+	const domainColor = computed(() => props.data.color ?? getDomainColor(props.data.key))
 
 	const displayName = computed(() =>
-		props.data.domain === '_other' ? t('activityTracking.common.other') : props.data.domain,
+		props.data.key === OTHER_DOMAIN ? t('activityTracking.common.other') : props.data.label,
 	)
 
 	// The tooltip's headline — name and total time — plus the window, since a focused bar has no

@@ -1,5 +1,9 @@
-export class WindowActivity {
+import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
+
+export class WindowActivity implements DashboardItem {
 	constructor(
+		public key: string,
+		public label: string,
 		public domain: string,
 		public activeSeconds: number,
 		public backgroundSeconds: number,
@@ -8,6 +12,15 @@ export class WindowActivity {
 	) {}
 
 	static fromJson(json: any): WindowActivity {
-		return new WindowActivity(json.domain, json.activeSeconds, json.backgroundSeconds, json.totalSeconds, json.url)
+		const { key, label } = readDashboardItem(json, json.domain)
+		return new WindowActivity(
+			key,
+			label,
+			json.domain,
+			json.activeSeconds,
+			json.backgroundSeconds,
+			json.totalSeconds,
+			json.url,
+		)
 	}
 }

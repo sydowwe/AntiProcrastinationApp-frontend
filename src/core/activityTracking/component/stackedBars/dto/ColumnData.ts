@@ -1,6 +1,8 @@
 export class ColumnData {
 	constructor(
-		public domain: string,
+		/** The item's identity, or `OTHER_DOMAIN` for the folded column. */
+		public key: string,
+		public label: string,
 		public activeSeconds: number,
 		public backgroundSeconds: number,
 		public activeMinutes: number,

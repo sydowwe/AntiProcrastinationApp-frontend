@@ -129,7 +129,8 @@ export function useHistoryDashboard(fetchers: HistoryDashboardFetchers, options:
 			windowStart: parseWindowInstant(w.windowStart),
 			windowEnd: parseWindowInstant(w.windowEnd),
 			items: w.items.map(item => ({
-				name: item.name,
+				key: item.name,
+				label: item.name,
 				activeSeconds: item.totalSeconds,
 				backgroundSeconds: 0,
 				color: resolveHistoryGroupColor(item),

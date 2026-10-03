@@ -129,14 +129,14 @@
 			<div class="domain-legend">
 				<div
 					v-for="entry in domainLegendEntries"
-					:key="entry.domain"
+					:key="entry.key"
 					class="domain-legend-item"
 				>
 					<div
 						class="domain-swatch"
 						:style="{ background: entry.color }"
 					/>
-					<span class="domain-name">{{ entry.domain }}</span>
+					<span class="domain-name">{{ entry.label }}</span>
 				</div>
 			</div>
 		</template>
@@ -150,6 +150,7 @@
 	import TimelineGrid from './TimelineGrid.vue'
 	import { calculateWaterfallStack } from './timelineUtils'
 	import type { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
+	import { distinctLabels } from '@/core/activityTracking/dto/DashboardItem.ts'
 	import type { TimelineViewMode } from '@/core/activityTracking/component/timeline/dto/TimelineViewMode.ts'
 
 	const props = defineProps<{
@@ -190,31 +191,20 @@
 		return calculateWaterfallStack(props.backgroundSessions)
 	})
 
-	// Collect unique domains for the color legend
+	// One legend entry per key, coloured by it — two processes sharing a product name are two
+	// colours, so they are two entries, told apart by `distinctLabels`.
 	const domainLegendEntries = computed(() => {
-		const seen = new Set<string>()
-		const entries: { domain: string; color: string }[] = []
-
-		for (const session of props.primarySessions) {
-			if (!seen.has(session.domain)) {
-				seen.add(session.domain)
-				entries.push({ domain: session.domain, color: getDomainColor(session.domain) })
-			}
-		}
-		for (const session of props.detailSessions) {
-			if (!seen.has(session.domain)) {
-				seen.add(session.domain)
-				entries.push({ domain: session.domain, color: getDomainColor(session.domain) })
-			}
-		}
-		for (const session of props.backgroundSessions) {
-			if (!seen.has(session.domain)) {
-				seen.add(session.domain)
-				entries.push({ domain: session.domain, color: getDomainColor(session.domain) })
-			}
+		const sessionsByKey = new Map<string, TimelineSessionDto>()
+		for (const session of [...props.primarySessions, ...props.detailSessions, ...props.backgroundSessions]) {
+			if (!sessionsByKey.has(session.key)) sessionsByKey.set(session.key, session)
 		}
 
-		return entries
+		const labels = distinctLabels(sessionsByKey.values())
+		return Array.from(sessionsByKey.keys(), key => ({
+			key,
+			label: labels.get(key)!,
+			color: getDomainColor(key),
+		}))
 	})
 </script>
 

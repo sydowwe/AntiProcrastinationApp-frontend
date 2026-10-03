@@ -1,7 +1,14 @@
-export class TimelineSessionDto {
+import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
+
+/**
+ * One timeline block, shared by all four dashboards. Colour and click-selection read `key`; the block,
+ * tooltip and legend print `label` — see `DashboardItem`.
+ */
+export class TimelineSessionDto implements DashboardItem {
 	constructor(
 		public id: number,
-		public domain: string,
+		public key: string,
+		public label: string,
 		public startedAt: Date,
 		public endedAt: Date,
 		public durationSeconds: number,
@@ -10,9 +17,11 @@ export class TimelineSessionDto {
 	) {}
 
 	static fromJson(json: any): TimelineSessionDto {
+		const { key, label } = readDashboardItem(json, json.domain)
 		return new TimelineSessionDto(
 			json.id,
-			json.domain,
+			key,
+			label,
 			new Date(json.startedAt),
 			new Date(json.endedAt),
 			json.durationSeconds,

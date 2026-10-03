@@ -80,7 +80,7 @@
 					class="pb-3"
 				>
 					<DesktopPieChartSection
-						v-model:selectedProductName="selectedItem"
+						v-model:selectedProcessName="selectedItem"
 						:processes="pieChartData?.processes ?? []"
 						:totals="pieChartData?.totals"
 						:loading="pieChartLoading"
@@ -110,7 +110,6 @@
 	import { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import { TimelineSessionDto } from '@/core/activityTracking/dto/response/timeline/TimelineSessionDto.ts'
 	import type { StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
-	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import {
 		getDesktopFocusMetrics,
 		getDesktopPieChart,
@@ -134,9 +133,13 @@
 	} from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	// --- Response → view-model mapping ---
+	// Every panel keys on the process name and prints the product name, through the server's
+	// `key`/`label` pair — so `?selected=` holds a process name, and two processes sharing a product
+	// name stay two items with two colours (OP11).
 	function toSummaryCardsData(process: DesktopProcessSummaryDto): SummaryCardsData {
 		return new SummaryCardsData(
-			process.productName,
+			process.key,
+			process.label,
 			process.active,
 			process.background,
 			(process.active?.seconds ?? 0) + (process.background?.seconds ?? 0),
@@ -149,10 +152,10 @@
 			windowStart: window.windowStart,
 			windowEnd: window.windowEnd,
 			items: window.activities.map(a => ({
-				name: a.productName,
+				key: a.key,
+				label: a.label,
 				activeSeconds: a.activeSeconds,
 				backgroundSeconds: a.backgroundSeconds,
-				color: getDomainColor(a.processName),
 			})),
 		}
 	}
@@ -160,7 +163,8 @@
 	function toTimelineSession(session: DesktopTimelineSession): TimelineSessionDto {
 		return new TimelineSessionDto(
 			session.id,
-			session.productName,
+			session.key,
+			session.label,
 			session.startedAt,
 			session.endedAt,
 			session.durationSeconds,

@@ -67,9 +67,10 @@
 		>
 			<ActivityDomainCard
 				v-for="domain in visibleDomains"
-				:key="domain.domain"
+				:key="domain.key"
 				:domain="domain"
-				:selected="domain.domain === selectedDomain"
+				:displayName="labelsByKey.get(domain.key)"
+				:selected="domain.key === selectedDomain"
 				@click="handleDomainClick"
 			/>
 		</div>
@@ -83,6 +84,7 @@
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
+	import { distinctLabels } from '@/core/activityTracking/dto/DashboardItem.ts'
 	import i18n from '@/i18n.ts'
 
 	const {
@@ -100,6 +102,7 @@
 		domains: SummaryCardsData[] | null
 		baselineOptions: BaselineOption[]
 		selectedBaseline: BaselineType
+		/** A card's `key`, as is the `domainClick` payload. */
 		selectedDomain?: string | null
 		loading?: boolean
 		error?: boolean
@@ -127,6 +130,8 @@
 			return hasActiveTime || hasBackgroundTime
 		})
 	})
+
+	const labelsByKey = computed(() => distinctLabels(visibleDomains.value ?? []))
 
 	function handleBaselineChange(value: BaselineType) {
 		emit('update:selectedBaseline', value)

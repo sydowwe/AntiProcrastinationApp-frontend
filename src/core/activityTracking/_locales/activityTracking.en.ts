@@ -93,6 +93,7 @@ const messages = {
 		groupTail: `Group small items`,
 		shareOfSpan: `Share of period:`,
 		packageName: `Package:`,
+		processName: `Process:`,
 		meanSession: `Average session:`,
 		longestSession: `Longest session:`,
 		firstUse: `First use:`,

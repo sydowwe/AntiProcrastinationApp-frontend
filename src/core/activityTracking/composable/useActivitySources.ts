@@ -7,8 +7,8 @@ import { ACTIVITY_SOURCE_ORDER, ActivitySource } from '@/core/activityTracking/d
  * THE COLOUR ENTRY POINT FOR THE MERGED VIEW — every unified surface goes through here and nothing
  * calls `getDomainColor()` directly.
  *
- * The three per-source dashboards each feed a different field to `getDomainColor()`: the web extension
- * its `domain`, desktop its `processName`, android its `packageName`. That is fine while a screen
+ * The three per-source dashboards each hash their item's `key`: the web extension's domain, desktop's
+ * process name, android's package name. That is fine while a screen
  * shows one source. Merged it is not: `slack.exe` and `com.Slack` hash to different hues, so one
  * application appears twice on one page, in one name, in two colours — and the pie legend, the bar
  * segments and the timeline swatches would each disagree with the others.

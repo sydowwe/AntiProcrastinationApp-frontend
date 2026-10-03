@@ -1,5 +1,9 @@
-export class DomainPieData {
+import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
+
+export class DomainPieData implements DashboardItem {
 	constructor(
+		public key: string,
+		public label: string,
 		public domain: string,
 		public activeSeconds: number,
 		public backgroundSeconds: number,
@@ -9,7 +13,10 @@ export class DomainPieData {
 	) {}
 
 	static fromJson(json: any): DomainPieData {
+		const { key, label } = readDashboardItem(json, json.domain)
 		return new DomainPieData(
+			key,
+			label,
 			json.domain,
 			json.activeSeconds,
 			json.backgroundSeconds,

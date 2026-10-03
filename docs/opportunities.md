@@ -101,17 +101,6 @@
 - **Value:** Today the only way to check a recurrence is to open its dialog, and a suggestion appears with no reason
   given. A wrong rule then shows up as a suggestion on a day it shouldn't, with no clue why.
 
-### OP11. Tell apart two apps with the same name in tracking
-- **Source:** from data-map (G4; backlog: the four dropped identifiers)
-- **Data it spends:** the server's `Key`/`Label` on 12 per-source DTOs, `DesktopProcessSummaryDto.processName`,
-  `AndroidAppSummaryDto.packageName`, `DesktopTimelineSession.processName`, `AndroidTimelineSession.packageName`
-- **Where it would surface:** every tracking dashboard: selection, `?selected=`, the details lookup, colour hashing
-  (which today uses different fields in the pie and the timeline)
-- **Needs backend:** no. The server already sends `Key`/`Label` for this purpose.
-- **Size:** M. Twelve DTOs, four views' mappers, and a URL key that changes meaning.
-- **Value:** Two desktop processes that share a product name collide on selection and open the wrong detail panel.
-  The user can't trust what they are looking at.
-
 ### OP13. Per-item time in the daily recap
 - **Source:** from data-map (backlog `DailyRecap.items[].timeLoggedSeconds`)
 - **Data it spends:** `DailyRecap.items[].timeLoggedSeconds`
@@ -226,6 +215,21 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP11**, built 2026-10-03, app-side only. The API already sent `key`/`label` on all 12 per-source DTOs
+  (`IDashboardItem`), so the backend did not change. All 12 client DTOs now parse the pair (`dto/DashboardItem.ts`).
+  The shared view-models (`SummaryCardsData`, `PieSegment`, `StackedBarsInputItem`, `TimelineSessionDto`) carry
+  `key` and `label` instead of one `domain`/`name` string. Selection, the details lookup and the colour hash read
+  `key`, and only the printed text reads `label`. **`?selected=` changed meaning:** on desktop it holds the process
+  name, on Android the package name. Web (domain) and unified (merged label) are unchanged. An old desktop or
+  Android link that carries a display name selects nothing. Where two keys share a label in one panel, cards and
+  legends print "Label (key)". The pie legend shortens the label, never the key. The timeline block's hover text
+  and tooltip name the key too. The desktop details panel gained a *Process* row. The pie and the timeline used to
+  hash different fields for desktop. They now both hash the process name. Covered by two route-mocked tests in
+  `e2e/tests/tracking-dashboards.draft.spec.ts`: two `Microsoft Teams` processes get two cards, and the second one
+  opens `ms-teams.exe`. The Android test now asserts `?selected=` is the package the details were fetched by.
+  Checked live: all four dashboards, the collision through route mocks, and a desktop timeline click
+  (`selected=rider64.exe`).
 
 - **OP6**, built 2026-10-03, in both repos. The API gained one nullable `PlannedLength` (`IntTime`) on
   `ActivityHistorySession`, its request and its response, plus the GDPR export and migration

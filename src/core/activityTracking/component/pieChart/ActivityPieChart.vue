@@ -56,6 +56,7 @@
 	import type { EChartsOption } from 'echarts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { OTHER_DOMAIN, type PieSegment } from './PieSegment.ts'
+	import { distinctLabels } from '@/core/activityTracking/dto/DashboardItem.ts'
 
 	const {
 		domains,
@@ -64,6 +65,7 @@
 		foldedCount = 0,
 	} = defineProps<{
 		domains: PieSegment[]
+		/** A segment's `key`, as is the `segmentClick` payload. */
 		selectedDomain: string | null
 		// Off for a source with no Active/Background split (Android) — the radio would re-render the
 		// same pie whichever metric is picked.
@@ -87,25 +89,35 @@
 	// Register ECharts components
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
+	// ECharts identifies a pie item — and its legend entry — by `name`, so `name` carries the key and
+	// every visible string is looked up from it. Naming items by label merged two processes that share
+	// a product name into one legend entry and made a click on either select the first.
+	const segmentsByKey = computed(() => new Map(domains.map(segment => [segment.key, segment])))
+	const labelsByKey = computed(() => distinctLabels(domains.filter(segment => segment.key !== OTHER_DOMAIN)))
+
+	function displayName(key: string): string {
+		if (key === OTHER_DOMAIN) return t('activityTracking.common.other')
+		return labelsByKey.value.get(key) ?? segmentsByKey.value.get(key)?.label ?? key
+	}
+
 	const chartOption = computed<EChartsOption>(() => {
 		const data = domains.map(segment => ({
-			name: segment.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : segment.domain,
+			name: segment.key,
 			value: segment.seconds,
 			itemStyle: {
 				color: segment.color,
 			},
 			// Select state
-			selected: selectedDomain === segment.domain,
+			selected: selectedDomain === segment.key,
 		}))
 
 		return {
 			tooltip: {
 				trigger: 'item',
 				formatter: (params: any) => {
-					const domain = params.name
 					const seconds = params.value
 					const percent = params.percent.toFixed(1)
-					return `<strong>${domain}</strong><br/>${fromSeconds(seconds)} (${percent}%)`
+					return `<strong>${displayName(params.name)}</strong><br/>${fromSeconds(seconds)} (${percent}%)`
 				},
 			},
 			legend: {
@@ -127,15 +139,17 @@
 					fontSize: 12,
 					fontWeight: 300,
 				},
-				formatter: (name: string) => {
-					const segment = domains.find(
-						d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === name,
-					)
-					if (segment) {
-						const displayName = name.length > 25 ? name.substring(0, 25) + '...' : name
-						return `${displayName} (${segment.percent.toFixed(1)}%)`
-					}
-					return name.length > 25 ? name.substring(0, 25) + '...' : name
+				formatter: (key: string) => {
+					const segment = segmentsByKey.value.get(key)
+					const name = displayName(key)
+					// A disambiguated name ends in the very part that tells it apart — "(chrome.exe)" — so
+					// the shared label is what gets shortened, never the key.
+					const isDisambiguated = segment !== undefined && name !== segment.label && key !== OTHER_DOMAIN
+					const suffix = isDisambiguated ? ` (${key})` : ''
+					const base = isDisambiguated ? segment.label : name
+					const limit = Math.max(8, 25 - suffix.length)
+					const truncated = (base.length > limit ? base.substring(0, limit) + '...' : base) + suffix
+					return segment ? `${truncated} (${segment.percent.toFixed(1)}%)` : truncated
 				},
 			},
 			series: [
@@ -176,23 +190,21 @@
 	function handleChartClick(params: any) {
 		if (!params.data) return
 
-		const clickedDomain = domains.find(
-			d => (d.domain === OTHER_DOMAIN ? t('activityTracking.common.other') : d.domain) === params.data.name,
-		)
+		const clicked = segmentsByKey.value.get(params.data.name)
 
-		if (!clickedDomain) return
+		if (!clicked) return
 
 		// "Other" is not selectable — clicking it expands it into its members instead.
-		if (clickedDomain.domain === OTHER_DOMAIN) {
+		if (clicked.key === OTHER_DOMAIN) {
 			showTail.value = true
 			return
 		}
 
 		// Toggle selection
-		if (selectedDomain === clickedDomain.domain) {
+		if (selectedDomain === clicked.key) {
 			emit('segmentClick', null)
 		} else {
-			emit('segmentClick', clickedDomain.domain)
+			emit('segmentClick', clicked.key)
 		}
 	}
 </script>

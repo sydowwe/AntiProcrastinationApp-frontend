@@ -1,7 +1,7 @@
 <template>
 	<VCard variant="outlined">
 		<VCardTitle class="d-flex align-center justify-space-between">
-			<span>{{ app.appLabel }}</span>
+			<span>{{ app.label }}</span>
 			<VBtn
 				icon="fas fa-xmark"
 				variant="text"
