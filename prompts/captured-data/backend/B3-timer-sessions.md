@@ -64,9 +64,17 @@ Each rule states what the client assumes. Correct any that are wrong, and the cl
    client assumes no session-level delete endpoint is needed now.
 9. **Rows written before this lands have no session**, and every reader treats such a row as a session of one. That is how they render today, so nothing
    old changes meaning.
-10. **Embedded timers stay single rows.** When `TrackTimeDialog` is opened for a planner task or a to-do item, the timer emits one total, and the embedder
-    writes one row linked to the task (`TodoListItemId` / `RoutineTodoListId`). That path is unchanged, so the session request needs **no** task link.
-    Please say if you see a reason it should have one.
+10. ~~**Embedded timers stay single rows.** When `TrackTimeDialog` is opened for a planner task or a to-do item, the timer emits one total, and the
+    embedder writes one row linked to the task (`TodoListItemId` / `RoutineTodoListId`). That path is unchanged, so the session request needs **no** task
+    link.~~
+    > **Corrected 2026-10-03 — both halves were wrong.** No path ever sent the link: the client's `ActivityHistoryRequest` carried only
+    > `startTimestamp`, `length` and `activityId`, so every row landed unlinked and the daily recap (`GET todo-list-item/daily-recap`, which sums by
+    > `TodoListItemId` alone) showed every item at zero time (`docs/feature-discovery/F2-half-built-backend.md`, "Out of scope" #1–2). And embedded timers
+    > no longer stay single rows. Since `f522b0c9` (OP6) a timer or Pomodoro in `TrackTimeDialog` saves through `POST /activity-history/session`
+    > (`createTracked` in `activityHistoryApi.ts`), so the session request **does** carry the link. The server already accepted it
+    > (`CreateActivityHistorySessionRequest.TodoListItemId` / `RoutineTodoListId`, same rules as the row request). A stopwatch is still one row, linked
+    > the same way. Editing a row keeps its link: `ActivityHistoryRequest.UpdateEntity` deliberately does not write either field, so the edit form's
+    > link-less `PUT` cannot unlink it.
 
 ## The shape the frontend needs
 

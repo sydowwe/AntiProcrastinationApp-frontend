@@ -52,6 +52,8 @@
 		if (!startTimestamp.value || !activityId.value) return
 		dialogApi.setLoading(true)
 		try {
+			// No item link sent, and none lost: the server's update never writes `todoListItemId` /
+			// `routineTodoListId`, so an edited row stays credited to its item on the daily recap.
 			await update(record.id, new ActivityHistoryRequest(startTimestamp.value, length.value, activityId.value))
 			showSuccessSnackbar(t('history.historyUpdated'))
 			dialogApi.close(true)
