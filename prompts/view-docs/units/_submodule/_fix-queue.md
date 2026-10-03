@@ -1,18 +1,18 @@
 # Fix queue — `_submodule` units (16–19)
 
-> Built 2026-09-30 · updated 2026-10-01 · commit `4d890646` (framework `b1b82a1`) · units triaged: 19 `scheduler`,
-> 18 `notifications` (inventory + mutation), 17 `reminders-admin` · findings considered: 62 · batches: 27 framework ·
-> 0 app-side · escalations: 4
+> Built 2026-09-30 · updated 2026-10-01 · commit `0e77f904` (framework `b1b82a1`) · units triaged: 19 `scheduler`,
+> 18 `notifications` (inventory + mutation), 17 `reminders-admin`, 16 `reminders-user` (inventory + mutation) ·
+> findings considered: 83 · batches: 31 framework · 0 app-side · escalations: 6
 
 > **Why a separate queue.** The app's queue (`docs/views/_fix-queue.md`) covers units 1–15. Units 16–19 document
 > framework modules (`src/_common/modules/*`), so every batch here is a **`vue_framework` commit first, then a pointer
 > bump in this repo** (CLAUDE.md, *`src/_common` is a submodule*). Batch ids are `S<n>` and escalations `§S<n>` so
-> they can never be confused with the app queue's `F<n>` / `FW<n>` / `§<n>`. Unit 16 (`reminders-user`) has run
-> but is not yet absorbed. Append its batches here, continuing the numbering, and fold its findings named below as
-> cross-unit duplicates into those batches instead of opening new ones.
->
-> Closing an item follows the app queue's rule — a move, not a mark — but this queue has no `_fix-queue-log.md` yet.
-> Create one beside this file the first time a batch closes.
+> they can never be confused with the app queue's `F<n>` / `FW<n>` / `§<n>`. The unit docs are in
+> `docs/views/_submodule/<unit>/`.
+
+> Closed batches, closed verification items, the per-pass narrative and the *Contradictions & re-grades* audit
+> trail live in [`_fix-queue-log.md`](_fix-queue-log.md) beside this file. This file holds only open work. Closing an
+> item is a move, not a mark: the body goes to the log and the summary row keeps a ✅.
 
 ## Summary
 
@@ -28,27 +28,27 @@
 | S8 | Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
 | S9 | Overdue / failed attention lists in no meaningful order | **framework** | `scheduler/P7` | trivial |
 | S10 | Inbox never loads unless the SignalR handshake succeeds | **framework** | `notifications/B1` | medium |
-| S11 | `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2` | low |
+| S11 | `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2`, `reminders-user/P6` | low |
 | S12 | Notifications controls with no name or a repeated one | **framework** | `notifications/A1`, `A3`, `A5`, `A7` | low |
-| S13 | Closing a `useDialog()` dialog drops focus to `<body>` (framework-wide component) | **framework** | `notifications/A2` | low |
+| S13 | Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component) | **framework** | `notifications/A2`, `reminders-user/A1` | low |
 | S14 | Preference cards' purple palette fails contrast | **framework** | `notifications/A4` | low |
 | S15 | Action toasts time out in 3 s, and so does the only Undo (framework-wide default) | **framework** | `notifications/A6` | trivial |
 | S16 | Notifications copy that says the wrong thing | **framework** | `notifications/P2`, `P3`, `P4`, `P6` | low |
-| S17 | Both notifications routes claim to be "Home" in the breadcrumb | **framework** | `notifications/P1` | trivial |
+| S17 | Framework routes outside any nav tree claim to be "Home" in the breadcrumb | **framework** | `notifications/P1`, `reminders-user/P1` | trivial |
 | S18 | Reminder pages clip their own content — detail cards and the history notice shrink | **framework** | `reminders-admin/X1`, `B6` | trivial |
 | S19 | Reminder grid DTOs drop schedule fields the server sends | **framework** | `reminders-admin/B1`, `B2`, `P4` | low |
-| S20 | Date-only filter bounds are sent as instants, so "to" excludes its own day | **framework** | `reminders-admin/B4`, `P8` (+ `reminders-user/B3`) | low |
+| S20 | Date-only filter bounds are sent as instants, so "to" excludes its own day | **framework** | `reminders-admin/B4`, `P8`, `reminders-user/B3` | low |
 | S21 | Dispatch history renders a raw key for skip reasons the client does not know | **framework** | `reminders-admin/B5` | trivial |
 | S22 | A reminder has no identity on screen — row actions, detail heading, upcoming rows | **framework** | `reminders-admin/A1`, `P3`, `P5` | low |
-| S23 | Reminder list default sorts omit `BasicTable`'s tie-breaker | **framework** | `reminders-admin/P1` (+ `reminders-user/P2`) | trivial |
+| S23 | Reminder list default sorts omit `BasicTable`'s tie-breaker | **framework** | `reminders-admin/P1`, `reminders-user/P2` | trivial |
 | S24 | Dispatch history: an empty actions column, and a correction that names an id nobody can see | **framework** | `reminders-admin/P6`, `P7` | low |
 | S25 | `BasicTable`'s select column checkboxes have no name (framework-wide component) | **framework** | `reminders-admin/A2` | low |
-| S26 | `FilterPanel` chip remove buttons are all named "Close" (framework-wide component) | **framework** | `reminders-admin/A3` (+ `reminders-user/A4`) | trivial |
+| S26 | `FilterPanel` chip remove buttons are all named "Close" (framework-wide component) | **framework** | `reminders-admin/A3`, `reminders-user/A4` | trivial |
 | S27 | `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component) | **framework** | `reminders-admin/A4` | low |
-
-`scheduler/P2` was *not batched* on the first pass, deferred to the app queue's *Contradictions* §22. It is now in
-**S11**. §22 is a note, not a queued fix ("unfiled, unobserved in a browser"), so deferring to it parked the
-defect nowhere. `notifications/B2` is the first observed instance. See *Re-grades & notes*.
+| S28 | Snooze and Dismiss never reach the server, and once they do, the default snooze delivers early | **framework** | `reminders-user/X1`, `B2` | low |
+| S29 | Reminder tables render a failed load as an empty list, in Vuetify's words | **framework** | `reminders-user/B5`, `P4` | low |
+| S30 | My reminders: the Dismiss confirm ignores Escape and names nothing; every 400 is "no longer in the future" | **framework** | `reminders-user/A2` (Dismiss half), `P5`, `P7` | trivial |
+| S31 | `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component) | **framework** | `reminders-user/A3` | trivial |
 
 ---
 
@@ -162,7 +162,8 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 - **Added in the third pass:** the reminder detail's 404 card and the overview's "Failed to load" / "Refresh failed —
   showing older data." lines are each accompanied by the interceptor snackbar. The overview polls every 5 min and
   on focus, so during an outage it would snackbar repeatedly. Both reminder views already own their failure copy,
-  so `_silent: true` on both requests is the whole fix. Leave `MyRemindersView` to unit 16's triage.
+  so `_silent: true` on both requests is the whole fix. `MyRemindersView` (unit 16) needs nothing here: its two
+  action requests are already `_silent`, and its table load gets its own failure state in S29.
 - **Root cause:** S1 #2 made the page state the message (not-found / load-failed + *Try again*), but the requests are
   not `_silent`, so the interceptor also snackbars.
 - **What to change:** pass `_silent: true` on the job and run `fetchById` (check how `useEntityQuery.fetchById` forwards
@@ -220,7 +221,8 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 ## S11. `DateTimeHelper` formatters speak only Slovak (framework-wide default)
 - **Scope:** **[framework]** `src/_common/utils/DateTimeHelper.ts` + `src/_common/docs/utils.md` — its own batch
   (batching rule 4: it changes what every app on the framework renders)
-- **Closes:** `notifications/B2`, `scheduler/P2`
+- **Closes:** `notifications/B2`, `scheduler/P2`, `reminders-user/P6` (filed so this batch's verification walks
+  `/pripomienky/moje`. No separate cause.)
 - **Root cause:** every formatter in the file pins dayjs to `'sk'`: `DateTimeHelper.ts:73, 77, 81, 85, 89, 93, 103, 107,
   142`. `formatLocalized` is the sharpest case, because a helper named *localized* that always speaks Slovak is how an
   EN account gets "28. september 2026" day headers on `/notifikacie`. The app queue's log recorded this as
@@ -239,7 +241,8 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
   purpose, and they are app-side follow-ups if they read wrong in EN, not part of this batch. Also do not patch
   `groupNotificationsByDay` on its own. That is the per-consumer fix §22 warns against.
 - **Verification:** `notifications/B2` `Verify:` (EN "September 28, 2026", SK "28. september 2026"); `scheduler/P2`
-  `Verify:`. Then walk the four app-side consumers above once in EN and SK, because their output changes with this
+  `Verify:`; `reminders-user/P6` `Verify:` (the next-occurrence cells and the snooze presets on `/pripomienky/moje`
+  in EN). Then walk the four app-side consumers above once in EN and SK, because their output changes with this
   commit.
 - **Risk:** the widest-reaching batch in this queue. It changes visible dates in the planner header, history timeline
   and routine list for every EN account, which is the fix, but those screens' e2e specs may assert the Slovak shape.
@@ -268,20 +271,30 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 - **Risk:** none functional. e2e locators that used `'Unread Badge'` or a structural fallback for the matrix can move to
   the new names.
 
-## S13. Closing a `useDialog()` dialog drops focus to `<body>` (framework-wide component)
-- **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` (or `composable/general/useDialog.ts`) — its own
-  batch: every `confirm()` / `openDialog()` in the framework **and** the app goes through it
-- **Closes:** `notifications/A2`
+## S13. Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component)
+- **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` — its own batch: every `confirm()` /
+  `openDialog()` in the framework **and** the app goes through it, and so does every `v-if`'d template dialog
+- **Closes:** `notifications/A2`, `reminders-user/A1`
 - **Root cause:** `MyDialog` records the opener in `watch(dialog, isOpen => …)` (`MyDialog.vue:144-151`), which fires
-  only on a *change*. A `DialogHost` entry is mounted already open, so the open transition never happens, no opener is
-  recorded, and on close there is nothing to restore. A template-declared `MyDialog` (opened by toggling its model)
-  works, which is why `_shell` recorded focus return as fine.
-- **Files:** `MyDialog.vue:127, 144-155`; `useDialog.ts` (`openDialog`, where the entry is pushed).
-- **What to change:** capture `document.activeElement` at the moment `openDialog()` / `confirm()` is called and hand
-  it to the entry. Alternatively, make the watch `{ immediate: true }` so a born-open dialog records its opener on
-  mount. Restore on close, after the leave transition, if the element is still connected.
-- **Verification:** `notifications/A2` `Verify:`. Then check one app-side `confirm()` (a to-do item delete) returns
-  focus the same way, and that a template-declared `MyDialog` still does.
+  only on a *change*. A dialog that is **mounted already open** never sees the open transition, records no opener,
+  and has nothing to restore on close. Two shapes hit it. A `DialogHost` entry (`notifications/A2`). And a template
+  dialog behind a `v-if` whose condition and model flip in the same tick: `SnoozeDialog v-if="activeOccurrence"`
+  (`MyRemindersView.vue:152-158`, `openSnooze` at `:277-280`), which also re-mounts after every confirmed or failed
+  snooze, because both paths null `activeReminderId` (`reminders-user/A1` round 2). A template `MyDialog` that stays
+  mounted and toggles its model works, which is why `_shell` recorded focus return as fine.
+- **Files:** `MyDialog.vue:127, 144-155`.
+- **What to change:** record the opener **inside `MyDialog`** when it mounts open: `{ immediate: true }` on the watch,
+  or the same assignment in `onMounted` when `dialog.value` is already true. At mount time `document.activeElement`
+  is still the button that was clicked. Restore on close, after the leave transition, if the element is still
+  connected. The first pass's other option, capturing the element in `useDialog().openDialog()`, is **not enough**
+  any more: it fixes the `DialogHost` path and leaves `SnoozeDialog` broken.
+- **Do not change:** `MyRemindersView`'s `restoreFocusAfterRowDrop` (`:296-308`). It covers a different case (the
+  opener's row was deleted), and its comment's premise ("MyDialog already restores focus to whatever opened it")
+  becomes true with this batch.
+- **Verification:** `notifications/A2` `Verify:`; `reminders-user/A1` `Verify:`, plus its round-2 case: on
+  `/pripomienky/moje`, snooze with `snooze` routed to 204, then open *Snooze* again and *Cancel*, and focus is on that
+  row's *Snooze* button. Then check one app-side `confirm()` (a to-do item delete) returns focus the same way, and that
+  a template-declared `MyDialog` still does.
 - **Risk:** nested dialogs: the inner dialog's opener is inside the outer one. Restore must target the element that
   opened *that* dialog, not the first one.
 
@@ -344,18 +357,18 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 - **Risk:** if §S3 lands and the server starts discounting unconfigured channels, P6's new sentence is still true. It
   describes the in-app exemption, which §S3 does not touch.
 
-## S17. Both notifications routes claim to be "Home" in the breadcrumb
+## S17. Framework routes outside any nav tree claim to be "Home" in the breadcrumb
 - **Scope:** **[framework]** `src/_common/modules/notifications/view/NotificationsView.vue`,
-  `reminderPreference/view/ReminderPreferencesView.vue`
-- **Closes:** `notifications/P1`
-- **Root cause:** neither route is in a nav tree, and `useBreadcrumbs.ts:49-59` gives such a route the home crumb alone,
-  rendered as the current page.
-- **What to change:** `useSetBreadcrumbExtra([{ title: t('<heading key>') }])` in each view, from its own heading key.
-  That is the `F28` pattern.
+  `reminderPreference/view/ReminderPreferencesView.vue`, `src/_common/modules/reminders/view/MyRemindersView.vue`
+- **Closes:** `notifications/P1`, `reminders-user/P1`
+- **Root cause:** none of the three routes is in a nav tree (`/pripomienky/moje` is reached from the user menu), and
+  `useBreadcrumbs.ts:49-59` gives such a route the home crumb alone, rendered as the current page.
+- **What to change:** `useSetBreadcrumbExtra([{ title: t('<heading key>') }])` in each view, from its own heading key
+  (`reminderDashboard.my.title` for My reminders). That is the `F28` pattern.
 - **Do not change:** `useBreadcrumbs`' fallback. Whether a nav-less framework route should get a generic crumb is the
   shell question S5 raised for the scheduler. If S5 takes the shell-level option, re-check this batch is still needed
   before doing it.
-- **Verification:** `notifications/P1` `Verify:`.
+- **Verification:** `notifications/P1` and `reminders-user/P1` `Verify:`.
 - **Risk:** none.
 
 ## S18. Reminder pages clip their own content — detail cards and the history notice shrink
@@ -394,7 +407,7 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
   uses) to the register DTO, and `dueAt` to the upcoming DTO. Pass all four `ReminderScheduleDisplay` props with
   `:dueAt="item.dueAt"` in both views, and delete the `TODO(Bn)`. `hasLeadOffsets` becomes "any offset < 0".
 - **Do not change:** `MyRemindersView` / the personal `my-upcoming` projection. Per the DTO's own header it is a
-  narrower route, and its missing `intervalPreset` is unit 16's `reminders-user/B4`, a backend ask, not this.
+  narrower route, and its missing `intervalPreset` is `reminders-user/B4`, escalated as §S6, not this.
 - **Verification:** the three findings' `Verify:` blocks.
 - **Risk:** the upcoming DTO is shared with `MyRemindersView`. `dueAt` is absent on that route, so it must default to
   `null` and the personal view must keep passing what it passes today.
@@ -402,8 +415,8 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 ## S20. Date-only filter bounds are sent as instants, so "to" excludes its own day
 - **Scope:** **[framework]** `modules/reminders/dto/request/{reminderFilterParams,*Filter}.ts`, the three list views'
   `chipFormatters`, `view/ReminderOverviewView.vue` (`dueSoonRoute`)
-- **Closes:** `reminders-admin/B4`, `P8`. **Cross-unit duplicate:** `reminders-user/B3` (unit 16, same codec via
-  `MyReminderFilter`) belongs here when unit 16 is absorbed.
+- **Closes:** `reminders-admin/B4`, `P8`, `reminders-user/B3` (the same codec, reached through `MyReminderFilter`.
+  Observed: `?to` = 2 Oct sends `2026-10-01T22:00:00.000Z` and lists 0 rows, and the chip reads "… 0:00:00").
 - **Root cause:** every date filter in the module is a `VDateInput` day, carried as a `Date` at local midnight and
   sent as that instant. The server compares instants, so an upper bound named "2 Oct" ends at the *start* of 2 Oct
   (`?to=2026-10-02` → `"nextOccurrenceTo":"2026-10-01T22:00:00.000Z"`, and #23001 at 02.10 16:30 is excluded).
@@ -420,7 +433,7 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
   `<=` on an instant, the end-of-day form is the one that needs no server change.
 - **Do not change:** the `from` bounds (start of day is right for them), or the URL param names that the overview
   drill-downs build.
-- **Verification:** `reminders-admin/B4` and `P8` `Verify:`; the overview's due-soon card count should now equal the
+- **Verification:** `reminders-admin/B4`, `P8` and `reminders-user/B3` `Verify:`; the overview's due-soon card count should now equal the
   upcoming list it links to, including a row due on the window's last day.
 - **Risk:** the overview's due-soon link will gain rows that fall on its last day. That is the intent, since the source
   comment there already apologises for the mismatch. The timezone is the browser's, not the account's
@@ -456,7 +469,9 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
   param or add a `{label}` variant), and as the detail `h1` and crumb, with kind as a caption. Wrap the upcoming
   caption in the register's `RouterLink`.
 - **Do not change:** the Subject/definition-id split (intended per the unit prompt), or `RecipientChips` (no PII by
-  design). Resolving a human title is `reminders-admin/O1`, which is deferred.
+  design). Resolving a human title is `reminders-admin/O1`, which is deferred. Do not widen the helper to
+  `MyRemindersView`: the personal `my-upcoming` row carries no `subjectType`/`subjectId`, so `reminders-user/B1` needs
+  the server field asked for in §S6.
 - **Verification:** the three findings' `Verify:` blocks.
 - **Risk:** `e2e/tests/reminders-admin.draft.spec.ts` scopes rows by `getByRole('row', { name: /Reminder #…/ })`,
   which still works. Its fixme stubs for A1/P3/P5 can become assertions.
@@ -464,7 +479,7 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 ## S23. Reminder list default sorts omit `BasicTable`'s tie-breaker
 - **Scope:** **[framework]** `modules/reminders/view/{ReminderDefinitionsView,ReminderUpcomingView,MyRemindersView}.vue`
   (`defaultSortBy`)
-- **Closes:** `reminders-admin/P1`. **Cross-unit duplicate:** `reminders-user/P2` (unit 16, `MyRemindersView`).
+- **Closes:** `reminders-admin/P1`, `reminders-user/P2` (`MyRemindersView.vue:217`)
 - **Root cause:** identical to S3 part (2). `BasicTable.vue:198` appends its first column when the sort lacks it, so a
   default of `[nextOccurrenceAt asc]` never equals the state. Every mount rewrites the URL
   (`…sortBy=nextOccurrenceAt:asc,ownerModule:asc` / `…,kind:asc`), and the first column shows a "2" badge. The
@@ -472,7 +487,8 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 - **What to change:** register `[nextOccurrenceAt asc, ownerModule asc]`; upcoming and my-reminders
   `[nextOccurrenceAt asc, kind asc]`.
 - **Do not change:** `BasicTable`'s push (S3 settled that).
-- **Verification:** `reminders-admin/P1` `Verify:`. Old bookmarks carry exactly the new default, so they survive.
+- **Verification:** `reminders-admin/P1` and `reminders-user/P2` `Verify:`. Old bookmarks carry exactly the new
+  default, so they survive.
 - **Risk:** none. Can ride with S3 in one session.
 
 ## S24. Dispatch history: an empty actions column, and a correction that names an id nobody can see
@@ -511,12 +527,12 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 ## S26. `FilterPanel` chip remove buttons are all named "Close" (framework-wide component)
 - **Scope:** **[framework]** `src/_common/component/FilterPanel.vue` + a framework locale key. Its own batch under
   rule 4.
-- **Closes:** `reminders-admin/A3`. **Cross-unit duplicate:** `reminders-user/A4`. The scheduler pass noted it
-  unfiled (*Re-grades*, first pass), and it is now filed.
+- **Closes:** `reminders-admin/A3`, `reminders-user/A4`. The scheduler pass noted it unfiled (log, first pass).
 - **Root cause:** the chips use `VChip closable` with Vuetify's default `closeLabel` ("Close"), so every chip's remove
   button has the same name, one that also reads as closing a dialog.
 - **What to change:** `:closeLabel="t('<framework key>', { label: chip.label })"` → "Remove filter: Paused" (sk + en).
-- **Verification:** `reminders-admin/A3` `Verify:`; spot-check one app-side `FilterPanel` (any list with chips).
+- **Verification:** `reminders-admin/A3` and `reminders-user/A4` `Verify:`; spot-check one app-side `FilterPanel`
+  (any list with chips).
 - **Risk:** e2e specs that clicked `getByRole('button', { name: 'Close' })` on a chip break. Grep `e2e/` first.
 
 ## S27. `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component)
@@ -530,6 +546,99 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 - **Verification:** `reminders-admin/A4` `Verify:`; one app-side `ExportMenu` still downloads.
 - **Risk:** the draft spec's `getByText('CSV (.csv)')` still resolves. Upgrade it to the role locator afterwards.
 
+## S28. Snooze and Dismiss never reach the server, and once they do, the default snooze delivers early
+- **Scope:** **[framework]** `modules/reminders/dto/request/{SnoozeOccurrenceRequest,DismissOccurrenceRequest}.ts`,
+  `component/SnoozeDialog.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/X1`, `reminders-user/B2`
+- **Root cause:** two causes, in one batch because they cannot ship apart. (X1) The two request DTOs serialize
+  `reminderId` / `occurrenceInstant`. The server binds `ReminderDefinitionId` / `OccurrenceAt`
+  (`Sydowwe.Reminders/application/dto/dashboard/{Snooze,Dismiss}ReminderOccurrenceRequest.cs`, confirmed in source
+  this pass), so it reads id 0, the guard answers 404, and the client's 404 branch tells the user their own reminder
+  is "no longer available" while the reload puts it straight back. Neither action has ever worked from
+  `/pripomienky/moje`: the client DTOs date from 2026-08-05, the server's from 2026-08-07, and neither has changed
+  since. (B2) `SnoozeDialog`'s presets are anchored to `now` (`:98-124`) and `in1Hour` is pre-selected (`:96`,
+  `:149`), but every row on the page is a *future* occurrence. The server accepts any future `snoozeUntil`, and the
+  scanner then skips the original send for that recipient (`SkipReason.Snoozed`). So the default "snooze" moves a
+  reminder **earlier, for good**. Observed in round 2: a 05.10 occurrence was delivered on 01.10. Today X1 is the only
+  thing that keeps B2 unreachable. Fixing X1 alone would arm it.
+- **Files:** as Scope; the call sites `MyRemindersView.vue:310-347` (read only, unless the constructor changes).
+- **What to change:** (X1) rename the fields to `reminderDefinitionId` / `occurrenceAt`. Keep the constructors'
+  positional order so the two call sites do not move. Add a unit test asserting the serialized keys of both requests,
+  because no test covers the wire shape today. (B2) anchor the presets to the occurrence: 1 h after it, 09:00 on the
+  day after it, 1 week after it. Floor the custom time at the occurrence as well (`minDate` and validation). Reword the
+  preset labels so "In 1 hour" does not still read as "from now" (sk + en).
+- **Do not change:** the `_silent` on the two action requests, or the 404/400/500 branches. Unit 16's round 2
+  settled that they work as coded (U2), and their copy is S30. Whether the *server* should refuse a `snoozeUntil`
+  earlier than the occurrence is §S7's question, not this batch's.
+- **Verification:** `reminders-user/X1` `Verify:` (real 204s, request body keys) and `B2` `Verify:`. X1's Verify
+  writes to the database, so reseed afterwards (`POST /api/test/seed`) and sign in again.
+- **Risk:** once X1 lands, §S7 (`B6`) is what the user sees next: the row drops, then comes back within ~300 ms with the
+  reload, and can be acted on again. Say that in the framework commit. Order: one framework commit, or B2 first.
+  Never X1 alone.
+
+## S29. Reminder tables render a failed load as an empty list, in Vuetify's words
+- **Scope:** **[framework]** `modules/reminders/composable/useReminderTableErrors.ts`, the four list views
+  (`MyRemindersView`, `ReminderDefinitionsView`, `ReminderUpcomingView`, `ReminderDispatchHistoryView`),
+  `component/TableResultAnnouncer.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/B5`, `reminders-user/P4`
+- **Root cause:** no table in the module owns its no-data state. `reportTableLoadError` is "deliberately terminal",
+  and its own comment hands the error state to R2, which never took it. So a 500 leaves `items` empty, the live region
+  announces "0 results found", and the body shows Vuetify's "No data available". The same three words appear for an
+  empty list and for a filtered-empty one. The only recovery is a page reload.
+- **Files:** `useReminderTableErrors.ts:21-26`; `onError: reportTableLoadError` at `MyRemindersView.vue:222`,
+  `ReminderDefinitionsView.vue:186`, `ReminderUpcomingView.vue:229`, `ReminderDispatchHistoryView.vue:221`;
+  `_common/composable/table/useServerTable.ts:79-80` (read only).
+- **What to change:** turn the helper into a small composable that returns an `error` ref, set on a non-cancel
+  failure and cleared on the next successful load, and pass its handler as `onError` in all four views. Each table's
+  `#no-data` slot then renders one of three states: load failed (a message plus *Try again* → `reload()`),
+  filtered-empty (module copy plus *Clear filters*), or empty (module copy). The announcer stays quiet, or announces
+  the failure, while `error` is set. Once the page states the failure itself, make the load `_silent` if
+  `useServerTable`'s fetch path can carry the flag, so there is one report per failure (the S7 rule). P4's
+  page-specific copy is for `/pripomienky/moje` ("No upcoming reminders"). Give the admin three the failure state, and
+  their own empty copy only if it is decided in the same commit.
+- **Do not change:** `useServerTable`'s contract. An `error` ref on the framework-wide composable is a rule-4 change.
+  Keep it in the module until a second module needs it.
+- **Verification:** `reminders-user/B5` and `P4` `Verify:`. The admin tables share the path by source (the same
+  helper at four sites) but were not observed failing. Repeat B5's route-to-500 once on `/pripomienky/register`.
+- **Risk:** the cancellation branch must stay silent and must not set `error`, because typing in a filter aborts
+  in-flight loads.
+
+## S30. My reminders: the Dismiss confirm ignores Escape and names nothing; every 400 is "no longer in the future"
+- **Scope:** **[framework]** `modules/reminders/view/MyRemindersView.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/A2` (**Dismiss half only**. The Snooze half is dropped, see the log), `reminders-user/P5`,
+  `reminders-user/P7`
+- **Root cause:** the Dismiss confirmation is a template-declared `MyDialog` (`:160-168`), and FW1 step 1 missed it,
+  so it is still `persistent` with no input to protect. It also names nothing: "This occurrence will no longer be
+  delivered…", with no date, on rows that are otherwise identical. After an action, `handleActionError`'s 400 branch
+  (`:361-367`) reports every 400 as "no longer in the future". The server sends 400 for two reasons: the occurrence
+  has passed, **or** `OccurrenceAt` is no longer the pending occurrence because the page is stale. The second is the
+  common one for a recurring reminder, and the list it reloads then shows the occurrence still ahead.
+- **What to change:** (A2) `:persistent="false"` on the Dismiss `MyDialog`, per FW1's rule that an input-less
+  confirmation closes on Escape. (P5) show the occurrence in the dialog body, reusing `SnoozeDialog`'s `InfoRow` with
+  `formatInstant(activeOccurrence)` (and the row's title once §S6 lands). (P7) one neutral key for both 400 reasons,
+  e.g. "This occurrence has changed or passed — the list was refreshed." (sk + en). Do not branch on the response's
+  `errors.occurrenceAt` text, which is server prose.
+- **Do not change:** `SnoozeDialog`'s `persistent`. FW1 (owner decision, 2026-09-23) kept it persistent on purpose,
+  because it carries a custom-time form.
+- **Verification:** `reminders-user/A2` `Verify:` for *Dismiss* only (Escape closes it, and focus returns to the row's
+  *Dismiss*); `P5` and `P7` `Verify:`. The phase-5 spec should assert that *Snooze* **resists** Escape, the way
+  `two-factor.spec.ts` does for its form.
+- **Risk:** none.
+
+## S31. `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component)
+- **Scope:** **[framework]** `src/_common/component/dateTime/DateTimePicker.vue` (maybe `TimePicker.vue`),
+  `src/_common/docs/components.md`. Its own batch under rule 4: every labelled `DateTimePicker` in every app renders it.
+- **Closes:** `reminders-user/A3`
+- **Root cause:** `:label="label ? '' : $t('dateTime.time')"` (`DateTimePicker.vue:20`) blanks the time half's label so
+  the pair reads as one labelled field on screen. Nothing gives assistive tech that name back. In the Snooze dialog's
+  custom time, the time input is a bare `textbox` showing `00:00`.
+- **What to change:** keep the visual label empty, and give the time input an `aria-label` of
+  `` `${label} — ${t('dateTime.time')}` ``. Check that `TimePicker` forwards the attribute to its `<input>`, not to its
+  wrapper. If it does not, add a prop. Document it in `components.md`.
+- **Verification:** `reminders-user/A3` `Verify:`. Then grep `src/core` for a `<DateTimePicker` that passes `label` and
+  check that its time field gets the same kind of name.
+- **Risk:** none functional.
+
 ## Escalations (backend / outside this repo)
 
 | § | ask | findings | status |
@@ -538,6 +647,11 @@ defect nowhere. `notifications/B2` is the first observed instance. See *Re-grade
 | §S2 | No catalog of reminder kinds, so the *Reminder types* card can never mute anything | `notifications/B3` | open — not yet written |
 | §S3 | The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | open — not yet written |
 | §S4 | The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | open — not yet written |
+| §S6 | The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | open — not yet written |
+| §S7 | Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | open — not yet written |
+
+`§S5` is unused on purpose. The third pass reserved it for wall-clock (DST) recurrence, if the product ever asks for
+that (log, third pass).
 
 ### §S1 — missed one-shot fires never recover; spent one-shots stay `Active` (`B6`)
 Server: `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer\framework\Sydowwe.Scheduler`. Twelve
@@ -566,6 +680,11 @@ if S12 has not shipped. If the product decision is instead "the card only shows 
 only: the subtitle stops promising muting and the planner's hint points at the delivery matrix. The app-side planner
 string is then an app batch. Write to `prompts/_common/notifications/backend/` (or the reminders folder, whichever owns
 `Sydowwe.Reminders`) in that folder's format, once someone owns it.
+**Also waiting on this catalog: `reminders-user/P3`** (polish). `/pripomienky/moje` shows the raw codes
+`PersonalReminder` / `Portal`, and its *Kind* and *Owner module* filters are free text matched exactly server-side
+(`?kind=Personal` → 0 rows). With a catalog, both filters become selects and the cells take its labels. Without one,
+the interim is to drop the two filters from the personal view, which never holds more than a handful of rows. That is
+an owner call. If §S6 gives rows a title, the label half matters much less.
 
 ### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
 Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
@@ -585,6 +704,34 @@ the dev/QA `POST /notification/test` (`SendTestNotificationEndpoint.cs`). The cl
 purpose: the one time it filtered, it hid `TimerBoundary` (notifications README). So a non-admin sees a *Test* row
 second in the matrix, and a *Test* option in the inbox's type filter. The ask: leave `Test` out of the catalog for
 accounts that cannot raise it (or entirely outside Development). Catalog decision only. No client change is needed.
+
+### §S6 — the personal reminder row has no recipient-safe identity and no interval (`reminders-user/B1`, `B4`)
+Server: `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs` returns `ownerModule, kind,
+templateKey, scheduleType, nextOccurrenceAt, id` and leaves out `PayloadJson` on purpose, as a non-admin
+data-exposure rule. So the three seed rows on `/pripomienky/moje` all read `PersonalReminder | Portal`, and six row
+buttons name two things (B1). The interval row reads "⟳ —" (B4). The ask has two parts. (a) A recipient-safe display
+title on the personal row. The server already renders one per recipient when the reminder fires (notification 22103:
+"File the tax return"), so serving the same render path in the caller's locale needs no new data. (b) `intervalPreset`
+and `cron`, neither of which is recipient-sensitive. **Client half after it lands** (a framework batch to append then):
+render the title as the row's primary text, in both `a11y.*For` labels and in the Dismiss dialog (S30's P5). Pass
+`intervalPreset` / `cronExpression` to `ReminderScheduleDisplay`. Correct `UpcomingReminderGridResponse.ts`'s header
+comment, which says `MyRemindersView` renders none of the missing fields except `cronExpression`. It renders
+`intervalPreset` too. Weigh (a) together with `reminders-admin/O1` (deferred): both ask whether a reminder's human
+label is server-rendered or host-registered.
+
+### §S7 — acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence (`reminders-user/B6`, `B2`)
+Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.
+`DismissReminderOccurrenceEndpoint` does not check for an existing marker. `SnoozeReminderOccurrenceEndpoint.cs:50`
+checks only `SnoozeUntil > now`. Observed with the real API: after a snooze of 23202 and a dismiss of 23201 (both
+204), `my-upcoming` returned both rows unchanged, and 23202 was still offered after its snoozed delivery had fired.
+A second identical dismiss also returned 204. The ask has three parts. (a) Project the caller's effective action onto
+the personal row (`myAction: Snoozed | Dismissed | null`, `snoozeUntil`), using the same "latest non-reversed" rule as
+`LoadEffectiveActionsAsync`. (b) Say whether a repeat dismiss is refused or a no-op. (c) Say whether a `snoozeUntil`
+earlier than the occurrence is valid. Today it moves the delivery earlier for good, because the original send is then
+skipped as `Snoozed`. **Client half after it lands:** replace `dropActiveRow()` + `reload()` with
+`reminders-user/O1`'s chip ("Snoozed until …" / "Dismissed"), and hide *Dismiss* on a dismissed row. If (c) comes back
+"earlier is valid", S28's B2 half still stands, because the *default* must not be earlier, but its custom-time floor
+can go.
 
 ## Needs verification (unverified findings, and what would settle each)
 
@@ -618,6 +765,14 @@ accounts that cannot raise it (or entirely outside Development). Catalog decisio
   Needs a fixture with more uncorrected failed dispatches than `OverviewFailureList`'s cap. Then compare the
   headline, the rendered rows, the N-of-M line and `/pripomienky/historia?needsAttention=true`.
 
+### `reminders-user`
+- **`U3`**: do reminder instants follow the browser's timezone rather than the account's? `useReminderFormat` goes
+  through `DateTimeHelper` in dayjs's local zone. The pass could not tell the two apart, because browser and account
+  are both `Europe/Bratislava`. Settled by running the browser with `timezoneId: 'America/New_York'` (or changing the
+  seed account's timezone) and comparing row 1 with `2026-10-02T14:30Z`. If confirmed, it is a framework batch on the
+  `useUserClock` / `userTimeZone` collaborator, separate from S11 (locale, not zone). S20's date bounds would follow
+  the same answer (its *Risk*).
+
 ## Deferred to opportunities
 
 - **`scheduler/O1`** — *Trigger now* is one click with real side effects, while *Replay* has an acknowledged warning.
@@ -627,87 +782,9 @@ accounts that cannot raise it (or entirely outside Development). Catalog decisio
 - **`reminders-admin/O1`**: reminders are named by kind and id everywhere, although each row's `payloadJson` carries
   a human title ("Call the dentist"). The right shape is a host-registered per-`(ownerModule, kind)` label resolver
   (like `notificationTypeMeta`) or a server `displayLabel`, not parsing the payload. Whether a title is PII in
-  another host is part of the decision. S22 is the no-decision half of this. Unit 16's `reminders-user/B1` (rows
-  indistinguishable on `/pripomienky/moje`) is the same gap from the user's side, so weigh the two together.
-
-## Re-grades & notes
-
-### First pass, 2026-09-30 — unit 19 `scheduler`
-
-- `B6` (bug) → **escalation §S1**. The cause is server-side, and the client reports the state correctly. Severity is
-  unchanged.
-- `P2` (polish) → **not batched**. It duplicates app-queue §22 (`DateTimeHelper` hardcoded `sk`). *(Reversed in the
-  second pass: now in S11.)*
-- Pairs batched together because one fixing session edits the same block: `B1`+`P1` (jobs-grid setup), `B3`+`B4`
-  (breadcrumb ownership), `A1`+`A2` (naming), and `P4`+`P5`+`P6` (run-detail cards). `X1` and `B5` are **not**
-  merged, even though both are flex-height bugs. They are different containers with different fixes, and S1 must not
-  change `SchedulerDetailPage` in a way that affects S2's page.
-- Contradiction with the unit prompt: it said to expect the code to lag `prompts/_common/scheduler/` ("a gap here is
-  usually *not built yet*"). S1, S3, S4, S5, S6, S7 and S8 have all landed (`git -C src/_common log --
-  modules/scheduler`), and every listed claim checked live holds (table in `docs/views/scheduler/findings.md`). That
-  prompt set is effectively done and could move to `_done/`. That is the owner's call, not this queue's.
-- Not filed, observed in passing (framework-wide, outside this unit): `ExportMenu`'s open menu joins the activator's
-  accessible name (`button "Export Excel (.xlsx) CSV (.csv)"`), and every `FilterPanel` chip's remove button is named
-  just "Close". Whichever unit meets them next can file them.
-
-### Second pass, 2026-10-01 — unit 18 `notifications` absorbed (inventory round 1 + mutation round 2)
-
-- 19 findings, all `[framework]`: 14 batched into S10–S17, 3 escalated (§S2–§S4), 2 to *Needs verification*. None
-  dropped and none merged across units, except `scheduler/P2`, which joins `notifications/B2` in S11.
-- **Re-grade of this queue's own first-pass call:** `scheduler/P2` "not batched" → **batched in S11**. The first pass
-  deferred it to the app queue's §22. §22 is a *Contradictions* note that explicitly left the defect "unfiled,
-  unobserved in a browser", so deferring to it parked the fix nowhere. With a second, independently observed consumer
-  (`notifications/B2`), rule 4 applies: a framework-wide default gets its own batch.
-- `notifications/B3` (bug) → **escalation §S2**. The card cannot be fixed without a server catalog. Its client half is
-  described in §S2, to be appended as a batch when the catalog lands. Severity unchanged.
-- `notifications/B4` (bug) → **escalation §S3**. The cause is the dispatcher's `activeIds`. The client caption states
-  the documented intent. Severity unchanged.
-- `notifications/P5` (polish) → **escalation §S4**. It is a catalog decision, and a client filter is the documented
-  wrong answer.
-- `notifications/P4` looked app-side in its finding ("the label keys are app-side, `src/app/notifications/`"). They
-  are not: the four labels in question are the framework's `notifications.type.*` (`src/_common/_locales/common.en.ts:
-  386-392`). The app's `notificationTypeMeta.ts` registers a label only for `RoutineSuggestedToday`. So P4 is
-  framework, batched in S16, and no app-side batch results.
-- Kept as separate batches despite touching the same module: S12 (names) vs S16 (copy). One is a11y attributes and the
-  other is visible wording with product choices in it (P4, P6). S13 and S15 are their own batches under rule 4:
-  `MyDialog` and `SnackbarComposable` defaults reach every app.
-- **Contradiction (resolved in the unit docs):** `docs/views/notifications/usecase.md` said the dispatcher "defers every
-  notification (not just reminders)" inside quiet hours, and that turning off every deliverable channel removes a type
-  from the inbox. Round 2 disproved both (P6, B4). The usecase was corrected in the same pass.
-- **Contradiction, cross-repo, not queued:** the API repo's `docs/e2eTestSeed.md` still warns that "the bell's text is
-  Slovak regardless of the account's locale". Round 1 settled that it is not (`_shell` B1, closed 2026-09-21 after
-  backend `B15`). It is a stale doc in another repo, so fix it there when next touched.
-- **Downstream app string to recheck after §S2/§S3 (second pass):** `dayPlanner.en.ts:27` sends users to reminder preferences to
-  turn reminders off "entirely". Today neither the kinds card (§S2) nor the matrix (§S3, the row still lands) can
-  fully do that on this deployment. If either escalation resolves as "keep behaviour", that string needs an app batch.
-
-### Third pass, 2026-10-01 — unit 17 `reminders-admin` absorbed (inventory)
-
-- 22 findings, all `[framework]`: 18 fix findings in 10 new batches (S18–S27) and 2 existing ones (S5, S7), 2 to
-  *Needs verification*, 1 to *Deferred*. None dropped. No severities changed.
-- **Merged into existing batches, by cause:** `reminders-admin/B3` → **S5**. It is the same assumption with the same
-  comment, and it tips S5 toward the shell-level de-dup. `reminders-admin/P2` → **S7**, the same missing `_silent`. Both
-  batches were widened in place rather than duplicated. Their titles changed, their numbers did not.
-- **Related but kept separate:** S18 (reminders flex-shrink) vs S2 (scheduler flex-shrink), and S23 (reminders
-  tie-breaker) vs S3 (2) (scheduler tie-breaker). Each pair has one cause but different files, and S2/S3 already carry
-  scheduler-only work. A fixing session can take a pair together.
-- **Rule 4 splits:** S25 (`BasicTable` select column), S26 (`FilterPanel` chip close label) and S27 (`ExportMenu`)
-  each change a component every app renders. S26 and S27 file the two items the first pass noted as "observed in
-  passing … whichever unit meets them next can file them".
-- **Contradiction with an intent source (resolved by observation):** R1 bug 5 and the register's `TODO(Bn)` say the
-  grid endpoint does not return `cronExpression`/`intervalPreset`, and the fix was parked on a backend ask that was
-  never written. The live response carries `intervalPreset`, `cron` (not `cronExpression`) and `dueAt`, so S19 is
-  client-only. The README's "the module is Slovak-only, do not add an EN locale" is also stale: both `.en.ts` files
-  exist and render. Neither needs a batch. Both are notes for whoever next reads `prompts/_done/_common/reminders/`.
-- **Contradiction between units (not yet absorbed):** unit 16's `reminders-user/B3` (date "to" bound), `A4` (chip
-  "Close") and `P2` (sort tie-breaker) are the same defects as `reminders-admin/B4`, `A3` and `P1`. They are listed in
-  S20, S26 and S23 as cross-unit duplicates so unit 16's triage closes them there. `reminders-user/B4`
-  (interval row "—" on `/pripomienky/moje`) looks like `reminders-admin/B1` but is **not** the same cause: the
-  personal `my-upcoming` projection genuinely omits `intervalPreset` (per the DTO header), so it stays a backend
-  question for unit 16's triage.
-- **Observed, not filed (unit's findings file, *Observed, not filed*):** a `RecurringInterval` reminder's local time
-  moves with DST, because the series is a UTC instant (#23003: 10:00 in October, 9:00 November–March). This is a
-  server rule in `Sydowwe.Reminders`. If the product wants wall-clock recurrence, it becomes an escalation (§S5) at
-  that point. No client change either way.
-- **Concurrency note:** the unit's draft spec was run once (global setup reseeds). Unit 16's files were last written
-  minutes before, and no other `playwright-cli` session was live at the time.
+  another host is part of the decision. S22 is the no-decision half of this. `reminders-user/B1` (rows
+  indistinguishable on `/pripomienky/moje`) is the same gap from the user's side, now escalated as §S6. Weigh the two
+  together.
+- **`reminders-user/O1`**: a *Snoozed until …* / *Dismissed* chip on each personal row, a *Snoozed* filter, and
+  somewhere for an R10 §1 *Undo* to live. It is not purely an opportunity: the chip is §S7's client half and the
+  fix for `B6` once the server projects the action. Deferred until then.
