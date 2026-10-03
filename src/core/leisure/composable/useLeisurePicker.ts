@@ -1,4 +1,4 @@
-import { onMounted, ref, type Ref, watch } from 'vue'
+import { computed, type ComputedRef, onMounted, ref, type Ref, watch } from 'vue'
 import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
 import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
@@ -152,6 +152,12 @@ export interface LeisurePicker {
 	locationTypeOptions: Ref<LookupResponse[]>
 	/** Today's weather fit, forwarded so a card can say *why* it matched — see `SuggestionCard`. */
 	weatherFit: Ref<WeatherFit | null>
+	/**
+	 * Some candidate in the pool is filed under a real weather dependency, so a weather signal would
+	 * change the draw. Gates the "set your location" hint: without such a row, asking for a location
+	 * promises an effect the user would never see.
+	 */
+	hasWeatherDependentCandidates: ComputedRef<boolean>
 }
 
 export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<number>): LeisurePicker {
@@ -170,6 +176,9 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 	const locationTypeOptions = ref<LookupResponse[]>([])
 
 	const pool = ref<LeisureSuggestion[]>([])
+	const hasWeatherDependentCandidates = computed(() =>
+		pool.value.some(candidate => candidate.weatherDependencyId !== null),
+	)
 	// What the last fetch was made under. Only the fields that change the *request* belong in it:
 	// energy and party size are ranked and filtered locally, so changing them must not cost a round
 	// trip, and neither must a reroll.
@@ -301,5 +310,6 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 		costTierOptions,
 		locationTypeOptions,
 		weatherFit,
+		hasWeatherDependentCandidates,
 	}
 }

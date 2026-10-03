@@ -518,9 +518,12 @@ have no note field.
 
 ## Unsettled
 
-- **U1. What does `GET /leisure-weather-fit` do when `User.weatherLocation` is null?** If it returns an empty list, the
-  client collapses that to `null` and every weather consumer in leisure is inert (C8). This needs a backend read. It also
-  decides whether OP4 in `docs/opportunities.md` is a fix or an enhancement, and what format the location takes.
+- ~~**U1. What does `GET /leisure-weather-fit` do when `User.weatherLocation` is null?**~~ Settled 2026-10-03 with OP4,
+  from the API's `GetLeisureWeatherFitEndpoint` and `OpenMeteoWeatherProvider`. There is no fallback: a null location
+  answers 200 with an empty list, the same as a miss or an outage. So OP4 was a fix. The location is free text, at
+  most 120 characters, trimmed, and `''` clears it. The server geocodes it with Open-Meteo, which resolves "Košice"
+  and "Košice, Slovakia" but not "Košice, SK" or "Košice, Slovensko", and a miss is silent. The settings hint says so.
+  Since OP4, `User.weatherLocation` (§ *Unspent data*, G3, C8) has a writer.
 - ~~**U2. `LoginResponse.email` is settled from static code only**~~ Settled 2026-10-03 with OP12: `LoginView` now
   writes the typed address, and `auth.spec.ts` asserts `auth.lastUsedEmail` after a password sign-in.
 - **U3. `ActivityFilterFormResponse` was never matched to a backend type** (the planner extract's search budget ran out),

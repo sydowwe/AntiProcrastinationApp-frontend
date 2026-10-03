@@ -151,6 +151,8 @@ const leisure = {
 			reasonEnergyDerived: `Energia: ~{energy} (odhad)`,
 			reasonComfortStep: `Krok zo zóny pohodlia: {step}`,
 			reasonWeatherFit: `Dnešné počasie tomu vyhovuje`,
+			weatherLocationHint: `Niektoré vaše aktivity závisia od počasia. Zadajte svoje mesto a výber zohľadní dnešné počasie.`,
+			setWeatherLocation: `Zadať mesto`,
 			doItNow: `Ideme na to`,
 			planLater: `Naplánovať`,
 			addToPlan: `Pridať do plánu`,

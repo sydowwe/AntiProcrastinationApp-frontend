@@ -29,6 +29,9 @@
 				</VBtn>
 			</MyBtnToggle>
 		</div>
+		<div class="mt-5">
+			<WeatherLocationField />
+		</div>
 	</SettingsSection>
 </template>
 <script setup lang="ts">
@@ -41,6 +44,7 @@
 	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
 	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import SettingsSection from '@/core/user/component/settings/SettingsSection.vue'
+	import WeatherLocationField from '@/core/user/component/settings/WeatherLocationField.vue'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()

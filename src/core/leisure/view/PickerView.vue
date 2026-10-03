@@ -11,6 +11,8 @@
 			:locationTypeOptions
 		/>
 
+		<WeatherLocationHint v-if="weatherLocation === null && hasWeatherDependentCandidates" />
+
 		<VRow v-if="loading && suggestions.length === 0">
 			<VCol
 				v-for="index in SUGGESTION_COUNT"
@@ -118,6 +120,8 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import ConstraintBar from '@/core/leisure/component/picker/ConstraintBar.vue'
 	import SuggestionCard from '@/core/leisure/component/picker/SuggestionCard.vue'
+	import WeatherLocationHint from '@/core/leisure/component/picker/WeatherLocationHint.vue'
+	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
 	import { SUGGESTION_COUNT } from '@/core/leisure/composable/leisureScoring.ts'
 	import { TIME_OPTIONS, usePickerUrlState } from '@/core/leisure/composable/usePickerUrlState.ts'
 	import { useLeisurePicker, type LeisureSuggestion } from '@/core/leisure/composable/useLeisurePicker.ts'
@@ -130,8 +134,20 @@
 	const { durationLabel } = usePickerLabels()
 
 	const { constraints, seed, reroll } = usePickerUrlState()
-	const { suggestions, loading, poolCount, loadFailed, costTierOptions, locationTypeOptions, weatherFit } =
-		useLeisurePicker(constraints, seed)
+	const {
+		suggestions,
+		loading,
+		poolCount,
+		loadFailed,
+		costTierOptions,
+		locationTypeOptions,
+		weatherFit,
+		hasWeatherDependentCandidates,
+	} = useLeisurePicker(constraints, seed)
+	// The weather fit is empty both when no location is set and when it fails to geocode, and the
+	// server does not say which. Only the first is something the user can fix from here, so the hint
+	// reads the preference itself rather than inferring from an empty fit.
+	const { weatherLocation } = useUserPreferences()
 	const { commit } = useLeisureCommitment()
 
 	/** Key of the card whose commit is in flight, so only that card shows a spinner. */

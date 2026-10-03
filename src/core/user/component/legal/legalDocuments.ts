@@ -18,5 +18,5 @@ export const LEGAL_ROUTE_NAMES: Record<LegalDocumentKey, string> = {
  */
 export const LEGAL_LAST_UPDATED: Record<LegalDocumentKey, string> = {
 	terms: '2026-08-18',
-	privacy: '2026-08-18',
+	privacy: '2026-10-03',
 }

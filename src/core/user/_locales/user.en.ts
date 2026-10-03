@@ -5,6 +5,13 @@ const user = {
 		askBeforeDelete: `Ask before deleting single items`,
 		askBeforeDeleteHint: `Deletions that also remove their contents always ask.`,
 		firstDayOfWeek: `First day of week`,
+		// The format advice is measured against the geocoder (Open-Meteo): a bare town name or
+		// "Town, Country" in English resolves, a country code ("Košice, SK") or a local country name
+		// ("Košice, Slovensko") does not, and a miss is silent — it only means no weather signal.
+		// Bratislava behaves identically in all four forms.
+		weatherLocation: `Your town, for the weather`,
+		weatherLocationHint: `The leisure picker uses today's weather here. Enter a town name, optionally followed by the country in English.`,
+		weatherLocationPlaceholder: `e.g. Bratislava, or Bratislava, Slovakia`,
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
 			title: `Per-module settings`,
@@ -157,7 +164,7 @@ You can download it at any time (Settings → Export my data). How we handle you
 					},
 					{
 						heading: `2. Account data`,
-						body: `When you register we store your e-mail address and your password as a cryptographic hash — we never see the password itself. We also store whether two-factor authentication is on, the dates your account was created and last signed in to, and your preferences: language, theme, time zone, first day of the week, and whether we should ask before deleting things.`,
+						body: `When you register we store your e-mail address and your password as a cryptographic hash — we never see the password itself. We also store whether two-factor authentication is on, the dates your account was created and last signed in to, and your preferences: language, theme, time zone, first day of the week, whether we should ask before deleting things, and — if you enter one — the town you set for the weather.`,
 					},
 					{
 						heading: `3. The content you put into the app`,
@@ -208,7 +215,7 @@ We carry out no automated decision-making with legal effect and no profiling for
 					// providers are not, and both are processors that must be named.
 					{
 						heading: `12. Who we share your data with`,
-						body: `We do not sell your data. It is accessible to the operator and to the services the app cannot run without: Google (calendar connection, reCAPTCHA) and your browser's push service. A full list of any other processors — in particular the hosting and e-mail providers — will be added.`,
+						body: `We do not sell your data. It is accessible to the operator and to the services the app cannot run without: Google (calendar connection, reCAPTCHA) and your browser's push service. If you set a town for the weather, our server sends that town's name — without your account or any other detail about you — to the weather service Open-Meteo to look up today's forecast. A full list of any other processors — in particular the hosting and e-mail providers — will be added.`,
 					},
 					// OWNER: confirm — the safeguards for the Google transfer (adequacy decision, SCCs).
 					{

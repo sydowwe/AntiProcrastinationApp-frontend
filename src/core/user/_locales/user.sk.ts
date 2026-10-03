@@ -8,6 +8,13 @@ const user = {
 		askBeforeDelete: `Pýtať sa pred vymazaním jednotlivých položiek`,
 		askBeforeDeleteHint: `Mazanie, ktoré odstráni aj obsah, sa potvrdzuje vždy.`,
 		firstDayOfWeek: `Prvý deň týždňa`,
+		// Rada k formátu je overená na geokodéri (Open-Meteo): samotný názov mesta alebo „Mesto, Krajina“
+		// po anglicky sa nájde, kód krajiny („Košice, SK“) ani slovenský názov krajiny („Košice,
+		// Slovensko“) nie — a neúspech je tichý, znamená len, že počasie sa nezohľadní.
+		// Bratislava sa vo všetkých štyroch tvaroch správa rovnako.
+		weatherLocation: `Vaše mesto (pre počasie)`,
+		weatherLocationHint: `Výber voľnočasových aktivít tu zohľadní dnešné počasie. Zadajte názov mesta, prípadne za ním krajinu po anglicky.`,
+		weatherLocationPlaceholder: `napr. Bratislava alebo Bratislava, Slovakia`,
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
 			title: `Nastavenia jednotlivých častí`,
@@ -170,7 +177,7 @@ Kedykoľvek si ho môžete stiahnuť (Nastavenia → Exportovať moje dáta). Ak
 					},
 					{
 						heading: `2. Údaje o účte`,
-						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa a či sa vás máme pýtať pred mazaním.`,
+						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa, či sa vás máme pýtať pred mazaním a — ak ho zadáte — mesto, ktoré ste nastavili pre počasie.`,
 					},
 					{
 						heading: `3. Obsah, ktorý do aplikácie vložíte`,
@@ -221,7 +228,7 @@ Automatizované rozhodovanie s právnym účinkom ani profilovanie na reklamné 
 					// providers are not, and both are processors that must be named.
 					{
 						heading: `12. Komu údaje sprístupňujeme`,
-						body: `Údaje nepredávame. Prístup k nim má prevádzkovateľ a služby, bez ktorých aplikácia nefunguje: Google (prepojenie s kalendárom, reCAPTCHA) a push služba vášho prehliadača. Úplný zoznam ďalších spracovateľov — najmä poskytovateľa hostingu a odosielania e-mailov — bude doplnený.`,
+						body: `Údaje nepredávame. Prístup k nim má prevádzkovateľ a služby, bez ktorých aplikácia nefunguje: Google (prepojenie s kalendárom, reCAPTCHA) a push služba vášho prehliadača. Ak nastavíte mesto pre počasie, náš server pošle jeho názov — bez vášho účtu či akéhokoľvek iného údaju o vás — meteorologickej službe Open-Meteo, aby zistil dnešnú predpoveď. Úplný zoznam ďalších spracovateľov — najmä poskytovateľa hostingu a odosielania e-mailov — bude doplnený.`,
 					},
 					// OWNER: confirm — the safeguards for the Google transfer (adequacy decision, SCCs).
 					{

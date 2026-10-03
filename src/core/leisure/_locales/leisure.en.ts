@@ -150,6 +150,8 @@ const leisure = {
 			reasonEnergyDerived: `Energy: ~{energy} (estimated)`,
 			reasonComfortStep: `Comfort zone step {step}`,
 			reasonWeatherFit: `Good weather for this today`,
+			weatherLocationHint: `Some of your activities depend on the weather. Set your town and the picker will take today's weather into account.`,
+			setWeatherLocation: `Set your town`,
 			doItNow: `Do it now`,
 			planLater: `Plan for later`,
 			addToPlan: `Add to plan`,

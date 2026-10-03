@@ -10,7 +10,13 @@
 // copies unknown keys through untouched, so both survive hydration without the framework knowing
 // they exist.
 //
-// Both are **optional on the response side**, and that is load-bearing rather than defensive.
+// `weatherLocation` is the third (OP4): free text, set from `PreferencesSection.vue` and read only
+// by the server, which geocodes it for `GET /leisure-weather-fit`. The client reads it back just to
+// show the input and to decide whether `/leisure/pick` shows its "set your location" hint. The wire
+// convention is asymmetric: the response carries `null` when unset, but the request treats `null`
+// (or an absent key) as "leave unchanged" and `''` as "clear", so the request side is `string` only.
+//
+// All three are **optional on the response side**, and that is load-bearing rather than defensive.
 // Interface merging declares a type; it cannot create a value, so neither field exists on a fresh
 // `new User()` — which is what the store holds until `hydrateFromServer()` resolves (from `login()`
 // on sign-in, from `installFramework({ hydrateOnBoot: true })` on reload; neither is awaited).
@@ -26,6 +32,7 @@ declare module '@/_common/modules/user/dto/response/User.ts' {
 	interface User {
 		firstDayOfWeek?: 0 | 1
 		askBeforeDelete?: boolean
+		weatherLocation?: string | null
 	}
 }
 
@@ -33,6 +40,7 @@ declare module '@/_common/modules/user/dto/request/UserPreferencesRequest.ts' {
 	interface UserPreferencesRequest {
 		firstDayOfWeek?: 0 | 1
 		askBeforeDelete?: boolean
+		weatherLocation?: string
 	}
 }
 

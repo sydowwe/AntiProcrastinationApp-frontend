@@ -14,7 +14,7 @@ import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 // leaves the defaults standing for the session), and the computeds below are what make a late
 // arrival change a preference rather than a decision already taken.
 //
-// Cross-module note: `todoList`, `dayPlanner` and `historyDashboard` import this. CLAUDE.md's rule
+// Cross-module note: `todoList`, `dayPlanner`, `historyDashboard` and `leisure` import this. CLAUDE.md's rule
 // is that cross-module imports go through `api/` or `dto/`, and this is a deliberate exception —
 // the alternative is each module re-deriving the defaults, which is exactly the drift this fixes.
 // `prompts/user/P1-two-settings-systems.md` owns the boundary decision; revisit it there.
@@ -33,6 +33,7 @@ export const FIRST_DAY_OF_WEEK_DEFAULT: 0 | 1 = 1
 export function useUserPreferences(): {
 	askBeforeDelete: ComputedRef<boolean>
 	firstDayOfWeek: ComputedRef<0 | 1>
+	weatherLocation: ComputedRef<string | null>
 } {
 	const userStore = useUserStore()
 
@@ -40,6 +41,10 @@ export function useUserPreferences(): {
 	// these must re-evaluate when the server's answer arrives.
 	const askBeforeDelete = computed(() => userStore.currentUser.askBeforeDelete ?? ASK_BEFORE_DELETE_DEFAULT)
 	const firstDayOfWeek = computed<0 | 1>(() => userStore.currentUser.firstDayOfWeek ?? FIRST_DAY_OF_WEEK_DEFAULT)
+	// No default to choose here: unset is `null`, as the server sends it. The blank string is folded
+	// into it because the store's optimistic `Object.assign` leaves `''` behind after a clear, while
+	// the server stores that same clear as `null`.
+	const weatherLocation = computed(() => userStore.currentUser.weatherLocation?.trim() || null)
 
-	return { askBeforeDelete, firstDayOfWeek }
+	return { askBeforeDelete, firstDayOfWeek, weatherLocation }
 }

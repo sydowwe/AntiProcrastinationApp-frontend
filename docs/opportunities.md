@@ -13,7 +13,7 @@
    `/routine-settings` silently wipes the server's nudge setting and resets the freeze budget. Small fix, real data loss.
 2. **OP2. Make "Show details panel by default" do something.** It is a saved setting that nothing reads.
 3. **OP3. Keep what's typed into a list's description.** Today the form accepts it and the round trip loses it both ways.
-4. **OP4. Tell the app where you are, so "good weather today" works.** The leisure weather fit has no input the user can set.
+4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
 5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
    none of it.
 6. **OP6. Remember the plan when a timer stops early.** Planned lengths never leave the browser, and timers started from
@@ -52,19 +52,6 @@
 - **Size:** S. A mapping fix plus one optional input.
 - **Value:** A user who writes "what this list is for" sees it accepted and then gone, and nothing tells them it was lost.
   The step note is the same shape: shown, but impossible to write.
-
-### OP4. Tell the app where you are, so "good weather today" works
-- **Source:** from data-map (backlog `User.weatherLocation`, G3, C8)
-- **Data it spends:** `User.weatherLocation` (stored and accepted by the server), and through it
-  `WeatherFit.matchingWeatherDependencyIds` plus the whole weather side of the backlog profile
-- **Where it would surface:** a location field on `/user/settings` → Preferences. It describes the person, and the
-  planner's per-day `weather` makes a second reader plausible, so it passes rule 2 of *Where a preference lives*. Add it
-  via `userAugmentation.ts`, not the framework DTO. `/leisure/pick` could show a "set your location" hint while it is empty.
-- **Needs backend:** no for the field itself. U1 (what the fit endpoint does with a null location, and what format the
-  location takes) must be read first.
-- **Size:** M. A preference field, a location input, and a hint on the picker.
-- **Value:** The "good today" chip, the picker's weather exclusion and its weather bonus are all built, and none of them
-  can run. Choosing something to do that fits today's weather is the backlog picker's main job.
 
 ### OP5. Show today's day context on home
 - **Source:** from data-map (todo extract contradiction #4; backlog note under dayPlanner)
@@ -254,12 +241,26 @@
 
 ## Closed
 
-- **OP12**, built 2026-10-03 (in `src/_common`): `LoginView` honours `requiresTwoFactor` and `requiresTwoFactorSetup` on
+- **OP4**, built 2026-10-03, app-side only. The API already stored, validated (120 chars), returned and cleared
+  (`''`) the field, so the backend did not change. `weatherLocation` is declared in `userAugmentation.ts` and read
+  through `useUserPreferences`. `WeatherLocationField` on `/user/settings` → Preferences saves it on blur or Enter.
+  `/leisure/pick` shows a dismissible "set your town" hint, but only while the field is empty *and* some candidate has
+  a real weather dependency. U1 is settled (data-map.md): a null location means no signal, and there is no fallback.
+  The geocoder resolves a town name or "Town, Country" in English, but not a country code. The field's hint says so,
+  because a miss is silent. The privacy policy now names the location and the Open-Meteo lookup (§2, §12). Covered by
+  `e2e/tests/weather-location.spec.ts` (8 tests). Checked against the live API: the fit went from `[]` to three ids
+  once "Košice, Slovakia" was set.
+
+- **OP12**, done 2026-10-03 (`_common` `439502d`, app `a7e56d9f`): `LoginView` honours `requiresTwoFactor` and `requiresTwoFactorSetup` on
   both the password and the Google answer. Forced setup calls `POST /auth/login/2fa/setup`, then shows the QR and the
   recovery codes, then the code dialog. A password sign-in writes `auth.lastUsedEmail` from the typed address. U2 is
   settled: `LoginResponse` has no `email`. Covered by `e2e/tests/two-factor-sign-in-setup.spec.ts` (forced setup) and
   the `lastUsedEmail` assertion in `auth.spec.ts`. The Google 2FA branch has no live coverage: a spec cannot
   drive the OAuth popup, and the server sends that branch only with `FederatedLoginSatisfiesTwoFactor = false`.
+  Wiring the setup endpoint exposed two backend holes, closed in the same pass (API `framework` `892a6f7`, API `0b76121`).
+  The setup endpoint handed an existing authenticator key to anyone who had passed the password step. Under
+  `TwoFactorMode.Required`, the code step accepted any code for an account whose 2FA flag was off, and setup could not
+  enrol that account.
 
 - todo-lists **O1**, resolved 2026-09-12: estimate-vs-actual calibration lacked seed data. The fixture now delivers it,
   with passing specs.
