@@ -521,7 +521,7 @@ have no note field.
 - **U1. What does `GET /leisure-weather-fit` do when `User.weatherLocation` is null?** If it returns an empty list, the
   client collapses that to `null` and every weather consumer in leisure is inert (C8). This needs a backend read. It also
   decides whether OP4 in `docs/opportunities.md` is a fix or an enhancement, and what format the location takes.
-- **U2. `LoginResponse.email` is settled from static code only** (`BaseLoginEndpoint.cs:74,80`, `authStore.ts:69-71`).
-  The account extract asks for a live check that a plain password sign-in leaves `auth.lastUsedEmail` unwritten.
+- ~~**U2. `LoginResponse.email` is settled from static code only**~~ Settled 2026-10-03 with OP12: `LoginView` now
+  writes the typed address, and `auth.spec.ts` asserts `auth.lastUsedEmail` after a password sign-in.
 - **U3. `ActivityFilterFormResponse` was never matched to a backend type** (the planner extract's search budget ran out),
   so its server-side drops are unchecked.

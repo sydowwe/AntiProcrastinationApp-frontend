@@ -139,17 +139,6 @@
 - **Value:** Two desktop processes that share a product name collide on selection and open the wrong detail panel.
   The user can't trust what they are looking at.
 
-### OP12. Honour the server's 2FA requirements at sign-in, and remember the e-mail
-- **Source:** from data-map (G6; backlog `LoginResponse.email`)
-- **Data it spends:** `LoginResponse.requiresTwoFactorSetup`, Google sign-in `requiresTwoFactor` and
-  `requiresTwoFactorSetup`, the uncalled `SetupTwoFactorForLoginEndpoint`, and the e-mail the user just typed
-- **Where it would surface:** `LoginView` / `GoogleSignIn` branch into the existing 2FA and QR dialogs. `auth.lastUsedEmail`
-  is written on a password sign-in too.
-- **Needs backend:** no
-- **Size:** M. Two new branches into existing dialogs. Verify U2 live first.
-- **Value:** When the server says a sign-in isn't finished, the client should not treat it as finished. The e-mail
-  prefill is a small daily friction for a password user who signs in on a fresh tab.
-
 ### OP13. Per-item time in the daily recap
 - **Source:** from data-map (backlog `DailyRecap.items[].timeLoggedSeconds`)
 - **Data it spends:** `DailyRecap.items[].timeLoggedSeconds`
@@ -264,6 +253,13 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP12**, built 2026-10-03 (in `src/_common`): `LoginView` honours `requiresTwoFactor` and `requiresTwoFactorSetup` on
+  both the password and the Google answer. Forced setup calls `POST /auth/login/2fa/setup`, then shows the QR and the
+  recovery codes, then the code dialog. A password sign-in writes `auth.lastUsedEmail` from the typed address. U2 is
+  settled: `LoginResponse` has no `email`. Covered by `e2e/tests/two-factor-sign-in-setup.spec.ts` (forced setup) and
+  the `lastUsedEmail` assertion in `auth.spec.ts`. The Google 2FA branch has no live coverage: a spec cannot
+  drive the OAuth popup, and the server sends that branch only with `FederatedLoginSatisfiesTwoFactor = false`.
 
 - todo-lists **O1**, resolved 2026-09-12: estimate-vs-actual calibration lacked seed data. The fixture now delivers it,
   with passing specs.

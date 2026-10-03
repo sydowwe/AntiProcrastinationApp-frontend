@@ -21,6 +21,10 @@ test.describe('Authentication', () => {
 		await expect(page.getByRole('main').getByText('Day planner', { exact: true })).toBeVisible()
 		await expect(page.getByText('Upcoming tasks')).toBeVisible()
 		await expect(page.getByText("Today's activity")).toBeVisible()
+
+		// The next visit's prefill. Written from the typed address: `LoginResponse` carries no e-mail, and
+		// reading one off it left this unset after every password sign-in (data-map U2, OP12).
+		expect(await page.evaluate(() => localStorage.getItem('auth.lastUsedEmail'))).toBe(seed.primaryUser.email)
 	})
 
 	test('invalid credentials show an error and stay on /login', async ({ page }) => {
