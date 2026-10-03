@@ -28,7 +28,145 @@
 
 ## Closed batches
 
-_None yet._
+## S10. Inbox never loads unless the SignalR handshake succeeds
+> ✅ **FIXED 2026-10-03** (framework `b038d3e`). `connect()` now runs `loadNotifications()` side by side with the first
+> `hub.start()` instead of after it. A failed initial start retries on the `reconnectForever` delays (new `startHub()`
+> plus a retry timer cleared by `disconnect()`), and a *retried* start re-reads the list, as `onreconnected` does. A new
+> `hasConnected` ref lets the inbox and the bell say "Connecting..." before the first connect. "Reconnecting..." is kept
+> for a dropped connection (new `notifications.connecting`; SK `reconnecting` became "Opätovné pripájanie...", since
+> "Pripájanie..." now means the first state). Four unit tests were added, covering list-without-hub, retry then reload,
+> one `mine` + one `unread-count` when healthy, and no retries after `reset()`. Docs: `docs/modules/notifications.md`.
+> **Verified** in the browser (`playwright-cli`, 1440×900, `primaryUser`): with negotiate routed to 503, `/notifikacie`
+> rendered the rows with "3 unread" and "Connecting...", and the bell read "Notifications, 3 unread". Negotiate retried.
+> After `unroute`, with no reload, the hub connected on its own, the label cleared, and exactly one more `mine` +
+> `unread-count` followed. A normal load issued one of each. An unplanned API restart mid-session showed the dropped
+> case: the list stayed up under "Reconnecting...", and the hub recovered when the API came back. **Not verified:** the
+> bell's first-paint `aria-label` was only read after load, not during the handshake.
+- **Scope:** **[framework]** `src/_common/modules/notifications/composable/useNotifications.ts`, `view/NotificationsView.vue`
+- **Closes:** `notifications/B1`
+- **Root cause:** `connect()` awaits `hub.start()` and only then calls `loadNotifications()` (`useNotifications.ts:549-567`).
+  The list and unread count are REST resources, but they are sequenced behind the realtime channel. A failed *initial*
+  `start()` is not covered by `withAutomaticReconnect`, and the catch only nulls `connectPromise` for a retry nothing
+  triggers. So a hub outage renders the **first-run** empty state ("No notifications yet") with badge 0, permanently.
+  The coded `loadError` + Retry state is unreachable because `error` is never set. The view also reads
+  `isConnected === false` as "Reconnecting…" before the first connect ever happened.
+- **Files:** `useNotifications.ts:549-567` (`connect`), `:306` (the failure log), the reconnect-delay policy
+  (`reconnectForever`); `NotificationsView.vue` (the "Reconnecting…" label and the skeleton gating on `isLoading`).
+- **What to change:** (1) start `loadNotifications()` (list + unread count) in parallel with, or before, `hub.start()`,
+  and set `isLoading` from the REST load, not the handshake. (2) On a failed initial `start()`, schedule retries with
+  the same `reconnectForever` delays. (3) Label the never-connected state "Connecting…" (new key, sk + en) or hide it,
+  keeping "Reconnecting…" for a dropped connection.
+- **Do not change:** the live-arrival path (hub → prepend, no refetch), which works (settled in the unit's findings,
+  *Settled: `_shell` B1*).
+- **Verification:** `notifications/B1` `Verify:` (negotiate mocked to 503, then `unroute` and wait ~70 s for a second
+  `negotiate`). Also confirm a normal load still issues exactly one `mine` + one `unread-count` (no duplicate from the
+  hub's `onreconnected` refetch).
+- **Risk:** the bell (`_shell`) shares this composable, so the badge's first value now comes from REST before the hub is
+  up. That is the intent, but re-check the bell's `aria-label` count on first paint.
+
+## S12. Notifications controls with no name or a repeated one
+> ✅ **FIXED 2026-10-03** (framework `40255f1`). A1: the inline badge is `aria-hidden` and the toggle is named
+> `notifications.filter.unreadWithCount` ("Unread, 3"). The bell's badge (in this module, `NotificationBell.vue`, not the
+> shell) gets `role="none"`, an empty `aria-label` and `aria-live="off"`. `aria-hidden` is not usable there, because
+> VBadge puts it on the root, which wraps the button. A3: `markReadItem` / `markUnreadItem` with `{ title }` (the tooltip
+> keeps the short form), and the cluster is named from type label + size (`clusterExpand` / `clusterCollapse` now take
+> `{count}` / `{type}`). A5: `aria-labelledby` = row label span id + column `th` id, from `useId()` via
+> `matrixRowHeaderId` / `matrixColumnHeaderId` in `notificationPreferenceMatrix.ts`. The id sits on the label span, not
+> the `th`, so the silenced caption is not folded into 3 names per row. A7: `:aria-label="kindLabel"`.
+> **Verified** in the browser: `getByRole('button', { name: /^Unread/ })` → 1, named "Unread, 3"; `getByRole('status')`
+> → 0 on `/notifikacie` (the bell's "Badge" status is gone). The rows read "Mark notification Deadline approaching as
+> read" etc. Two raised `Test` notifications clustered as "Expand 2 notifications: Test" (both deleted afterwards,
+> unread back to 3). `getByRole('checkbox', { name: /Personal reminder.*In-app|In-app.*Personal reminder/ })` → 1.
+> **Not verified:** A7 live. It needs a kind row, i.e. a `PUT /reminder-preference/kind` write that cannot be undone
+> short of a reseed (the card would leave its empty state for later specs), so only the source was checked. Note that
+> `playwright-cli snapshot` still *lists* the hidden badge as `status "3"` under the toggle; role queries, which honour
+> `aria-hidden`, do not see it.
+- **Scope:** **[framework]** `src/_common/modules/notifications/` (+ both locale files)
+- **Closes:** `notifications/A1`, `A3`, `A5`, `A7`
+- **Root cause:** four controls take their name from nothing, or from a generic string. `VBadge` renders
+  `aria-label="Badge"`, which replaces the count in the *Unread* toggle's name ("Unread Badge"). The read toggle and
+  cluster use one fixed string per row. The 33 matrix `VCheckboxBtn`s and the reminder-kind `VSwitch` have no label at
+  all.
+- **Files:** `component/NotificationInboxToolbar.vue:13-22` (A1); `component/NotificationRow.vue:72-80`,
+  `component/NotificationClusterSummary.vue` (A3); `component/NotificationTypeSettingsRow.vue:39-52` (A5);
+  `reminderPreference/component/ReminderKindRow.vue:22-29` (A7).
+- **What to change:** A1: `aria-hidden` the badge and put the count in the toggle's `aria-label` via
+  `notifications.unreadCount` (or give the badge that label). A3: `notifications.markReadItem` / `markUnreadItem` taking
+  `{ title }`, mirroring `dismissItem`; the cluster's label from its summary text (type + count). A5:
+  `aria-labelledby="<row th id> <column th id>"`, which names the box from the headers already there and so keeps the
+  source comment's "don't read it twice" intent. A7: `:aria-label="kindLabel"` on the switch.
+- **Do not change:** `dismissItem` (already right); the bell's own `aria-label` (already carries the count). The
+  top-bar `status "Badge"` next to it is the same `VBadge` default. Hide it in the same edit if it is in this module,
+  and leave it if it lives in the shell's `Navbar.vue`.
+- **Verification:** the four findings' `Verify:` blocks. A7 needs a kind row first (`PUT /reminder-preference/kind`,
+  as in its Repro) until §S2 lands.
+- **Risk:** none functional. e2e locators that used `'Unread Badge'` or a structural fallback for the matrix can move to
+  the new names.
+
+## S14. Preference cards' purple palette fails contrast
+> ✅ **FIXED 2026-10-03** (framework `5b2e76b`). `color="secondary"` was dropped from all three cards (`elevation="2"`
+> kept). Measuring after that showed the batch's premise was incomplete. On a surface card the info notice's text
+> (theme `info`, `#0284C7`) still measured only **3.53:1**, so the alert also takes `color="primaryOutline"` (light
+> `#1D4ED8`), and `type="info"` still supplies the icon. **Verified** in the light theme with `getComputedStyle`
+> against the card background (`rgb(238,238,238)`): subtitles 12.65:1, the three card icons 4.45:1 (≥ 3:1 for
+> non-text), notice text 5.78:1. A screenshot confirmed the page reads as plain surface cards. **Not verified:** the dark
+> theme. Toggling it writes the user's theme preference, so it was left alone. Also not measured: the quiet-hours-on
+> states (Saved, active-now line). They are standard `text-success` / `text-primary` on a surface now, like the rest of
+> the app. `SessionsSection.vue` (user module) has the same `color="secondary"` card. Out of scope here, and not
+> measured.
+- **Scope:** **[framework]** `src/_common/modules/notifications/component/QuietHoursCard.vue`,
+  `reminderPreference/component/ReminderKindList.vue`, `component/NotificationTypeSettingsCard.vue`
+- **Closes:** `notifications/A4`
+- **Root cause:** all three cards are `VCard color="secondary"` (`#7C3AED`, light theme), and every foreground on them
+  was designed for a surface background: `color="primary"` icons ≈ 1.1:1, the info alert ≈ 1.4:1, empty-state text
+  ≈ 2.4:1, and subtitles ≈ 3.7:1. Round 2 adds the states that only show once quiet hours are on: the green "✓ Saved"
+  (the card's only save confirmation), the blue active-now line, the switch track, and the kind row's
+  `primaryOutline` chip. N12 copied the palette from the two older cards rather than choosing it.
+- **What to change:** drop `color="secondary"` so the cards are surface cards like every other settings screen. Keep
+  `elevation="2"`. If the tint is a product decision, the alternative is switching *every* foreground to
+  `on-secondary`, including the success/primary text colours, which is more edits and easier to get half right.
+- **Verification:** `notifications/A4` `Verify:` in the light theme; also open the dark theme once, which was not
+  checked by the unit.
+- **Risk:** visual only; none outside this page.
+
+## S16. Notifications copy that says the wrong thing
+> ✅ **FIXED 2026-10-03** (framework `8c5dd57`, plus the app-side half of P4 in the pointer-bump commit). P2:
+> `emptyFilteredAll` when `!hasMore`. P3: `dismissManyConfirmTitle` (`{count}`, EN two forms, SK three). P4 split by who
+> owns the vocabulary. Reading the API showed that only `ReminderDigest`'s title ("Reminders" / "Pripomienky") comes from
+> the framework backend (`Sydowwe.Notifications/application/text`). The routine titles ("Period ended", "Period ending
+> soon") are this app's `PortalNotificationTexts` overrides, and the framework's defaults are just "New notification".
+> So the framework label became "Reminders (summary)" / "Pripomienky (súhrn)". The two routine types got app-side
+> `NotificationTypeMeta.label`s, "Routine period ending soon" / "Routine period ended" (SK "Obdobie rutiny sa čoskoro
+> končí" / "… sa skončilo"), following `RoutineSuggestedToday`'s precedent. P6: the subtitle and both active-now lines
+> now say that scheduled reminders and push/e-mail copies wait, while the in-app list keeps updating. **Verified** in the
+> browser (EN): `/notifikacie?type=ScheduledJobFailed` reads "None of your notifications match this filter." with no
+> *Load older*. Select all → Dismiss is titled "Dismiss 8 notifications?" (cancelled). The Type options read "Reminders
+> (summary)", "Routine period ending soon" and "Routine period ended". The quiet-hours subtitle shows the new sentence.
+> **Not verified:** the SK strings on screen (source only), and the active-now line live, which needs quiet hours
+> switched on over the current time.
+- **Scope:** **[framework]** `src/_common/modules/notifications/` views + `src/_common/_locales/common.{sk,en}.ts`
+  (`notifications.*`, `notifications.type.*`, `reminderPreference.quietHours.*`)
+- **Closes:** `notifications/P2`, `P3`, `P4`, `P6`
+- **Root cause:** four strings that do not match the state or the server. P2: `notifications.emptyFiltered` always
+  offers "load older ones", even when `hasMore` is false and no button renders. P3: the bulk dismiss confirm reuses the
+  singular `dismissConfirmTitle`. P4: the type labels (`common.en.ts:386-392`: "Routine ended", "Reminder digest",
+  "Timer finished") are a different vocabulary from the server-rendered titles on the rows they filter ("Period
+  ended", "Reminders", "Focus finished"). P6: the quiet-hours subtitle and active-now line promise "we won't disturb
+  you" and "a reminder arriving now will be delivered at …", but the server never holds the in-app row, so the bell
+  keeps filling during the window.
+- **Files:** `view/NotificationsView.vue:119-149` (P2), `:392-396` (P3); `common.{sk,en}.ts` `notifications.type.*`
+  (P4); `component/QuietHoursCard.vue:94-105` and the `reminderPreference.quietHours.subtitle` / `activeNow*` keys (P6).
+- **What to change:** P2: two keys, chosen on `hasMore`. P3: a plural title key with a count (`{n}`, sk plural forms).
+  P4: align each label's key noun with the server title ("Period ended" / "Period ending soon" / "Reminders"). The same
+  labels head the delivery-matrix rows, so both surfaces change together. Check the sk labels against the backend's sk
+  titles too. P6: one sentence in both locales saying the notification list still updates, and only push/e-mail
+  copies and scheduled reminders wait for the window to end.
+- **Do not change:** the server titles (a backend wording decision, and they are already English per locale);
+  `TimerBoundary`'s label, since its three server titles share no noun and "Timer finished" is the nearest honest
+  umbrella.
+- **Verification:** the four findings' `Verify:` blocks.
+- **Risk:** if §S3 lands and the server starts discounting unconfigured channels, P6's new sentence is still true. It
+  describes the in-app exemption, which §S3 does not touch.
 
 ## Closed verification items
 

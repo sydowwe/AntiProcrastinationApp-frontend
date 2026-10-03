@@ -153,6 +153,9 @@ const todoList = {
 		suggestedTodayTooltip: `Suggested for today and not done yet`,
 		// The inbox's type-filter name for the `RoutineSuggestedToday` notification (B4).
 		suggestedTodayNotificationType: `Routine suggested for today`,
+		// Type-filter names for the two period notifications; they share the row titles' noun (P4).
+		periodEndingSoonNotificationType: `Routine period ending soon`,
+		periodEndedNotificationType: `Routine period ended`,
 		streakTooltip: `Streak: {streak} · best: {best}`,
 		gracePeriodActive: `Grace period active!`,
 		history: `History`,

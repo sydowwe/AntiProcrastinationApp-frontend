@@ -36,7 +36,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 ---
 
 ### B1. The inbox never loads its list unless the SignalR handshake succeeds — a hub failure is a permanent, false "No notifications yet" [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S10, framework `b038d3e`)
 - **Severity:** bug
 - **Where:** `/notifikacie` (and the bell) → `src/_common/modules/notifications/composable/useNotifications.ts:549-567` (`connect()` awaits `hub.start()` before `loadNotifications()`)
 - **Expected:** the list and unread count are REST resources (`GET /notification/mine`, `/notification/unread-count`) and should load independently of the realtime channel; the hub only adds live arrivals. N6 asked for three distinct states — first run, filtered-empty, and "a failed load (retry)" — and the view codes all three. A screen that cannot distinguish "you have none" from "we never asked" is the false-empty-state class the view-docs README calls the dangerous one.
@@ -84,7 +84,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** backend: intersect `webPushIds` / `emailIds` with the configured channels before computing `activeIds`. No client change is needed once that lands; the caption is already right about what *should* happen.
 
 ### A1. The unread count is announced as "Badge" — the Unread filter's name is "Unread Badge" [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S12, framework `40255f1`)
 - **Severity:** a11y
 - **Where:** `/notifikacie` → read-status group → `button[value=unread]` → `NotificationInboxToolbar.vue:13-22` (`VBadge inline`)
 - **Expected:** the count is part of the control's meaning ("Unread, 10"); `MyBtnToggle` exists precisely to name these groups (F90).
@@ -107,7 +107,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** in `MyDialog`, make the opener capture `{ immediate: true }` (or capture it in `useDialog().openDialog` before pushing the entry and hand it to the host).
 
 ### A3. Per-row controls repeat one name: every read toggle is "Mark as read" and every cluster is "Expand notification group" [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S12, framework `40255f1`)
 - **Severity:** a11y
 - **Where:** `/notifikacie` → `NotificationRow.vue:72-80` (`:aria-label="readToggleLabel"`), cluster summary (`NotificationClusterSummary.vue`)
 - **Expected:** the sibling *Dismiss* button already names its row ("Dismiss notification Period ended", `notifications.dismissItem`); a screen-reader user tabbing the buttons (after the first row they are the only Tab stops — see *Keyboard* in the inventory) needs the same context on the read toggle, and a cluster should say what it groups.
@@ -118,7 +118,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** a `notifications.markReadItem` / `markUnreadItem` pair taking `{ title }`, mirroring `dismissItem`; cluster label from the summary's own text.
 
 ### A4. Text and icons on the purple settings cards fail contrast — the "not set up on this server" notice is ~1.4:1 [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S14, framework `5b2e76b`; light theme measured, dark not checked)
 - **Severity:** a11y
 - **Where:** `/nastavenia/pripomienky`, light theme → all three cards (`VCard color="secondary"`, `#7C3AED`): `QuietHoursCard.vue:2-11`, `ReminderKindList.vue:2-26`, `NotificationTypeSettingsCard.vue` (info `VAlert` + prepend icon)
 - **Expected:** WCAG 1.4.3 — 4.5:1 for body text; 1.4.11 — 3:1 for meaningful icons. The info alert carries the one sentence explaining why two columns are disabled.
@@ -130,7 +130,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** drop `color="secondary"` (surface cards like the rest of the settings screens) — or keep the tint and switch every foreground to `on-secondary`.
 
 ### A5. The 33 delivery-matrix checkboxes have no accessible name [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S12, framework `40255f1`)
 - **Severity:** a11y
 - **Where:** `/nastavenia/pripomienky` → *Notification delivery* table → `src/_common/modules/notifications/component/NotificationTypeSettingsRow.vue:39-52` (`VCheckboxBtn`, no label)
 - **Expected:** every interactive control has an accessible name (WCAG 4.1.2); the template treats an unnameable control as an a11y defect and an untestable element at once.
@@ -153,7 +153,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** local: `timeout: 10000` (or `-1`) on this toast. Framework-wide: give action toasts a longer default in `showSnackbar`, and write it in `docs/composables.md`. That is its own decision, because it affects every app.
 
 ### A7. The reminder-kind switch has no accessible name [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S12, framework `40255f1`; source only, not re-run live — needs a kind row)
 - **Severity:** a11y
 - **Where:** `/nastavenia/pripomienky` → *Reminder types* card → each row's `VSwitch` → `src/_common/modules/notifications/reminderPreference/component/ReminderKindRow.vue:22-29` (no `label`, no `aria-label`)
 - **Expected:** every control has an accessible name (WCAG 4.1.2), like the quiet-hours switch on the same page ("Enable quiet hours").
@@ -176,7 +176,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** `useSetBreadcrumbExtra([{ title: … }])` in each view, from the heading's own key.
 
 ### P2. The filtered-empty state tells the user to "load older ones" when there is nothing older and no button [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S16, framework `8c5dd57`)
 - **Severity:** polish
 - **Where:** `/notifikacie?type=ScheduledJobFailed` → empty state → `NotificationsView.vue:119-149`; copy key `notifications.emptyFiltered`
 - **Expected:** the copy matches the actions offered: the *Load older* button only renders while `hasMore`.
@@ -187,7 +187,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** two keys, chosen on `hasMore`.
 
 ### P3. The bulk dismiss confirmation is titled "Dismiss notification?" for 13 notifications [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S16, framework `8c5dd57`)
 - **Severity:** polish
 - **Where:** `/notifikacie` → Select → Select all visible → Dismiss → `NotificationsView.vue:392-396` (`title: t('notifications.dismissConfirmTitle')`)
 - **Expected:** a plural title, matching the body's "Selected notifications: 13".
@@ -197,7 +197,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Verify:** 1. Same steps with ≥ 2 selected. 2. **Pass:** the dialog title is plural (e.g. "Dismiss 13 notifications?"); with 1 selected it may stay singular.
 
 ### P4. The type filter's labels do not match the titles on the rows they filter [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S16: `ReminderDigest` in framework `8c5dd57`; the two routine types app-side in `src/app/notifications/notificationTypeMeta.ts`, because their titles are this app's backend overrides)
 - **Severity:** polish
 - **Where:** `/notifikacie` → Type select options (app-registered labels, `src/app/notifications/notificationTypeMeta.ts` via `notificationTypeLabel`) vs. row titles (server-rendered)
 - **Expected:** picking an option finds rows that say what the option says.
@@ -219,7 +219,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Root cause guess:** the row set is the server's deployment catalog (B4, landed 2026-08-27), which includes `Test`; the client deliberately renders whatever the server lists. So the fix is a backend catalog decision, not a client filter — the notifications README warns that the one time this client filtered, it hid `TimerBoundary`.
 
 ### P6. The quiet-hours card promises "we won't disturb you", but the bell keeps filling during the window [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-03 (S16, framework `8c5dd57`; copy changed, server behaviour unchanged)
 - **Severity:** polish
 - **Where:** `/nastavenia/pripomienky` → *Quiet hours* subtitle (`reminderPreference.quietHours.subtitle`) and the active-now line (`reminderPreference.quietHours.activeNowToday` / `…Tomorrow`, `QuietHoursCard.vue:94-105`)
 - **Expected:** copy that says what is held. The server holds (a) scheduled reminders, the whole occurrence, in the reminders scan, and (b) the **push and e-mail** copies of every other type. It never holds the history row or the in-app delivery (`NotificationService.cs:77-86` in the API: "InApp is never deferred … the notification is visible in-app immediately either way").

@@ -50,14 +50,21 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 
 	// All four carry `routinePeriod`, which the subject map sends to `/routine-todo-list?focus=<id>`;
 	// the list itself is the fallback when a notification has no subject.
+	//
+	// The two period types are labelled app-side because their row titles are this app's backend's
+	// ("Period ending soon" / "Period ended", `PortalNotificationTexts`), and a type-filter label that
+	// does not share their noun finds rows saying something else (`notifications/P4`). The framework's
+	// own "Routine ended" had no server title behind it to match.
 	RoutinePeriodEndingSoon: {
 		icon: 'hourglass-half',
 		color: 'warning',
+		label: 'routineTodoList.periodEndingSoonNotificationType',
 		route: n => subjectRoute(n, { name: 'routineToDoList' }),
 	},
 	RoutinePeriodEnded: {
 		icon: 'flag-checkered',
 		color: 'success',
+		label: 'routineTodoList.periodEndedNotificationType',
 		route: n => subjectRoute(n, { name: 'routineToDoList' }),
 	},
 	RoutineStreakGraceExpiring: {

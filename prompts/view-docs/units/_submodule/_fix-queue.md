@@ -27,13 +27,13 @@
 | S7 | Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler **and reminders** | **framework** | `scheduler/P3`, `reminders-admin/P2` | trivial |
 | S8 | Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
 | S9 | Overdue / failed attention lists in no meaningful order | **framework** | `scheduler/P7` | trivial |
-| S10 | Inbox never loads unless the SignalR handshake succeeds | **framework** | `notifications/B1` | medium |
+| S10 | ✅ **FIXED 2026-10-03** (`b038d3e`) — Inbox never loads unless the SignalR handshake succeeds | **framework** | `notifications/B1` | medium |
 | S11 | `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2`, `reminders-user/P6` | low |
-| S12 | Notifications controls with no name or a repeated one | **framework** | `notifications/A1`, `A3`, `A5`, `A7` | low |
+| S12 | ✅ **FIXED 2026-10-03** (`40255f1`) — Notifications controls with no name or a repeated one | **framework** | `notifications/A1`, `A3`, `A5`, `A7` | low |
 | S13 | Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component) | **framework** | `notifications/A2`, `reminders-user/A1` | low |
-| S14 | Preference cards' purple palette fails contrast | **framework** | `notifications/A4` | low |
+| S14 | ✅ **FIXED 2026-10-03** (`5b2e76b`) — Preference cards' purple palette fails contrast | **framework** | `notifications/A4` | low |
 | S15 | Action toasts time out in 3 s, and so does the only Undo (framework-wide default) | **framework** | `notifications/A6` | trivial |
-| S16 | Notifications copy that says the wrong thing | **framework** | `notifications/P2`, `P3`, `P4`, `P6` | low |
+| S16 | ✅ **FIXED 2026-10-03** (`8c5dd57` + app-side P4 labels) — Notifications copy that says the wrong thing | **framework** | `notifications/P2`, `P3`, `P4`, `P6` | low |
 | S17 | Framework routes outside any nav tree claim to be "Home" in the breadcrumb | **framework** | `notifications/P1`, `reminders-user/P1` | trivial |
 | S18 | Reminder pages clip their own content — detail cards and the history notice shrink | **framework** | `reminders-admin/X1`, `B6` | trivial |
 | S19 | Reminder grid DTOs drop schedule fields the server sends | **framework** | `reminders-admin/B1`, `B2`, `P4` | low |
@@ -195,28 +195,7 @@
 - **Verification:** `scheduler/P7` `Verify:`.
 - **Risk:** the live-region counts are order-independent. None.
 
-## S10. Inbox never loads unless the SignalR handshake succeeds
-- **Scope:** **[framework]** `src/_common/modules/notifications/composable/useNotifications.ts`, `view/NotificationsView.vue`
-- **Closes:** `notifications/B1`
-- **Root cause:** `connect()` awaits `hub.start()` and only then calls `loadNotifications()` (`useNotifications.ts:549-567`).
-  The list and unread count are REST resources, but they are sequenced behind the realtime channel. A failed *initial*
-  `start()` is not covered by `withAutomaticReconnect`, and the catch only nulls `connectPromise` for a retry nothing
-  triggers. So a hub outage renders the **first-run** empty state ("No notifications yet") with badge 0, permanently.
-  The coded `loadError` + Retry state is unreachable because `error` is never set. The view also reads
-  `isConnected === false` as "Reconnecting…" before the first connect ever happened.
-- **Files:** `useNotifications.ts:549-567` (`connect`), `:306` (the failure log), the reconnect-delay policy
-  (`reconnectForever`); `NotificationsView.vue` (the "Reconnecting…" label and the skeleton gating on `isLoading`).
-- **What to change:** (1) start `loadNotifications()` (list + unread count) in parallel with, or before, `hub.start()`,
-  and set `isLoading` from the REST load, not the handshake. (2) On a failed initial `start()`, schedule retries with
-  the same `reconnectForever` delays. (3) Label the never-connected state "Connecting…" (new key, sk + en) or hide it,
-  keeping "Reconnecting…" for a dropped connection.
-- **Do not change:** the live-arrival path (hub → prepend, no refetch), which works (settled in the unit's findings,
-  *Settled: `_shell` B1*).
-- **Verification:** `notifications/B1` `Verify:` (negotiate mocked to 503, then `unroute` and wait ~70 s for a second
-  `negotiate`). Also confirm a normal load still issues exactly one `mine` + one `unread-count` (no duplicate from the
-  hub's `onreconnected` refetch).
-- **Risk:** the bell (`_shell`) shares this composable, so the badge's first value now comes from REST before the hub is
-  up. That is the intent, but re-check the bell's `aria-label` count on first paint.
+<!-- S10 (Inbox never loads unless the SignalR handshake succeeds — notifications/B1) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## S11. `DateTimeHelper` formatters speak only Slovak (framework-wide default)
 - **Scope:** **[framework]** `src/_common/utils/DateTimeHelper.ts` + `src/_common/docs/utils.md` — its own batch
@@ -248,28 +227,7 @@
   and routine list for every EN account, which is the fix, but those screens' e2e specs may assert the Slovak shape.
   Run the full suite after the pointer bump. Say in the app-side commit that §22 is resolved.
 
-## S12. Notifications controls with no name or a repeated one
-- **Scope:** **[framework]** `src/_common/modules/notifications/` (+ both locale files)
-- **Closes:** `notifications/A1`, `A3`, `A5`, `A7`
-- **Root cause:** four controls take their name from nothing, or from a generic string. `VBadge` renders
-  `aria-label="Badge"`, which replaces the count in the *Unread* toggle's name ("Unread Badge"). The read toggle and
-  cluster use one fixed string per row. The 33 matrix `VCheckboxBtn`s and the reminder-kind `VSwitch` have no label at
-  all.
-- **Files:** `component/NotificationInboxToolbar.vue:13-22` (A1); `component/NotificationRow.vue:72-80`,
-  `component/NotificationClusterSummary.vue` (A3); `component/NotificationTypeSettingsRow.vue:39-52` (A5);
-  `reminderPreference/component/ReminderKindRow.vue:22-29` (A7).
-- **What to change:** A1: `aria-hidden` the badge and put the count in the toggle's `aria-label` via
-  `notifications.unreadCount` (or give the badge that label). A3: `notifications.markReadItem` / `markUnreadItem` taking
-  `{ title }`, mirroring `dismissItem`; the cluster's label from its summary text (type + count). A5:
-  `aria-labelledby="<row th id> <column th id>"`, which names the box from the headers already there and so keeps the
-  source comment's "don't read it twice" intent. A7: `:aria-label="kindLabel"` on the switch.
-- **Do not change:** `dismissItem` (already right); the bell's own `aria-label` (already carries the count). The
-  top-bar `status "Badge"` next to it is the same `VBadge` default. Hide it in the same edit if it is in this module,
-  and leave it if it lives in the shell's `Navbar.vue`.
-- **Verification:** the four findings' `Verify:` blocks. A7 needs a kind row first (`PUT /reminder-preference/kind`,
-  as in its Repro) until §S2 lands.
-- **Risk:** none functional. e2e locators that used `'Unread Badge'` or a structural fallback for the matrix can move to
-  the new names.
+<!-- S12 (Notifications controls with no name or a repeated one — notifications/A1, A3, A5, A7) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## S13. Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component)
 - **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` — its own batch: every `confirm()` /
@@ -298,21 +256,7 @@
 - **Risk:** nested dialogs: the inner dialog's opener is inside the outer one. Restore must target the element that
   opened *that* dialog, not the first one.
 
-## S14. Preference cards' purple palette fails contrast
-- **Scope:** **[framework]** `src/_common/modules/notifications/component/QuietHoursCard.vue`,
-  `reminderPreference/component/ReminderKindList.vue`, `component/NotificationTypeSettingsCard.vue`
-- **Closes:** `notifications/A4`
-- **Root cause:** all three cards are `VCard color="secondary"` (`#7C3AED`, light theme), and every foreground on them
-  was designed for a surface background: `color="primary"` icons ≈ 1.1:1, the info alert ≈ 1.4:1, empty-state text
-  ≈ 2.4:1, and subtitles ≈ 3.7:1. Round 2 adds the states that only show once quiet hours are on: the green "✓ Saved"
-  (the card's only save confirmation), the blue active-now line, the switch track, and the kind row's
-  `primaryOutline` chip. N12 copied the palette from the two older cards rather than choosing it.
-- **What to change:** drop `color="secondary"` so the cards are surface cards like every other settings screen. Keep
-  `elevation="2"`. If the tint is a product decision, the alternative is switching *every* foreground to
-  `on-secondary`, including the success/primary text colours, which is more edits and easier to get half right.
-- **Verification:** `notifications/A4` `Verify:` in the light theme; also open the dark theme once, which was not
-  checked by the unit.
-- **Risk:** visual only; none outside this page.
+<!-- S14 (Preference cards' purple palette fails contrast — notifications/A4) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## S15. Action toasts time out in 3 s, and so does the only Undo (framework-wide default)
 - **Scope:** **[framework]** `src/_common/composable/general/SnackbarComposable.ts` + `docs/composables.md`, or
@@ -332,30 +276,7 @@
 - **Risk:** a longer action toast holds the queue longer. `MAX_PENDING_SNACKBARS` never drops action toasts, so a burst
   of them now takes longer to drain. That is acceptable, but say it in `composables.md`.
 
-## S16. Notifications copy that says the wrong thing
-- **Scope:** **[framework]** `src/_common/modules/notifications/` views + `src/_common/_locales/common.{sk,en}.ts`
-  (`notifications.*`, `notifications.type.*`, `reminderPreference.quietHours.*`)
-- **Closes:** `notifications/P2`, `P3`, `P4`, `P6`
-- **Root cause:** four strings that do not match the state or the server. P2: `notifications.emptyFiltered` always
-  offers "load older ones", even when `hasMore` is false and no button renders. P3: the bulk dismiss confirm reuses the
-  singular `dismissConfirmTitle`. P4: the type labels (`common.en.ts:386-392`: "Routine ended", "Reminder digest",
-  "Timer finished") are a different vocabulary from the server-rendered titles on the rows they filter ("Period
-  ended", "Reminders", "Focus finished"). P6: the quiet-hours subtitle and active-now line promise "we won't disturb
-  you" and "a reminder arriving now will be delivered at …", but the server never holds the in-app row, so the bell
-  keeps filling during the window.
-- **Files:** `view/NotificationsView.vue:119-149` (P2), `:392-396` (P3); `common.{sk,en}.ts` `notifications.type.*`
-  (P4); `component/QuietHoursCard.vue:94-105` and the `reminderPreference.quietHours.subtitle` / `activeNow*` keys (P6).
-- **What to change:** P2: two keys, chosen on `hasMore`. P3: a plural title key with a count (`{n}`, sk plural forms).
-  P4: align each label's key noun with the server title ("Period ended" / "Period ending soon" / "Reminders"). The same
-  labels head the delivery-matrix rows, so both surfaces change together. Check the sk labels against the backend's sk
-  titles too. P6: one sentence in both locales saying the notification list still updates, and only push/e-mail
-  copies and scheduled reminders wait for the window to end.
-- **Do not change:** the server titles (a backend wording decision, and they are already English per locale);
-  `TimerBoundary`'s label, since its three server titles share no noun and "Timer finished" is the nearest honest
-  umbrella.
-- **Verification:** the four findings' `Verify:` blocks.
-- **Risk:** if §S3 lands and the server starts discounting unconfigured channels, P6's new sentence is still true. It
-  describes the in-app exemption, which §S3 does not touch.
+<!-- S16 (Notifications copy that says the wrong thing — notifications/P2, P3, P4, P6) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## S17. Framework routes outside any nav tree claim to be "Home" in the breadcrumb
 - **Scope:** **[framework]** `src/_common/modules/notifications/view/NotificationsView.vue`,

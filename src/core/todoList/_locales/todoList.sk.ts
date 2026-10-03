@@ -165,6 +165,9 @@ const todoList = {
 		suggestedTodayTooltip: `Odporúčané na dnes a ešte nehotové`,
 		// Názov typu notifikácie `RoutineSuggestedToday` vo filtri schránky (B4).
 		suggestedTodayNotificationType: `Rutina odporúčaná na dnes`,
+		// Názvy typov notifikácií o konci obdobia vo filtri; zdieľajú podstatné meno s nadpisom riadku (P4).
+		periodEndingSoonNotificationType: `Obdobie rutiny sa čoskoro končí`,
+		periodEndedNotificationType: `Obdobie rutiny sa skončilo`,
 		streakTooltip: `Séria: {streak} · najdlhšia: {best}`,
 		gracePeriodActive: `Odklad je aktívny!`,
 		history: `História`,
