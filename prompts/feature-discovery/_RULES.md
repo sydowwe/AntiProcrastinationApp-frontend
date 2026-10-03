@@ -43,6 +43,12 @@ app already collects.
   plus the `framework/` submodule. Entity shape and cascades are in `*Configuration.cs`, and contract behaviour is in
   `IntegrationTests/`. The working tree may be dirty: record `git -C <path> rev-parse --short HEAD` and say whether it was
   dirty.
+- **Backend conventions: read these before any backend code.** This session runs from the frontend repo, so only the
+  frontend `CLAUDE.md` loads automatically. Read the backend's own `CLAUDE.md`, `docs/architecture.md` and
+  `docs/modules.md` (all under `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer`) first. They define the module
+  boundaries a candidate must respect and where its logic would live. For anything that touches notifications or the
+  scheduler, also read `docs/notificationSetup.md`. Run the passes from the frontend repo regardless: every path in
+  these prompts is relative to it.
 
 ## Dedupe: do not re-propose these
 
