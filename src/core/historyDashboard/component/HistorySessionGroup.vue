@@ -53,7 +53,7 @@
 				</div>
 				<VCardText class="px-4 pt-0 pb-2 d-flex flex-column ga-1">
 					<span class="text-body-2 font-weight-medium">
-						{{ $t('history.session.focusTotal', { duration: focusTotal.getNice }) }}
+						{{ focusLine }}
 					</span>
 					<span
 						v-if="outcomeLine"
@@ -104,6 +104,7 @@
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 	import type { ActivityHistorySession } from '@/core/activityHistory/dto/response/ActivityHistorySession.ts'
 	import { TimerSessionPhase } from '@/core/activityHistory/dto/enum/TimerSessionPhase.ts'
+	import { TimerSessionOutcome } from '@/core/activityHistory/dto/enum/TimerSessionOutcome.ts'
 	import HistoryRecordItem from '@/core/activityHistory/component/HistoryRecordItem.vue'
 
 	const { session, records } = defineProps<{
@@ -131,6 +132,19 @@
 	const focusTotal = computed(() =>
 		Time.fromMinutes(focusRecords.value.reduce((sum, record) => sum + record.length.getInMinutes, 0)),
 	)
+
+	/**
+	 * The focus total, set against the plan when the session did not run all of it and carries one. A
+	 * completed plan is left as the bare total: its rows already are the plan, give or take rounding.
+	 */
+	const focusLine = computed(() => {
+		const { plannedLength, outcome } = session
+		const duration = focusTotal.value.getNice.trim()
+		if (plannedLength === null || outcome === TimerSessionOutcome.Completed) {
+			return t('history.session.focusTotal', { duration })
+		}
+		return t('history.session.focusOfPlanned', { duration, planned: plannedLength.getNice.trim() })
+	})
 
 	/** Named after its focus activity — the rest activity is the breaks, not what the sitting was for. */
 	const focusActivityName = computed(() => (focusRecords.value[0] ?? records[0]!).activity.name)

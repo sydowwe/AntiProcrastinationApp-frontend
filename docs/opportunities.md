@@ -16,8 +16,7 @@
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
 5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
    none of it.
-6. **OP6. Remember the plan when a timer stops early.** Planned lengths never leave the browser, and timers started from
-   other screens lose their session entirely.
+6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
 
@@ -62,19 +61,6 @@
 - **Size:** S
 - **Value:** Home is where the day starts. "Holiday", a "Travel day" label or a note written the night before changes
   what's realistic today. The user typed all of it into the planner, and it never comes back on the dashboard.
-
-### OP6. Remember the plan when a timer stops early
-- **Source:** from data-map (history note *the timer's plan never reaches the server*)
-- **Data it spends:** the running timer's `durationMs`, `focusMs`, `shortRestMs`, `longRestMs` (client-only today),
-  `ActivityHistorySession.outcome` and `.plannedFocusPeriods` (already spent)
-- **Where it would surface:** the history detail timeline row ("planned 25m, stopped at 12m"), and later a plan-vs-actual
-  line for timers like the planner's `PlanVsActualTrendLine`. The second half is client-only: timers embedded in
-  `TrackTimeDialog` (from dayPlanner, todoList, the NowBar) should save through the session endpoint too, so they keep
-  `session`, `phase` and `outcome` and log pomodoro rest.
-- **Needs backend:** yes. A planned-length member on the session request and response.
-- **Size:** M. One backend field, the session request, and the embedded save path.
-- **Value:** `outcome = stoppedEarly` is the app's only procrastination signal from timers, and without the plan it can't
-  say by how much. Timers started from a task are the ones most likely to be abandoned, and they record the least.
 
 ### OP7. "Streak kept today" on the flame
 - **Source:** from data-map (backlog `PlannerStreak.isTodayComplete`)
@@ -240,6 +226,30 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP6**, built 2026-10-03, in both repos. The API gained one nullable `PlannedLength` (`IntTime`) on
+  `ActivityHistorySession`, its request and its response, plus the GDPR export and migration
+  `ActivityHistorySessionPlannedLength`. It holds the *focus* the timer was set for: a countdown's length, or a
+  pomodoro's focus length × `plannedFocusPeriods`. Breaks are left out, and one period's length is that ÷ the count. It
+  is optional and must be positive when sent, so pre-OP6 sessions read null. On screen: a countdown row stopped early
+  reads "Stopped early: 12m of 25m planned", a pomodoro header that did not complete reads "Focus 37m of 1h 40m
+  planned", and the Detail CSV gains a *Planned focus (s)* column. Embedded timers (`TrackTimeDialog`, from the planner,
+  the to-do lists and home) now save through the session endpoint, so they keep `outcome`, the plan and a pomodoro's
+  rest rows. The to-do undo deletes every row the session wrote. **Home had never saved tracked time at all**: since
+  `c38fe75d` its dialog's `done` only refreshed the dashboard and dropped the result. It now writes it. The
+  plan-vs-actual trend line is not built.
+  **Follow-up, same day: the to-do link.** No history row had ever carried a to-do link. The client never sent one, on
+  any path, so the daily recap showed every item at zero time however long its timer ran. The session request now
+  takes `todoListItemId` / `routineTodoListId`, with the single create's rules (positive, never both, ownership-checked
+  with a 404). The API stamps the link on the *focus* rows only, because a break is not the item's time. The client
+  sends it from the to-do lists (manual log and timer, keyed by list kind), and from the planner and home when the
+  task was planned from a to-do item. Covered by `TodoListItemDailyRecapTests` (a linked pomodoro credits 25 + 15
+  minutes, not its 5-minute break) and two new `ActivityHistorySessionTests` cases.
+  Checked live: a countdown stopped early from home's NowBar posted one `Timer`/`StoppedEarly` session with
+  `plannedLength`, and Detail read *Stopped early: 1m of 1h 30m planned*. On `/todo-list/13002`, a quick-start timer
+  stopped at 1m (session, `todoListItemId: 14012`) and a 20m manual log (single row, `todoListItemId: 14011`) put
+  60 s and 1200 s on their items' recap rows ("3 things finished today — 21m logged"). Both undos then deleted their
+  rows and reopened the items.
 
 - **OP4**, built 2026-10-03, app-side only. The API already stored, validated (120 chars), returned and cleared
   (`''`) the field, so the backend did not change. `weatherLocation` is declared in `userAugmentation.ts` and read

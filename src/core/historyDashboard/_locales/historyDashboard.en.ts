@@ -84,6 +84,8 @@ const messages = {
 				session: `Timer session`,
 				phase: `Phase`,
 				outcome: `Session outcome`,
+				// The focus time the session's timer was set for. Empty outside a session and on older ones.
+				plannedSeconds: `Planned focus (s)`,
 			},
 		},
 	},

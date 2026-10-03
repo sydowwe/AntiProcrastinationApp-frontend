@@ -28,7 +28,19 @@ export class ActivityHistorySessionRequest {
 		/** Both non-null for a pomodoro, both null for a countdown. */
 		public plannedFocusPeriods: number | null,
 		public completedFocusPeriods: number | null,
+		/**
+		 * The focus time the timer was set for: a countdown's length, or a pomodoro's focus length ×
+		 * `plannedFocusPeriods`. Breaks are not in it. Null when there is none to send — the API refuses
+		 * a zero.
+		 */
+		public plannedLength: Time | null,
 		/** In strictly increasing start order: 1 to `MAX_SESSION_RECORDS`, exactly one for a countdown. */
 		public records: ActivityHistorySessionRecordRequest[],
+		/**
+		 * The item the timer was run for, set by the embedder that knows it (`createTracked`). The API stamps
+		 * it on the focus rows only — a break is not the item's time. Never set with the routine one.
+		 */
+		public todoListItemId: number | null = null,
+		public routineTodoListId: number | null = null,
 	) {}
 }

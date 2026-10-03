@@ -59,6 +59,9 @@ const activityHistory = {
 			// outcome labels on a session's rows (HistoryRecordItem). Descriptive, never a verdict.
 			pomodoroUnit: `Pomodoro`,
 			focusTotal: `Focus {duration}`,
+			// A session that did not run its whole plan, set against what the timer was set for (OP6).
+			focusOfPlanned: `Focus {duration} of {planned} planned`,
+			stoppedEarlyOfPlanned: `Stopped early: {duration} of {planned} planned`,
 			showPhases: `Show phases ({count})`,
 			hidePhases: `Hide phases`,
 			phase: {

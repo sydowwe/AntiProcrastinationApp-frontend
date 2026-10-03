@@ -1,3 +1,4 @@
+import { Time } from '@/_common/dto/dto/Time.ts'
 import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { TimerSessionKind } from '@/core/activityHistory/dto/enum/TimerSessionKind.ts'
 import { TimerSessionOutcome } from '@/core/activityHistory/dto/enum/TimerSessionOutcome.ts'
@@ -14,16 +15,29 @@ export class ActivityHistorySession {
 		/** Null for a countdown, which has no focus periods. */
 		public plannedFocusPeriods: number | null,
 		public completedFocusPeriods: number | null,
+		/**
+		 * The focus time the timer was set for: a countdown's length, or a pomodoro's focus length ×
+		 * `plannedFocusPeriods`. Null on sessions saved before the client sent it.
+		 */
+		public plannedLength: Time | null,
 	) {}
 
 	static fromJson(object: any) {
-		const { id = 0, kind, outcome, plannedFocusPeriods = null, completedFocusPeriods = null } = object
+		const {
+			id = 0,
+			kind,
+			outcome,
+			plannedFocusPeriods = null,
+			completedFocusPeriods = null,
+			plannedLength = null,
+		} = object
 		return new ActivityHistorySession(
 			id,
 			convertToEnum(TimerSessionKind, kind) ?? TimerSessionKind.Pomodoro,
 			convertToEnum(TimerSessionOutcome, outcome) ?? TimerSessionOutcome.Completed,
 			plannedFocusPeriods,
 			completedFocusPeriods,
+			plannedLength === null ? null : Time.fromJson(plannedLength),
 		)
 	}
 }

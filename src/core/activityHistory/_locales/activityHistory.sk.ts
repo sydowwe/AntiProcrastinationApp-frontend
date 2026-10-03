@@ -60,6 +60,9 @@ const activityHistory = {
 			// výsledku na riadkoch relácie (HistoryRecordItem). Opisné, nikdy nie hodnotenie.
 			pomodoroUnit: `Pomodoro`,
 			focusTotal: `Sústredenie {duration}`,
+			// Relácia, ktorá neprešla celý plán, oproti času, na ktorý bol časovač nastavený (OP6).
+			focusOfPlanned: `Sústredenie {duration} z plánovaných {planned}`,
+			stoppedEarlyOfPlanned: `Zastavené skôr: {duration} z plánovaných {planned}`,
 			showPhases: `Zobraziť fázy ({count})`,
 			hidePhases: `Skryť fázy`,
 			phase: {

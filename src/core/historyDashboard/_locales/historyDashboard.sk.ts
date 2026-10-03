@@ -84,6 +84,8 @@ const messages = {
 				session: `Relácia časovača`,
 				phase: `Fáza`,
 				outcome: `Výsledok relácie`,
+				// Čas sústredenia, na ktorý bol časovač relácie nastavený. Prázdne mimo relácie a pri starších.
+				plannedSeconds: `Plánované sústredenie (s)`,
 			},
 		},
 	},

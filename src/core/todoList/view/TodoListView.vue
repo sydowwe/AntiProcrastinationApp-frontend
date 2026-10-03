@@ -415,11 +415,11 @@
 	const lastStartedLeisureName = ref<string | null>(null)
 
 	function onLogTimeCreated({
-		historyRecordId,
+		historyRecordIds,
 		itemId,
 		itemWasCompleted,
 	}: {
-		historyRecordId: number
+		historyRecordIds: number[]
 		itemId: number | undefined
 		itemWasCompleted: boolean
 	}) {
@@ -431,7 +431,7 @@
 		if (itemId === undefined) void earnedRewardsStore.resync()
 		pushLogTimeUndo(
 			item?.activity.name ?? leisureName ?? '',
-			historyRecordId,
+			historyRecordIds,
 			itemWasCompleted && itemId !== undefined
 				? async () => {
 						await toggleIsDone(itemId, false)

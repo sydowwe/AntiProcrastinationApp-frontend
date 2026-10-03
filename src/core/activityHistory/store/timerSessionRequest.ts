@@ -29,6 +29,15 @@ function wireName<T extends Record<string, string>>(enumObject: T, value: string
 	return (getEnumKeyByValue(enumObject, value) as string | undefined) ?? null
 }
 
+/**
+ * A plan in the wire's whole minutes, or null when it has none to send. The pickers only set whole
+ * minutes, so the rounding is a guard, not a rule; a zero would be refused by the API.
+ */
+function plannedLength(ms: number): Time | null {
+	const minutes = Math.round(ms / 60_000)
+	return minutes > 0 ? Time.fromMinutes(minutes) : null
+}
+
 export function pomodoroSessionRequest(session: PomodoroSession): ActivityHistorySessionRequest | null {
 	const summary = pomodoroOutcomeSummary(session)
 	const planned = planPomodoroRows(session)
@@ -42,6 +51,9 @@ export function pomodoroSessionRequest(session: PomodoroSession): ActivityHistor
 		outcome,
 		summary.focusPeriodsPlanned,
 		summary.focusPeriodsCompleted,
+		// The focus the plan asked for, comparable with the focus rows' total. Breaks are left out:
+		// "stopped after 12 of 100 minutes" is about the work, not the rests between it.
+		plannedLength(session.focusMs * summary.focusPeriodsPlanned),
 		rows.map(
 			row =>
 				new ActivityHistorySessionRecordRequest(
@@ -67,7 +79,12 @@ export function countdownSessionRequest(
 	const outcome = wireName(TimerSessionOutcome, session.outcome)
 	if (outcome === null) return null
 
-	return new ActivityHistorySessionRequest(wireName(TimerSessionKind, TimerSessionKind.Timer)!, outcome, null, null, [
-		new ActivityHistorySessionRecordRequest(session.activityId, startTimestamp, length, null),
-	])
+	return new ActivityHistorySessionRequest(
+		wireName(TimerSessionKind, TimerSessionKind.Timer)!,
+		outcome,
+		null,
+		null,
+		plannedLength(session.durationMs),
+		[new ActivityHistorySessionRecordRequest(session.activityId, startTimestamp, length, null)],
+	)
 }

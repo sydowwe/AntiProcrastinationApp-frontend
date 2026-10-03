@@ -25,11 +25,15 @@ export function useTodoListUndo() {
 		push({ description: `Reschedule (${count})`, undo: onRestoreDueDates })
 	}
 
-	function pushLogTimeUndo(activityName: string, historyRecordId: number, onItemUncheck?: () => Promise<void>) {
+	/**
+	 * `historyRecordIds`: every row the log wrote — a timer session is several. One by one, not in
+	 * parallel: the API drops the session with its last row, and that probe must see the others gone.
+	 */
+	function pushLogTimeUndo(activityName: string, historyRecordIds: number[], onItemUncheck?: () => Promise<void>) {
 		push({
 			description: `Log time "${activityName}"`,
 			undo: async () => {
-				await deleteHistoryRecord(historyRecordId)
+				for (const id of historyRecordIds) await deleteHistoryRecord(id)
 				if (onItemUncheck) await onItemUncheck()
 			},
 		})

@@ -20,13 +20,14 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
+	import type { TrackedTime } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { plannerTaskId } = defineProps<{ plannerTaskId?: number }>()
 
 	const emit = defineEmits<{
 		confirm: [startTime: Time, length: Time]
-		trackingDone: [data: { startTimestamp: Date; length: Time }]
+		trackingDone: [tracked: TrackedTime]
 	}>()
 
 	const { openDialog } = useDialog()
@@ -87,10 +88,10 @@
 		}
 	}
 
-	function handleDone(data: { startTimestamp: Date; length: Time }) {
+	function handleDone(tracked: TrackedTime) {
 		trackTimeDialog.value = false
 		activityId.value = null
-		emit('trackingDone', data)
+		emit('trackingDone', tracked)
 	}
 
 	defineExpose({ open })

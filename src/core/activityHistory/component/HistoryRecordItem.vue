@@ -125,6 +125,7 @@
 	import { useI18n } from 'vue-i18n'
 	import type { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
 	import { TimerSessionKind } from '@/core/activityHistory/dto/enum/TimerSessionKind.ts'
+	import { TimerSessionOutcome } from '@/core/activityHistory/dto/enum/TimerSessionOutcome.ts'
 	import { formatToTime } from '@/_common/utils/DateTimeHelper.ts'
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 
@@ -138,14 +139,20 @@
 
 	/**
 	 * What the row's timer session says about it: which phase it was, for a pomodoro row (shown inside
-	 * its folded session), or how the countdown ended, for a countdown's one row. Nothing for a row
-	 * outside a session.
+	 * its folded session), or how the countdown ended, for a countdown's one row. A countdown stopped
+	 * early says by how much, when its session carries the plan. Nothing for a row outside a session.
 	 */
 	const sessionNote = computed(() => {
-		const { phase, session } = props.record
+		const { phase, session, length } = props.record
 		if (phase !== null) return t(`history.session.phase.${phase}`)
-		if (session?.kind === TimerSessionKind.Timer) return t(`history.session.outcome.${session.outcome}`)
-		return null
+		if (session?.kind !== TimerSessionKind.Timer) return null
+		if (session.outcome === TimerSessionOutcome.StoppedEarly && session.plannedLength !== null) {
+			return t('history.session.stoppedEarlyOfPlanned', {
+				duration: length.getNice.trim(),
+				planned: session.plannedLength.getNice.trim(),
+			})
+		}
+		return t(`history.session.outcome.${session.outcome}`)
 	})
 
 	const actions = [

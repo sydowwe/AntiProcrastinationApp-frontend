@@ -273,11 +273,11 @@
 	}
 
 	function onLogTimeCreated({
-		historyRecordId,
+		historyRecordIds,
 		itemId,
 		itemWasCompleted,
 	}: {
-		historyRecordId: number
+		historyRecordIds: number[]
 		itemId: number | undefined
 		itemWasCompleted: boolean
 	}) {
@@ -293,7 +293,7 @@
 		}
 		pushLogTimeUndo(
 			activityName,
-			historyRecordId,
+			historyRecordIds,
 			itemWasCompleted && itemId !== undefined ? () => handleIsDoneChange(itemId, false) : undefined,
 		)
 	}

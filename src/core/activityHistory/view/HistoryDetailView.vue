@@ -431,6 +431,11 @@
 						header: i18n.t('historyDashboard.export.detail.columns.outcome'),
 						value: r => (r.session === null ? '' : i18n.t(`history.session.outcome.${r.session.outcome}`)),
 					},
+					// Seconds, like durationSeconds, so a spreadsheet can set it against the rows' total.
+					{
+						header: i18n.t('historyDashboard.export.detail.columns.plannedSeconds'),
+						value: r => r.session?.plannedLength?.getInSeconds ?? '',
+					},
 				],
 				records,
 			)

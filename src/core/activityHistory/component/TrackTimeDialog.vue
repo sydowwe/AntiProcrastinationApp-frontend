@@ -86,6 +86,8 @@
 	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useRunningTimerStore } from '@/core/activityHistory/store/runningTimerStore.ts'
+	import type { TrackedTime } from '@/core/activityHistory/api/activityHistoryApi.ts'
+	import type { ActivityHistorySessionRequest } from '@/core/activityHistory/dto/request/ActivityHistorySessionRequest.ts'
 
 	type Method = 'stopwatch' | 'timer' | 'pomodoro'
 
@@ -105,7 +107,7 @@
 
 	const emit = defineEmits<{
 		started: [actualStartTime: Time]
-		done: [{ startTimestamp: Date; length: Time }]
+		done: [tracked: TrackedTime]
 	}>()
 
 	const model = defineModel<boolean>({ default: false })
@@ -125,7 +127,7 @@
 	const isRunning = computed(() => trackedSession.value !== null)
 
 	const selectedMethod = ref<Method>(trackedSession.value?.kind ?? initialMethod)
-	const lengthData = ref<{ startTimestamp: Date; length: Time } | null>(null)
+	const lengthData = ref<TrackedTime | null>(null)
 	/** The dialog's second face: a finished length waiting to be confirmed back to the caller. */
 	const showResult = computed(() => lengthData.value !== null && !isRunning.value)
 
@@ -146,8 +148,9 @@
 		emit('started', actualStartTime)
 	}
 
-	function handleDone(startTimestamp: Date, length: Time) {
-		lengthData.value = { startTimestamp, length }
+	// The stopwatch emits no session; it has no plan and no outcome.
+	function handleDone(startTimestamp: Date, length: Time, session: ActivityHistorySessionRequest | null = null) {
+		lengthData.value = { startTimestamp, length, session }
 	}
 
 	function handleConfirm() {

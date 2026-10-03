@@ -82,6 +82,7 @@
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
 	import { countdownSessionRequest } from '@/core/activityHistory/store/timerSessionRequest.ts'
+	import type { ActivityHistorySessionRequest } from '@/core/activityHistory/dto/request/ActivityHistorySessionRequest.ts'
 
 	const {
 		activityId = null,
@@ -99,7 +100,8 @@
 
 	const emit = defineEmits<{
 		started: [actualStartTime: Time]
-		done: [startTimestamp: Date, length: Time]
+		/** `session`: the same one-row session the routed save writes, or null when it cannot be one. */
+		done: [startTimestamp: Date, length: Time, session: ActivityHistorySessionRequest | null]
 	}>()
 
 	const { showErrorSnackbar } = useSnackbar()
@@ -223,9 +225,12 @@
 				store.clearSession()
 				return
 			}
+			// A one-row session, so the row carries how the countdown ended and what it was set for. A
+			// session stored before the outcome existed cannot say, and is saved as the plain row it always was.
+			const request = countdownSessionRequest(current, startTimestamp, length)
 			if (activityId) {
 				store.clearSession()
-				emit('done', startTimestamp, length)
+				emit('done', startTimestamp, length, request)
 				return
 			}
 			const result = await openDialog<boolean>({
@@ -234,9 +239,6 @@
 				dialogProps: { title: t('activities.recordNewActivity') },
 			})
 			if (result) {
-				// A one-row session, so the row carries how the countdown ended. A session stored before the
-				// outcome existed cannot say, and is saved as the plain row it always was.
-				const request = countdownSessionRequest(current, startTimestamp, length)
 				if (request !== null) await saveSessionToHistory(request, name)
 				else await saveActivityToHistory(targetActivityId, name, startTimestamp, length)
 			}

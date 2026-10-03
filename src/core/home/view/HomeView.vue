@@ -65,13 +65,16 @@
 			initialMethod="timer"
 			:initialLength="remainingLength(trackedTask)"
 			@started="handleTrackingStarted"
-			@done="notifyTrackingSessionFinished"
+			@done="handleTrackingDone"
 		/>
 	</div>
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import TrackTimeDialog from '@/core/activityHistory/component/TrackTimeDialog.vue'
+	import { useActivityHistoryCrud, type TrackedTime } from '@/core/activityHistory/api/activityHistoryApi.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
 	// A finished timer changes the plan AND the history pie, which lives in another widget. One
 	// signal, both subscribers — see useDashboardRefresh.
@@ -85,6 +88,22 @@
 	import TodoListWidget from '@/core/home/component/TodoListWidget.vue'
 
 	const { isOpen, trackedTask, remainingLength, handleTrackingStarted } = useTaskTracker()
+	const { createTracked } = useActivityHistoryCrud()
+	const { showSuccessSnackbar } = useSnackbar()
+	const { t } = useI18n()
+
+	/**
+	 * Write what the timer tracked, then tell the dashboard. This used to only signal: the dialog's result
+	 * was dropped, so time tracked from the now bar or a planner row was never saved at all (OP6).
+	 */
+	async function handleTrackingDone(tracked: TrackedTime) {
+		const task = trackedTask.value
+		if (task === null) return
+		// A task planned from a to-do item is that item's time, so the recap credits the item with it.
+		await createTracked(tracked, task.activity.id, { todoListItemId: task.todoListItemId })
+		showSuccessSnackbar(t('history.addedToHistory', { activity: task.activity.name }))
+		notifyTrackingSessionFinished()
+	}
 
 	// Bound here rather than in a widget, for the same reason the dialog is mounted here: the
 	// shortcuts act on the focus task, which the bar and the planner both render, and the view is the

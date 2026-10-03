@@ -80,6 +80,8 @@ describe('pomodoroSessionRequest', () => {
 			outcome: 'StoppedEarly',
 			plannedFocusPeriods: 2,
 			completedFocusPeriods: 1,
+			// One-minute focus × two planned periods; the breaks are not in the plan.
+			plannedLength: { hours: 0, minutes: 2 },
 			records: [
 				// The 10-second sliver of the second focus period rounds to nothing and is not sent.
 				{
@@ -95,6 +97,9 @@ describe('pomodoroSessionRequest', () => {
 					phase: 'ShortBreak',
 				},
 			],
+			// A routed timer is not run for an item; an embedder sets one through `createTracked`.
+			todoListItemId: null,
+			routineTodoListId: null,
 		})
 	})
 
@@ -113,6 +118,13 @@ describe('pomodoroSessionRequest', () => {
 	it('gives up on a session with no log or no outcome, which the caller saves the old way', () => {
 		expect(pomodoroSessionRequest(pomodoro(undefined))).toBeNull()
 		expect(pomodoroSessionRequest(pomodoro(alternating(1), { outcome: undefined }))).toBeNull()
+	})
+
+	it('plans the whole session: focus length × every focus period of every cycle', () => {
+		const request = pomodoroSessionRequest(
+			pomodoro(alternating(1), { focusMs: 25 * MINUTE, focusPeriodsPerCycle: 4, totalCycles: 2 }),
+		)!
+		expect(wire(request).plannedLength).toEqual({ hours: 3, minutes: 20 })
 	})
 
 	it('sends each start as a UTC instant with a trailing Z, which the API requires', () => {
@@ -143,6 +155,7 @@ describe('countdownSessionRequest', () => {
 			outcome: 'Completed',
 			plannedFocusPeriods: null,
 			completedFocusPeriods: null,
+			plannedLength: { hours: 0, minutes: 25 },
 			records: [
 				{
 					activityId: 7,
@@ -151,7 +164,24 @@ describe('countdownSessionRequest', () => {
 					phase: null,
 				},
 			],
+			todoListItemId: null,
+			routineTodoListId: null,
 		})
+	})
+
+	it('keeps the plan when stopped early, so the row can say by how much it fell short', () => {
+		const request = countdownSessionRequest(
+			countdown({ outcome: 'stoppedEarly', durationMs: 85 * MINUTE }),
+			new Date(T0),
+			Time.fromMinutes(12),
+		)!
+		expect(wire(request).plannedLength).toEqual({ hours: 1, minutes: 25 })
+		expect(wire(request).records[0].length).toEqual({ hours: 0, minutes: 12 })
+	})
+
+	it('sends no plan rather than a zero one, which the API refuses', () => {
+		const request = countdownSessionRequest(countdown({ durationMs: 0 }), new Date(T0), Time.fromMinutes(1))!
+		expect(request.plannedLength).toBeNull()
 	})
 
 	it('gives up without an outcome or an activity', () => {

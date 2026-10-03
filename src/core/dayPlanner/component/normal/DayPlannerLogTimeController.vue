@@ -12,7 +12,7 @@
 	import LogTimeController from '@/core/dayPlanner/component/normal/LogTimeController.vue'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
-	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
+	import { useActivityHistoryCrud, type TrackedTime } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
@@ -24,7 +24,7 @@
 
 	const store = useDayPlannerStore()
 	const { patchStatus, fetchById } = useTaskPlannerCrud()
-	const { create: createActivityHistory } = useActivityHistoryCrud()
+	const { create: createActivityHistory, createTracked } = useActivityHistoryCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { t } = useI18n()
 
@@ -111,19 +111,22 @@
 		currentActivityId.value = null
 	}
 
-	async function handleTrackingDone({ startTimestamp, length }: { startTimestamp: Date; length: Time }) {
+	async function handleTrackingDone(tracked: TrackedTime) {
+		const { startTimestamp, length } = tracked
 		const plannerTaskId = currentPlannerTaskId.value
 		if (plannerTaskId !== null) {
 			// `startTimestamp` is an instant. Read in the user's zone, because this is persisted as
 			// the hour the work actually happened at.
 			const actualStartTime = timeInUserZone(startTimestamp)
 			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
+			// A task planned from a to-do item is that item's time, so the recap credits the item with it.
+			const todoListItemId = store.tasks.find(t => t.id === plannerTaskId)?.todoListItemId ?? null
 			await Promise.all([
 				patchStatus(
 					plannerTaskId,
 					new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
 				),
-				createActivityHistory(startTimestamp, length, currentActivityId.value!),
+				createTracked(tracked, currentActivityId.value!, { todoListItemId }),
 			])
 			const updated = await fetchById(plannerTaskId)
 			const idx = store.tasks.findIndex(t => t.id === plannerTaskId)
@@ -133,7 +136,7 @@
 			store.clearSelection()
 			showSuccessSnackbar(t('planner.feedback.taskMarkedDone'))
 		} else {
-			await createActivityHistory(startTimestamp, length, currentActivityId.value!)
+			await createTracked(tracked, currentActivityId.value!)
 			showSuccessSnackbar(t('planner.feedback.timeLogged'))
 		}
 		currentPlannerTaskId.value = null

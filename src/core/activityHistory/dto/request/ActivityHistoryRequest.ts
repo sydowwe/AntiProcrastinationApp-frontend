@@ -6,11 +6,24 @@ export class ActivityHistoryRequest {
 		public startTimestamp: Date,
 		public length: Time,
 		public activityId: number,
+		/**
+		 * The to-do item the time was logged from. The daily recap credits an item with exactly the rows that
+		 * carry its id, so a log that drops it shows the item as taking no time. Never set with the routine one.
+		 */
+		public todoListItemId: number | null = null,
+		/** Same, for a routine item. */
+		public routineTodoListId: number | null = null,
 	) {}
 
 	static fromJson(object: any) {
-		const { startTimestamp = new Date(), length = new TimePrecise(), activityId = 0 } = object
-		return new ActivityHistoryRequest(startTimestamp, length, activityId)
+		const {
+			startTimestamp = new Date(),
+			length = new TimePrecise(),
+			activityId = 0,
+			todoListItemId = null,
+			routineTodoListId = null,
+		} = object
+		return new ActivityHistoryRequest(startTimestamp, length, activityId, todoListItemId, routineTodoListId)
 	}
 
 	static listFromObjects(objects: any[]) {

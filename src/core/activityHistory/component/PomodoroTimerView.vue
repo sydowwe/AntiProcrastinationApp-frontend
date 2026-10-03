@@ -75,6 +75,7 @@
 	import PomodoroSaveBody from '@/core/activityHistory/component/PomodoroSaveBody.vue'
 	import { pomodoroOutcomeSummary } from '@/core/activityHistory/store/pomodoroSessionLog.ts'
 	import { pomodoroSessionRequest } from '@/core/activityHistory/store/timerSessionRequest.ts'
+	import type { ActivityHistorySessionRequest } from '@/core/activityHistory/dto/request/ActivityHistorySessionRequest.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
@@ -112,7 +113,11 @@
 	}>()
 	const emit = defineEmits<{
 		started: [actualStartTime: Time]
-		done: [startTimestamp: Date, length: Time]
+		/**
+		 * `length` is the focus total, which the embedder quotes. `session` is the whole sitting, rest rows
+		 * included, as the routed save writes it, or null when it cannot be one (`pomodoroSessionRequest`).
+		 */
+		done: [startTimestamp: Date, length: Time, session: ActivityHistorySessionRequest | null]
 	}>()
 	const DEFAULT_FOCUS_TIME = new Time(0, 25)
 	const DEFAULT_SHORT_REST_TIME = new Time(0, 5)
@@ -279,7 +284,7 @@
 			}
 			if (activityId) {
 				store.clearSession()
-				emit('done', startTimestamp, timeSpent)
+				emit('done', startTimestamp, timeSpent, pomodoroSessionRequest(current))
 				return
 			}
 			const result = await openDialog<boolean>({
@@ -306,9 +311,9 @@
 	// Not awaited, and the session is cleared straight after, as before: a tab closed mid-request must
 	// not offer the same save again, which would be refused as a duplicate (409).
 	//
-	// The embedded path (`activityId` pinned, `done` emitted above) stays one summed row: the embedder
-	// links that row to its task, the task's recap and estimate calibration read it as the task's one
-	// sitting, and the rest is not the task's time.
+	// The embedded path (`activityId` pinned, `done` emitted above) hands the embedder the same request,
+	// and the embedder writes it (OP6). It used to be one summed focus row with no session, so a pomodoro
+	// started from a task lost its outcome, its plan and its rest time.
 	function saveActivity(current: PomodoroSession, startTimestamp: Date, timeSpent: Time) {
 		const request = pomodoroSessionRequest(current)
 		if (request !== null) {

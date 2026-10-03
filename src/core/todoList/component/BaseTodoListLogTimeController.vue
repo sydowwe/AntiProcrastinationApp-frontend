@@ -10,7 +10,11 @@
 	import { ref } from 'vue'
 	import LogTimeController from '@/core/dayPlanner/component/normal/LogTimeController.vue'
 	import { API } from '@/_common/axiosConfig.ts'
-	import { useActivityHistoryCrud } from '@/core/activityHistory/api/activityHistoryApi.ts'
+	import {
+		useActivityHistoryCrud,
+		type HistoryItemLink,
+		type TrackedTime,
+	} from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind.ts'
@@ -21,10 +25,10 @@
 
 	const emit = defineEmits<{
 		itemsChanged: [ids: number[]]
-		logTimeCreated: [{ historyRecordId: number; itemId: number | undefined; itemWasCompleted: boolean }]
+		logTimeCreated: [{ historyRecordIds: number[]; itemId: number | undefined; itemWasCompleted: boolean }]
 	}>()
 
-	const { create: createActivityHistory } = useActivityHistoryCrud()
+	const { create: createActivityHistory, createTracked } = useActivityHistoryCrud()
 	const { showSuccessSnackbar } = useSnackbar()
 	const { t } = useI18n()
 
@@ -67,8 +71,8 @@
 		)
 	}
 
-	async function finalize(startTimestamp: Date, length: Time) {
-		const historyRecordId = await createActivityHistory(startTimestamp, length, currentActivityId.value!)
+	/** After the write: `historyRecordIds` is every row it made — one, or a timer session's several. */
+	async function finalize(historyRecordIds: number[]) {
 		showSuccessSnackbar(t('toDoList.timeLogged'))
 		const itemId = currentItemId.value ?? undefined
 		let itemWasCompleted = false
@@ -77,7 +81,7 @@
 			itemWasCompleted = true
 			emit('itemsChanged', [currentItemId.value])
 		}
-		emit('logTimeCreated', { historyRecordId, itemId, itemWasCompleted })
+		emit('logTimeCreated', { historyRecordIds, itemId, itemWasCompleted })
 		currentItemId.value = null
 		currentActivityId.value = null
 	}
@@ -85,11 +89,21 @@
 	async function handleConfirm(startTime: Time, length: Time) {
 		const startTimestamp = new Date()
 		startTimestamp.setHours(startTime.hours, startTime.minutes, 0, 0)
-		await finalize(startTimestamp, length)
+		await finalize([await createActivityHistory(startTimestamp, length, currentActivityId.value!, itemLink())])
 	}
 
-	async function handleTrackingDone({ startTimestamp, length }: { startTimestamp: Date; length: Time }) {
-		await finalize(startTimestamp, length)
+	async function handleTrackingDone(tracked: TrackedTime) {
+		await finalize(await createTracked(tracked, currentActivityId.value!, itemLink()))
+	}
+
+	/**
+	 * The item being logged, as the link the daily recap credits it by. Without it the recap showed every
+	 * item at zero however long its timer ran. A leisure reward has no item, so no link.
+	 */
+	function itemLink(): HistoryItemLink {
+		const itemId = currentItemId.value
+		if (itemId === null) return {}
+		return kind === ToDoListKind.ROUTINE ? { routineTodoListId: itemId } : { todoListItemId: itemId }
 	}
 
 	defineExpose({ open, openLeisureReward })

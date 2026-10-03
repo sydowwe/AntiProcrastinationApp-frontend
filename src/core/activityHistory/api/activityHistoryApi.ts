@@ -25,12 +25,54 @@ export function useActivityHistoryCrud() {
 		entityName: url,
 	})
 
-	async function create(startTimestamp: Date, length?: Time, activityId?: number) {
-		const request = new ActivityHistoryRequest(startTimestamp, length ?? Time.fromMinutes(0), activityId ?? -1)
+	async function create(startTimestamp: Date, length?: Time, activityId?: number, link: HistoryItemLink = {}) {
+		const request = new ActivityHistoryRequest(
+			startTimestamp,
+			length ?? Time.fromMinutes(0),
+			activityId ?? -1,
+			link.todoListItemId ?? null,
+			link.routineTodoListId ?? null,
+		)
 		return baseCreate(request)
 	}
 
-	return { fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, update, deleteEntity }
+	/**
+	 * Writes what a timer embedded in `TrackTimeDialog` tracked. A timer or pomodoro goes through the session
+	 * endpoint, the way the routed views save, so it keeps its outcome, its plan and a pomodoro's rest rows.
+	 * A stopwatch, or a session that cannot be one, is the plain row it always was. Either way it carries
+	 * `link`, which is what puts the time on the item's row of the daily recap. Answers the ids written, one
+	 * per row. Not `_silent`: like `create`, a failure throws and the interceptor shows it.
+	 */
+	async function createTracked(
+		tracked: TrackedTime,
+		activityId: number,
+		link: HistoryItemLink = {},
+	): Promise<number[]> {
+		if (tracked.session === null) return [await create(tracked.startTimestamp, tracked.length, activityId, link)]
+		const { data } = await API.post('/activity-history/session', {
+			...tracked.session,
+			todoListItemId: link.todoListItemId ?? null,
+			routineTodoListId: link.routineTodoListId ?? null,
+		})
+		return data.recordIds ?? []
+	}
+
+	return { fetchById, fetchAll, fetchSelectOptions, createWithResponse, create, createTracked, update, deleteEntity }
+}
+
+/** What `TrackTimeDialog` hands its embedder once the user confirms. */
+export interface TrackedTime {
+	startTimestamp: Date
+	/** What the embedder quotes and writes to its task: the run's length, or a pomodoro's focus total. */
+	length: Time
+	/** The run as a timer session, or null for a stopwatch and for a session that cannot be one. */
+	session: ActivityHistorySessionRequest | null
+}
+
+/** The to-do or routine item time was logged from, when there is one. At most one of the two is set. */
+export interface HistoryItemLink {
+	todoListItemId?: number | null
+	routineTodoListId?: number | null
 }
 
 /**
