@@ -30,6 +30,7 @@ const todoList = {
 		stepMoveUp: `Move step {position} up`,
 		stepMoveDown: `Move step {position} down`,
 		stepDelete: `Delete step {position}`,
+		stepNote: `Note for step {position}`,
 		isRepeated: `Is repeated`,
 		doneCount: `Done count`,
 		totalCount: `Total count`,

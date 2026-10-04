@@ -31,6 +31,7 @@ const todoList = {
 		stepMoveUp: `Posunúť krok {position} vyššie`,
 		stepMoveDown: `Posunúť krok {position} nižšie`,
 		stepDelete: `Vymazať krok {position}`,
+		stepNote: `Poznámka ku kroku {position}`,
 		isRepeated: `Opakovaná`,
 		doneCount: `Počet hotových`,
 		totalCount: `Celkový počet`,

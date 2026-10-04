@@ -20,10 +20,11 @@
 			hideDetails
 		/>
 		<VTextarea
-			v-model="request.description"
+			v-model="request.text"
 			:label="$t('toDoList.namedList.description')"
+			:counter="DESCRIPTION_MAX_LENGTH"
+			:maxlength="DESCRIPTION_MAX_LENGTH"
 			rows="3"
-			hideDetails
 		/>
 	</VForm>
 </template>
@@ -50,6 +51,10 @@
 	}>()
 
 	const { requiredRule } = useGeneralRules()
+
+	// The server's limit (`TodoListValidator`, `EntityFieldLengths.Text`). A native `maxlength` rather
+	// than a rule: the framework has no length rule, and a cap cannot be failed.
+	const DESCRIPTION_MAX_LENGTH = 1000
 	const { fetchSelectOptions } = useTodoListCategoryCrud()
 
 	const form = ref<InstanceType<typeof VForm>>()

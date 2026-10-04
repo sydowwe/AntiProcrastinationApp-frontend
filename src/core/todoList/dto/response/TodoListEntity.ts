@@ -16,7 +16,8 @@ export class TodoListEntity {
 			json.id,
 			json.name,
 			json.icon ?? null,
-			json.description ?? null,
+			// Sent as `text` (see TodoListRequest); a blank one reads as no description.
+			json.text || null,
 			json.category ? TodoListCategoryEntity.fromJson(json.category) : null,
 			json.itemCount ?? null,
 			json.completedCount ?? null,

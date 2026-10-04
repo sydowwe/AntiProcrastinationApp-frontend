@@ -11,23 +11,13 @@
 
 1. ~~**OP1. Routine periods: warn before the reset, and stop saving over the warning.**~~ Done. See *Closed*.
 2. ~~**OP2. Make "Show details panel by default" do something.**~~ Done. See *Closed*.
-3. **OP3. Keep what's typed into a list's description.** Today the form accepts it and the round trip loses it both ways.
+3. ~~**OP3. Keep what's typed into a list's description.**~~ Done. See *Closed*.
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
 5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
    none of it.
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP3. Keep what's typed into a list's description (and let a step carry a note)
-- **Source:** from data-map (backlog `TodoList.description`, G2; reverse gap `TodoListItemStep.note`)
-- **Data it spends:** `TodoList.description` ↔ the server's `text`, and `TodoListItemStep.note`
-- **Where it would surface:** `TodoListCard` (the description line already exists at `TodoListCard.vue:28`).
-  `TodoListStepsFormField` would get a note input, for a note that `BaseTodoListItemSteps` already renders.
-- **Needs backend:** no. Map `description` to `text` in `TodoListRequest` and in `TodoListEntity.fromJson`.
-- **Size:** S. A mapping fix plus one optional input.
-- **Value:** A user who writes "what this list is for" sees it accepted and then gone, and nothing tells them it was lost.
-  The step note is the same shape: shown, but impossible to write.
 
 ### OP5. Show today's day context on home
 - **Source:** from data-map (todo extract contradiction #4; backlog note under dayPlanner)
@@ -180,6 +170,25 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP3**, built 2026-10-04, in both repos. The server already stored a list's description as `text` (the shared
+  `NameTextIconRequest`) and a step's `note` on every step path, so the contract did not change. `TodoListRequest`
+  now sends `text`, and `TodoListEntity.fromJson` reads it back into `description`. Before this, the client sent and
+  read `description`, so the text was dropped in both directions. **The backend did change in one place:**
+  `TodoListValidator` had no length rule, so once the text started arriving, an over-long one would have hit Postgres
+  as a 22001 and reached the form with no field to attach to. It now has `MaximumLength(EntityFieldLengths.Text)`
+  (1000), and `TodoListDescriptionTests` pins the round trip through POST, PUT and GET, plus the 1000/1001 boundary.
+  The form caps the textarea at 1000 with a counter. `TodoListStepsFormField` has a note toggle per step
+  (`aria-pressed`, named by position like the move and delete buttons). It opens a note field under the step, and
+  the field is already open when the step has a note. Clearing the field, or toggling again, drops the note.
+  `TodoListItemStepRequest` turns a blank note into `null`, and both item dialogs rebuild their steps through it.
+  Checked live: a list created with a description showed it on its card, the edit form opened with it, and an edit
+  survived a reload. An item saved with two steps, where only one had a note, posted `"Oat, 2 litres"` and `null`.
+  The note rendered under its step, and the edit dialog reopened with only that step's note field open.
+  `e2e/tests/todo-list-description-step-note.spec.ts` (5 tests) covers the description on create (the POST carries
+  `text`, the card shows it), the edit dialog prefill plus an edit surviving a reload, the 1000-character cap, a step
+  note opening pre-filled while a blank one is sent as `null`, and toggling a note off clearing it on the server.
+  All 5 passed on 2026-10-04 (24 s).
 
 - **OP2**, built 2026-10-04, app-side only. The API already stored, returned and saved
   `detailsPanelExpandedByDefault`, so the backend did not change. `useRoutinePlacement` takes an optional
