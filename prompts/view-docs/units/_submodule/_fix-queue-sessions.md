@@ -40,7 +40,7 @@ sessions above is blocked by them.
 | # | Session | Status |
 | --- | --- | --- |
 | 1 | My reminders: broken actions | open |
-| 2 | Flex and height layout | ✅ done 2026-10-04 — S1 `ff91bec`, S2 `d21119c`, S18 `7c048c2`; pointer bump left to session 6's (it carries these), app-side spec + queue edits uncommitted |
+| 2 | Flex and height layout | ✅ done 2026-10-04 — S1 `ff91bec`, S2 `d21119c`, S18 `7c048c2`; shared pointer bump with session 6 in `11fe182b` |
 | 3 | Sort tie-breakers | open |
 | 4 | Scheduler detail polish | open |
 | 5 | Breadcrumbs | open |
