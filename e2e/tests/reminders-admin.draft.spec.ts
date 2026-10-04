@@ -68,7 +68,7 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 
 	test('a status filter in the URL becomes a chip and survives a reload', async ({ adminPage }) => {
 		await adminPage.goto(`${REGISTER}?status=Paused`)
-		// The chip's remove button is named just "Close" (A3), so assert on the chip's text instead.
+		// Assert on the chip's text; its remove button is covered by the A3 test below.
 		await expect(adminPage.locator('main .v-chip').filter({ hasText: /^Paused$/ }).first()).toBeVisible()
 		await adminPage.reload()
 		await expect(adminPage).toHaveURL(/status=Paused/)
@@ -111,11 +111,15 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 		).toHaveCount(1)
 	})
 
-	// A3 — FilterPanel chip remove buttons are all named "Close".
-	test.fixme('a filter chip\'s remove button names the filter it removes', async () => {})
+	// A3 (S26) — FilterPanel chip remove buttons were all named "Close".
+	test('a filter chip\'s remove button names the filter it removes', async ({ adminPage }) => {
+		await adminPage.goto(`${REGISTER}?status=Paused`)
+		await expect(adminPage.getByRole('button', { name: 'Remove filter: Paused' })).toBeVisible()
+	})
 
-	// P1 — BasicTable pushes an ownerModule tie-breaker the default sort does not declare.
-	test.fixme('a fresh load shows no sort rank on a column the user never sorted', async () => {})
+	// P1 (fixed by S23) — the default sort now declares BasicTable's ownerModule tie-breaker, so a bare URL is not
+	// rewritten on mount. The "Owner module 2" rank badge stays: it describes the declared sort (log, Contradiction 5).
+	test.fixme('a bare URL stays bare — the default sort is not rewritten on mount', async () => {})
 })
 
 test.describe(`Reminder detail (${REGISTER}/:id)`, () => {

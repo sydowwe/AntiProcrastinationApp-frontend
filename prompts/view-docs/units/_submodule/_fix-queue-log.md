@@ -736,8 +736,8 @@
 ## S23. Reminder list default sorts omit `BasicTable`'s tie-breaker
 > ✅ **FIXED 2026-10-04** (framework `5d03e01`, session 3). Register `[nextOccurrenceAt asc, ownerModule asc]`. Upcoming
 > and my reminders `[nextOccurrenceAt asc, kind asc]`. **Verified:** bare `/pripomienky/register`, `/nadchadzajuce`
-> and `/moje` keep `location.search === ''`, and `/historia` is still unaffected. **Not met:** the "no rank badge"
-> half of `reminders-admin/P1`'s *Verify* (Contradiction 5).
+> and `/moje` keep `location.search === ''`, and `/historia` is still unaffected. The "no rank badge" half of
+> `reminders-admin/P1`'s *Verify* is won't-fix by owner decision (Contradiction 5).
 - **Scope:** **[framework]** `modules/reminders/view/{ReminderDefinitionsView,ReminderUpcomingView,MyRemindersView}.vue`
 - **Closes:** `reminders-admin/P1`, `reminders-user/P2`
 - **Root cause:** identical to S3 part (2).
@@ -776,11 +776,12 @@ Numbered from 1 here. Passes 1–3 recorded theirs inline, and those are kept ve
    default "is `nextOccurrenceAt:asc,ownerModule:asc` — and the Owner module header carries no rank badge on a fresh
    load". It cannot have both. A two-key sort is a multi-sort, and Vuetify ranks every key in it, so the declared
    tie-breaker still reads "Owner module 2" ("Kind 2" on upcoming and my reminders, "Job key 2" on the scheduler).
-   The fix that shipped is the one S3 and S23 prescribed: the URL half. The badge is now a sort the view declares
-   rather than one nobody chose, which satisfies `scheduler/P1`'s *Expected* ("visible sort = the sort set").
-   Hiding the rank for a tie-breaker would be a `BasicTable` change in every app. File it only if the owner wants the
-   badge gone. `reminders-admin.draft.spec.ts:118`'s fixme title asserts the badge half, so it should be re-titled
-   to the URL check before it is enabled.
+   The fix that shipped is the one S3 and S23 prescribed: the URL half. **Resolved 2026-10-04, owner decision:
+   the badge half is won't-fix.** The badge was a defect only while it reported a sort nobody declared. Now it
+   describes the view's real, declared order, which satisfies `scheduler/P1`'s *Expected* ("visible sort = the sort
+   set"). Hiding the rank for a tie-breaker would hide true information, and it would be a `BasicTable` change in
+   every app. `reminders-admin.draft.spec.ts`'s P1 fixme is re-titled to the URL check, and the badge is not to be
+   asserted away.
 
 ### Re-grades
 
