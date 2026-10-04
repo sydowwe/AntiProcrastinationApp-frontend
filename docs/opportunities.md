@@ -18,16 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP14. Show the baseline behind each "+40%"
-- **Source:** from data-map (backlog `ActivityStat.averageSeconds`, `HistorySummaryCard.averageSeconds`)
-- **Data it spends:** `ActivityStat.averageSeconds` (four tracking ledgers), `HistorySummaryCard.averageSeconds`
-- **Where it would surface:** tracking summary cards and history's Top Activities cards ("usually 25m", or a tooltip)
-- **Needs backend:** no for tracking. For history, first confirm what `averageSeconds` holds: its DTO comment (B2) says
-  the backend assigns the baseline daily average.
-- **Size:** S
-- **Value:** A percentage with no base reads as alarming or reassuring at random. The absolute baseline is what the user
-  can compare to their day.
-
 ### OP15. Show which template a task or day came from
 - **Source:** from data-map (backlog `PlannerTask.sourceTemplateTaskId`, `.isFromTemplate`, `Calendar.appliedTemplateId`)
 - **Data it spends:** `PlannerTask.sourceTemplateTaskId` (with `isFromTemplate` derived from it client-side),
@@ -111,6 +101,30 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP14**, built 2026-10-04, in both repos. The tracking ledgers' `averageSeconds` was already the right number: the
+  baseline's mean day multiplied out to the selected span (`BaseSummaryCardsEndpoint.ScaleToSpan`), so it sits on
+  the card's own scale. **History's was not.** The B2 comment was right: `HistorySummaryCardsBuilder` sent the
+  baseline's bare *daily* mean beside a *period* total, so on a 7-day range "usually 30m" would have sat under
+  "3h 30m · ▲ 0%". The API now sends the baseline scaled to the reported period
+  (`baselineTotal × dayCount / baselineDays`, multiplied before the divide, as tracking does), and `percentChange`
+  is computed from `totalSeconds` against that same number rather than from two rounded daily means. On a one-day
+  range both are unchanged. This is a response-meaning change only, with no migration, but the running API needs a
+  restart to pick it up. `AverageSeconds_IsTheBaselineScaledToTheReportedPeriod` pins it on a 4-day range (7h over
+  a 7-day baseline reads 4h, and 2h reads −50%). 33/33 pass across the history summary-card, group-identity and
+  archived-read classes.
+  On screen, `ActivityStatColumn` (desktop, web, Android and unified cards, both active and background columns) and
+  history's `HistorySummaryCard` add a caption under the percentage: "usually 25m" / "zvyčajne 25m". It shows only
+  when there is a percentage, so a NEW card or a zero baseline ("-") gets no caption. A base under a minute prints
+  in seconds ("usually 45s"), the same fix as OP13's.
+  Checked live on `/activity-tracking/desktop`: "JetBrains Rider 30m · ▲ 16.7% · usually 25m", with background
+  columns reading the same way. The seed has no history before its own week, so every history card reads NEW. After
+  the API restart, one 7h *Feature Development* row was added on 23 Sep (inside the last7days baseline of the
+  8-day *Week* range over 4 Oct) through `POST /activity-history`. The real response carried `averageSeconds: 28800`
+  (7h ÷ 7 × 8; the old code would have sent 3600) and `percentChange: -8.3`, and the card read "7h 20m · ▼ 8.3% ·
+  usually 8h". No console errors. The row (id 15502) was left in the dev database. `e2e/tests/summary-card-baseline.spec.ts` (2 tests,
+  route-patched) covers the tracking caption with a sub-minute base and a NEW card, and the history caption with a
+  NEW card and a zero-base card. Both passed on 2026-10-04 (16 s).
 
 - **OP13**, built 2026-10-04, app-side only. `DailyRecapItem` already sent and parsed `timeLoggedSeconds`, the
   seconds linked to that exact item (OP6's follow-up), so the backend did not change. `DailyRecapCard` replaces the

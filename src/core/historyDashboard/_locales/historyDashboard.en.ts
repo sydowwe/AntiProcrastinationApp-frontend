@@ -17,6 +17,8 @@ const messages = {
 		topGroup: `Top {group}`,
 		show: `Show`,
 		total: `Total`,
+		// OP14: the baseline the percentage is taken against, scaled to the selected range.
+		usually: `usually {duration}`,
 		// The card is a toggle that cross-highlights the pie slice — it opens nothing (F30).
 		viewDetails: `Highlight {name} in the chart`,
 		// Keyed off the HistoryGroupBy enum values.

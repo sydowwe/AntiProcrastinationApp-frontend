@@ -44,13 +44,21 @@
 					>
 						{{ $t('activityTracking.statColumn.new') }}
 					</VChip>
-					<div
-						v-else-if="card.percentChange !== null"
-						:class="comparisonClass"
-						style="font-size: 0.85rem !important"
-					>
-						{{ comparisonText }}
-					</div>
+					<template v-else-if="card.percentChange !== null">
+						<div
+							:class="comparisonClass"
+							style="font-size: 0.85rem !important"
+						>
+							{{ comparisonText }}
+						</div>
+						<!-- OP14: the base the percentage is taken against, on the same scale as the total. -->
+						<div
+							v-if="formattedBaseline"
+							class="text-caption text-medium-emphasis"
+						>
+							{{ $t('historyDashboard.summaryCards.usually', { duration: formattedBaseline }) }}
+						</div>
+					</template>
 					<div
 						v-else
 						class="text-caption text-disabled"
@@ -71,7 +79,7 @@
 	import { computed } from 'vue'
 	import type { HistorySummaryCard as HistorySummaryCardDto } from '@/core/historyDashboard/dto/response/HistorySummaryCard.ts'
 	import { historyGroupKey, type HistoryGroupKey } from '@/core/historyDashboard/dto/HistoryGroupKey.ts'
-	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
+	import { fromSeconds, fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
 	import { resolveHistoryGroupColor } from '@/core/historyDashboard/dto/historyGroupColor.ts'
 
 	const props = defineProps<{
@@ -85,6 +93,13 @@
 
 	const resolvedColor = computed(() => resolveHistoryGroupColor(props.card))
 	const formattedTime = computed(() => fromSeconds(props.card.totalSeconds))
+
+	// A baseline under a minute is still a base; `fromSeconds` would floor it to "0m".
+	const formattedBaseline = computed(() => {
+		const seconds = props.card.averageSeconds
+		if (!(seconds > 0)) return ''
+		return seconds < 60 ? fromSecondsDetailed(seconds) : fromSeconds(seconds)
+	})
 
 	const comparisonText = computed(() => {
 		if (props.card.percentChange === null) return ''

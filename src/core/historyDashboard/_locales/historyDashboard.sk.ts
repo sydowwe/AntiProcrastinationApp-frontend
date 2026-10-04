@@ -17,6 +17,8 @@ const messages = {
 		topGroup: `Top {group}`,
 		show: `Zobraziť`,
 		total: `Spolu`,
+		// OP14: základ, voči ktorému sa počíta percento, prepočítaný na zvolené obdobie.
+		usually: `zvyčajne {duration}`,
 		// Karta je prepínač, ktorý zvýrazní výsek v grafe — nič neotvára (F30).
 		viewDetails: `Zvýrazniť {name} v grafe`,
 		// Kľúčované podľa hodnôt enumu HistoryGroupBy.

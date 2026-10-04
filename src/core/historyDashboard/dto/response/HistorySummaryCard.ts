@@ -10,10 +10,9 @@ export class HistorySummaryCard {
 		public color: string | null,
 		public totalSeconds: number,
 		/**
-		 * B2: **not** the selected period's daily average — the backend assigns this the *baseline*
-		 * period's daily average, the same number `percentChange` is computed against. Reported to the
-		 * backend as a bug; until it is fixed, label it as a baseline or derive the current-period
-		 * average from `totalSeconds` and the range's day count instead.
+		 * The baseline's mean day scaled to the selected period's length — what `totalSeconds` usually is,
+		 * and the number `percentChange` is computed against (OP14). It used to be the bare daily mean (B2),
+		 * which sat beside a period total on every multi-day range. 0 when the baseline found nothing.
 		 */
 		public averageSeconds: number,
 		/** B2: genuinely nullable — null when `isNew`, or when the baseline daily average is 0. */
@@ -27,7 +26,7 @@ export class HistorySummaryCard {
 			json.name,
 			json.color ?? null,
 			json.totalSeconds,
-			json.averageSeconds,
+			json.averageSeconds ?? 0,
 			json.percentChange ?? null,
 			json.isNew,
 		)

@@ -35,6 +35,7 @@
 					<ActivityStatColumn
 						:label="$t('activityTracking.viewMode.active')"
 						:seconds="domain.active!.seconds"
+						:averageSeconds="domain.active!.averageSeconds"
 						:percentChange="domain.active!.percentChange"
 						:isNew="domain.isNew"
 					/>
@@ -42,6 +43,7 @@
 					<ActivityStatColumn
 						:label="$t('activityTracking.viewMode.background')"
 						:seconds="domain.background!.seconds"
+						:averageSeconds="domain.background!.averageSeconds"
 						:percentChange="domain.background!.percentChange"
 						:isNew="domain.isNew"
 					/>
@@ -50,6 +52,7 @@
 					<ActivityStatColumn
 						:label="$t('activityTracking.viewMode.active')"
 						:seconds="domain.active!.seconds"
+						:averageSeconds="domain.active!.averageSeconds"
 						:percentChange="domain.active!.percentChange"
 						:isNew="domain.isNew"
 						class="single-column"
@@ -59,6 +62,7 @@
 					<ActivityStatColumn
 						:label="$t('activityTracking.viewMode.background')"
 						:seconds="domain.background!.seconds"
+						:averageSeconds="domain.background!.averageSeconds"
 						:percentChange="domain.background!.percentChange"
 						:isNew="domain.isNew"
 						class="single-column"

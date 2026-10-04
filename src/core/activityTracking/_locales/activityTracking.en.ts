@@ -115,6 +115,8 @@ const messages = {
 		noChange: `No change from average`,
 		aboveAverage: `{percent}% above average`,
 		belowAverage: `{percent}% below average`,
+		// OP14: the baseline the percentage is taken against, scaled to the selected span.
+		usually: `usually {duration}`,
 		viewDetails: `View details for {domain}`,
 	},
 	stackedBars: {

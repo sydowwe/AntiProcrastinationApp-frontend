@@ -116,6 +116,8 @@ const messages = {
 		noChange: `Bez zmeny oproti priemeru`,
 		aboveAverage: `{percent} % nad priemerom`,
 		belowAverage: `{percent} % pod priemerom`,
+		// OP14: základ, voči ktorému sa počíta percento, prepočítaný na zvolené obdobie.
+		usually: `zvyčajne {duration}`,
 		viewDetails: `Zobraziť detaily pre {domain}`,
 	},
 	stackedBars: {
