@@ -42,7 +42,7 @@ sessions above is blocked by them.
 | 1 | My reminders: broken actions | ✅ done 2026-10-04 — S28 `4e385e5`, S30 `0d04853`, S29 `639814a`, one pointer bump |
 | 2 | Flex and height layout | ✅ done 2026-10-04 — S1 `ff91bec`, S2 `d21119c`, S18 `7c048c2`; shared pointer bump with session 6 in `11fe182b` |
 | 3 | Sort tie-breakers | open |
-| 4 | Scheduler detail polish | open |
+| 4 | Scheduler detail polish | ✅ done 2026-10-04 — S4, S6, S7, S8, S9 in one framework commit `62451f7` (they share `JobRunHistory`, `SchedulerRunDetailView` and both locale files, so the one-commit-per-batch split was not practical), one pointer bump |
 | 5 | Breadcrumbs | ✅ done 2026-10-04 — S5 `6154af1` (shell de-dup) + `524312a` (run detail), S17 `7033ca2`, one pointer bump |
 | 6 | Reminders admin data and identity | ✅ done 2026-10-04 — S19 `f103416`, S20 `4920a5b`, S21 `60c85f0`, S22 `dcd6b11`, S24 `113fcaf`, S25 `e46b50f` (so session 8 no longer carries S25). Ran before session 1, which is still open. |
 | 7 | Notifications module | ✅ done 2026-10-03 — S10 `b038d3e`, S12 `40255f1`, S14 `5b2e76b`, S16 `8c5dd57`, one pointer bump |

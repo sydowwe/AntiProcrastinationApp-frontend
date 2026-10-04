@@ -630,6 +630,85 @@
 - **Risk:** the cancellation branch must stay silent and must not set `error`, because typing in a filter aborts
   in-flight loads.
 
+## S4. Disabled Trigger / Replay explain themselves only via an unreachable `title`
+> ✅ **FIXED 2026-10-04** (framework `62451f7`, session 4 — one commit for S4 and S6–S9, because the five batches
+> share `JobRunHistory`, `SchedulerRunDetailView` and both locale files). `triggerBlockedReason` /
+> `replayBlockedReason` in `schedulerFormat.ts` return the reason or `null` (they replace `replayTitle`). The two
+> labelled header buttons (job detail Trigger, run detail Replay) get a visible `text-caption` line under them,
+> linked by `aria-describedby`; the icon-only grid rows get a wrapper `span` that owns the `title`, plus an
+> `d-sr-only` description. `scheduler.actions.cannotTriggerRemoved` added (sk + en), so a `Removed` job no longer
+> reads "Trigger now". **Verified** (`playwright-cli`, `primaryUser`): `/planovac/ulohy/11` shows the disabled
+> *Trigger now* with "A removed job cannot be triggered."; `/planovac/behy/52704` shows *Replay run* disabled with
+> "This run cannot be replayed — its job has been removed."; on `/planovac/ulohy?status=Removed` each row's disabled
+> trigger button has `aria-describedby` resolving to that text and its wrapper's `title` is the same string. I used
+> the `span`-wrapper approach rather than `aria-disabled` for the grid rows, so no click-handler guard is needed.
+> **Not verified:** the orphaned variant (`scheduler/U3`, no orphaned job exists).
+- **Scope:** **[framework]** `component/JobActionButtons.vue`, `component/JobRunHistory.vue`,
+  `view/SchedulerRunDetailView.vue`, `utils/schedulerFormat.ts`, both locale files
+- **Closes:** `scheduler/B2`
+- **Root cause:** Vuetify renders a disabled `VBtn` with `pointer-events: none` and removes it from the tab order, so a
+  `title` on it is shown to nobody. The B3 gate work put every reason there. Separately, `triggerTitle` knows only the
+  orphaned reason, so a `Removed` job's disabled Trigger is titled "Trigger now".
+- **What to change:** add `scheduler.actions.cannotTriggerRemoved` (sk + en) and a `triggerTitle`-style helper beside
+  `replayTitle`. Carry the reason somewhere reachable: visible caption text under the two labelled header buttons;
+  for the icon-only grid rows, wrap the button in a `span` that owns the `title`, or use `aria-disabled` (still
+  focusable) plus `aria-describedby`. Keep one approach for all three sites.
+- **Verification:** `scheduler/B2` `Verify:` on `/planovac/behy/52704` (job 11, `Removed`) and `/planovac/ulohy?status=Removed`.
+
+## S6. Ambiguous accessible names — run links and copy buttons
+> ✅ **FIXED 2026-10-04** (framework `62451f7`, session 4). The run-history link takes
+> `scheduler.a11y.showRunDetail` with `startedAtOf(item.id)`; `CopyIconButton` has an optional `label` prop
+> (`scheduler.actions.copyLabeled` → "Copy {label}", `aria-label` and `title`), and the four call sites pass the row's
+> own label. **Verified:** run 52704 exposes `Copy Job key`, `Copy Correlation ID` and `Copy Payload snapshot`; job 11
+> exposes `Copy Job key`; the history grid links are named "Show detail of the run started at …".
+- **Scope:** **[framework]** `component/JobRunHistory.vue`, `component/CopyIconButton.vue` + its three call sites, locales
+- **Closes:** `scheduler/A1`, `scheduler/A2`
+- **Root cause:** names were taken from visible text or a generic `title`. The run link's text is a relative time
+  ("now", "2 minutes ago", repeated), and `CopyIconButton` has one fixed title for every value.
+- **Verification:** `scheduler/A1`, `A2` `Verify:`.
+
+## S7. Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler and reminders
+> ✅ **FIXED 2026-10-04** (framework `62451f7`, session 4). `_silent: true` on the job and run `fetchById`
+> (`useEntityQuery.fetchById` forwards its second argument into the request config), on
+> `ReminderDefinitionDetailView`'s `fetchById`, and on `fetchReminderOverview`. `MyRemindersView` needed nothing, as
+> the queue said. **Verified by source and typecheck only:** `vue-tsc --build --force` is clean and the argument is
+> spread after `silentConfig`. **Not verified in the browser:** the routed 404 / 500 / 503 paths (`scheduler/P3`,
+> `reminders-admin/P2` `Verify:`) were not driven, so confirm there is no snackbar next to the page's own message.
+- **Scope:** **[framework]** the two scheduler detail views' `fetchById`, `modules/reminders/view/ReminderDefinitionDetailView.vue`
+  and `api/ReminderDashboardApi.ts` (`fetchReminderOverview`)
+- **Closes:** `scheduler/P3`, `reminders-admin/P2`
+- **Root cause:** S1 #2 made the page state the message (not-found / load-failed + *Try again*), but the requests were
+  not `_silent`, so the interceptor also snackbarred. The overview polls every 5 min and on focus, so during an outage
+  it would have snackbarred repeatedly.
+
+## S8. Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines
+> ✅ **FIXED 2026-10-04** (framework `62451f7`, session 4). (P4) Copy is neutral in both locales: *Related runs*,
+> *Re-run of*, *Re-runs of this run*. (P5) The toggle renders when `payloadExpanded || payloadOverflows`, where
+> `payloadOverflows` is `scrollHeight > clientHeight` measured on the `<pre>` after render and by a `ResizeObserver`
+> (only while collapsed, so an expanded block keeps its *Show less*). (P6) `errorMessageText` is
+> `errorMessage.replace(/\r\n/g, '\n').trim()`. **Verified:** run 57272 (3-line payload, `pre` 86/86 px) has no
+> *Show all*; run 60270's error text ends `…POSITION: 376` with no trailing newline; 60249 and 60270 show the
+> *Related runs* heading. **Not verified:** the toggle *appearing* on a payload taller than 320 px — no run in the
+> fixture has one. The blank line **between** the two error lines remains: it is the server's `\r\n\r\n`, which P6's
+> `Verify:` (no trailing blank space, normalised `\r\n`) does not ask to collapse.
+- **Scope:** **[framework]** `view/SchedulerRunDetailView.vue`, locales
+- **Closes:** `scheduler/P4`, `P5`, `P6`
+- **Root cause:** three small rendering choices on one page. (P4) The server records automatic retries and operator
+  replays under one `replaysRunId`, and the card labelled all of them "replay". (P5) The expand toggle rendered whenever
+  there was a payload, not when the payload overflowed its cap. (P6) The error message went into `pre-wrap` untrimmed.
+- **Do not change:** per-row kind is not available without a contract change, so no per-child fetch.
+
+## S9. Overdue / failed attention lists in no meaningful order
+> ✅ **FIXED 2026-10-04** (framework `62451f7`, session 4). `AttentionJobList` derives `sortedItems`: with
+> `timeField === 'nextRunAt'` ascending (most late first), `lastRunAt` descending, no time field by `jobKey`; a missing
+> time sorts last and ties break on `jobKey`. **Verified:** `/planovac/pozornost` lists the overdue
+> `history.timer-boundary.*` jobs in order of decreasing lateness (18 d 14 h → 18 d 11 h). **Not verified:** the failed
+> and orphaned lists, which are empty on this fixture.
+- **Scope:** **[framework]** `component/AttentionJobList.vue`
+- **Closes:** `scheduler/P7`
+- **Root cause:** the lists rendered the server's order, which is neither by key nor by lateness. A presentational
+  sort of a complete list, not a server rule.
+
 ## Closed verification items
 
 _None yet._

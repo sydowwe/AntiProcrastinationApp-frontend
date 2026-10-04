@@ -21,12 +21,12 @@
 | S1 | ✅ **FIXED 2026-10-04** (`ff91bec`) — Run history on job detail has a 0 px scroll box | **framework** | `scheduler/X1` | low |
 | S2 | ✅ **FIXED 2026-10-04** (`d21119c`) — Needs-attention children shrink — rollup card crushed | **framework** | `scheduler/B5` | trivial |
 | S3 | Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker | **framework** | `scheduler/B1`, `P1` | low |
-| S4 | Disabled Trigger / Replay explain themselves only via an unreachable `title` | **framework** | `scheduler/B2` | low |
+| S4 | ✅ **FIXED 2026-10-04** (`62451f7`) — Disabled Trigger / Replay explain themselves only via an unreachable `title` | **framework** | `scheduler/B2` | low |
 | S5 | ✅ **FIXED 2026-10-04** (`6154af1`, `524312a`) — Detail-page breadcrumbs: duplicate crumb on job **and reminder**, stale crumb on run not-found | **framework** | `scheduler/B3`, `B4`, `reminders-admin/B3` | low |
-| S6 | Ambiguous accessible names — run links and copy buttons | **framework** | `scheduler/A1`, `A2` | trivial |
-| S7 | Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler **and reminders** | **framework** | `scheduler/P3`, `reminders-admin/P2` | trivial |
-| S8 | Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
-| S9 | Overdue / failed attention lists in no meaningful order | **framework** | `scheduler/P7` | trivial |
+| S6 | ✅ **FIXED 2026-10-04** (`62451f7`) — Ambiguous accessible names — run links and copy buttons | **framework** | `scheduler/A1`, `A2` | trivial |
+| S7 | ✅ **FIXED 2026-10-04** (`62451f7`) — Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler **and reminders** | **framework** | `scheduler/P3`, `reminders-admin/P2` | trivial |
+| S8 | ✅ **FIXED 2026-10-04** (`62451f7`) — Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
+| S9 | ✅ **FIXED 2026-10-04** (`62451f7`) — Overdue / failed attention lists in no meaningful order | **framework** | `scheduler/P7` | trivial |
 | S10 | ✅ **FIXED 2026-10-03** (`b038d3e`) — Inbox never loads unless the SignalR handshake succeeds | **framework** | `notifications/B1` | medium |
 | S11 | `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2`, `reminders-user/P6` | low |
 | S12 | ✅ **FIXED 2026-10-03** (`40255f1`) — Notifications controls with no name or a repeated one | **framework** | `notifications/A1`, `A3`, `A5`, `A7` | low |
@@ -72,79 +72,17 @@
 - **Verification:** `scheduler/B1` and `P1` `Verify:`; the draft spec's two related `fixme`s.
 - **Risk:** the old URL form (`sortBy=nextRunAt:asc,jobKey:asc`) is exactly the new default, so bookmarks survive.
 
-## S4. Disabled Trigger / Replay explain themselves only via an unreachable `title`
-- **Scope:** **[framework]** `component/JobActionButtons.vue`, `component/JobRunHistory.vue`,
-  `view/SchedulerRunDetailView.vue`, `utils/schedulerFormat.ts`, both locale files
-- **Closes:** `scheduler/B2`
-- **Root cause:** Vuetify renders a disabled `VBtn` with `pointer-events: none` and removes it from the tab order, so a
-  `title` on it is shown to nobody. The B3 gate work put every reason there. Separately, `triggerTitle` knows only the
-  orphaned reason, so a `Removed` job's disabled Trigger is titled "Trigger now".
-- **Files:** `JobActionButtons.vue:142-145` (`canTrigger`, `triggerTitle`), `SchedulerRunDetailView.vue:46-55`,
-  `JobRunHistory.vue:133-144`, `schedulerFormat.ts` (`replayTitle`).
-- **What to change:** add `scheduler.actions.cannotTriggerRemoved` (sk + en) and a `triggerTitle`-style helper beside
-  `replayTitle`. Carry the reason somewhere reachable: visible caption text under the two labelled header buttons;
-  for the icon-only grid rows, wrap the button in a `span` that owns the `title`, or use `aria-disabled` (still
-  focusable) plus `aria-describedby`. Keep one approach for all three sites.
-- **Verification:** `scheduler/B2` `Verify:` on `/planovac/behy/52704` (job 11, `Removed`) and `/planovac/ulohy?status=Removed`.
-- **Risk:** `aria-disabled` buttons still receive clicks. The handlers already guard (`if (!canTrigger.value …) return`)
-  but check the replay path's `@click` too.
+<!-- S4 (Disabled Trigger / Replay explain themselves only via an unreachable title — scheduler/B2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S5 (Detail-page breadcrumbs — scheduler/B3, B4, reminders-admin/B3) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S6. Ambiguous accessible names — run links and copy buttons
-- **Scope:** **[framework]** `component/JobRunHistory.vue`, `component/CopyIconButton.vue` + its three call sites, locales
-- **Closes:** `scheduler/A1`, `scheduler/A2`
-- **Root cause:** names were taken from visible text or a generic `title`. The run link's text is a relative time
-  ("now", "2 minutes ago", repeated), and `CopyIconButton` has one fixed title for every value.
-- **Files:** `JobRunHistory.vue:83-89` (`#item.startedAt`; `startedAtOf` at `:256` already builds the absolute
-  label), `CopyIconButton.vue`, `SchedulerJobDetailView.vue:67`, `SchedulerRunDetailView.vue:70,111,159`.
-- **What to change:** `aria-label` on the run link from `startedAtOf(item.id)` (e.g. reuse
-  `scheduler.a11y.showRunDetail`). A `label` prop on `CopyIconButton` → `aria-label`/`title` "Copy {label}", passed
-  as the row's own label key at each site.
-- **Verification:** `scheduler/A1`, `A2` `Verify:`.
-- **Risk:** the draft spec's locators use the current names in two places (`Replay the run started at`, fine; the copy
-  buttons are not located). None break.
+<!-- S6 (Ambiguous accessible names — run links and copy buttons — scheduler/A1, A2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S7. Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler and reminders
-- **Scope:** **[framework]** `api/SchedulerApi.ts` or the two views' `fetchById` calls;
-  `modules/reminders/view/ReminderDefinitionDetailView.vue:361-380` (`fetchById`) and
-  `modules/reminders/view/ReminderOverviewView.vue:274-294` (`fetchReminderOverview`)
-- **Closes:** `scheduler/P3`, `reminders-admin/P2`
-- **Added in the third pass:** the reminder detail's 404 card and the overview's "Failed to load" / "Refresh failed —
-  showing older data." lines are each accompanied by the interceptor snackbar. The overview polls every 5 min and
-  on focus, so during an outage it would snackbar repeatedly. Both reminder views already own their failure copy,
-  so `_silent: true` on both requests is the whole fix. `MyRemindersView` (unit 16) needs nothing here: its two
-  action requests are already `_silent`, and its table load gets its own failure state in S29.
-- **Root cause:** S1 #2 made the page state the message (not-found / load-failed + *Try again*), but the requests are
-  not `_silent`, so the interceptor also snackbars.
-- **What to change:** pass `_silent: true` on the job and run `fetchById` (check how `useEntityQuery.fetchById` forwards
-  request config; `fetchSchedulerNeedsAttention` shows the idiom).
-- **Verification:** `scheduler/P3` `Verify:`; the 500 path (routed) shows only the *Load failed* alert;
-  `reminders-admin/P2` `Verify:` (detail 404 and overview routed 503).
-- **Risk:** none.
+<!-- S7 (Detail pages report a 404/500 twice — scheduler/P3, reminders-admin/P2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S8. Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines
-- **Scope:** **[framework]** `view/SchedulerRunDetailView.vue`, locales
-- **Closes:** `scheduler/P4`, `P5`, `P6`
-- **Root cause:** three small rendering choices on one page. (P4) The server records automatic retries and operator
-  replays under one `replaysRunId`, and the card labels all of them "replay". (P5) The expand toggle renders whenever
-  there is a payload, not when the payload overflows its cap. (P6) The error message goes into `pre-wrap` untrimmed,
-  and the server's `\r\n\r\n` becomes blank lines.
-- **Files:** `SchedulerRunDetailView.vue:211-258` (lineage), `:142-171` (payload header), `:123-136` (error alert).
-- **What to change:** (P4) neutral copy — *Re-runs* / *Re-run of* — in both locales; per-row kind is not available
-  without a contract change, so do not fetch per child. (P5) show the toggle only when `payloadLineCount` exceeds what
-  320 px holds, or measure `scrollHeight > clientHeight`. (P6) `errorMessage.replace(/\r\n/g, '\n').trim()`.
-- **Verification:** the three findings' `Verify:` on 60249 / 60270 / 57272.
-- **Risk:** none.
+<!-- S8 (Run detail presentation — scheduler/P4, P5, P6) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S9. Overdue / failed attention lists in no meaningful order
-- **Scope:** **[framework]** `component/AttentionJobList.vue` or `view/SchedulerNeedsAttentionView.vue`
-- **Closes:** `scheduler/P7`
-- **Root cause:** the lists render the server's order, which is neither by key nor by lateness.
-- **What to change:** sort client-side before render: overdue by `nextRunAt` ascending (most late first), failed by
-  `lastRunAt` descending, orphaned by `jobKey`. A presentational sort of a complete list, not a server rule.
-- **Verification:** `scheduler/P7` `Verify:`.
-- **Risk:** the live-region counts are order-independent. None.
+<!-- S9 (Overdue / failed attention lists in no meaningful order — scheduler/P7) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S10 (Inbox never loads unless the SignalR handshake succeeds — notifications/B1) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
