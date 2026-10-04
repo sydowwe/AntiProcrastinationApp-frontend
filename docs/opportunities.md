@@ -16,46 +16,7 @@
 5. ~~**OP5. Show today's day context on home.**~~ Done. See *Closed*.
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
-8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP8. Say when the longest focus block happened
-- **Source:** from data-map (backlog `FocusBlock.startedAt/endedAt`)
-- **Data it spends:** `FocusBlock.startedAt`, `.endedAt`
-- **Where it would surface:** `ActivityFocusStrip`'s *Longest unbroken block* line ("1h 40m, 09:10–10:50")
-- **Needs backend:** no
-- **Size:** S
-- **Value:** Knowing *when* deep focus happens is what lets someone plan hard work into that slot. The strip already has
-  both times.
-
-### OP9. Tell me which days a bulk apply failed on
-- **Source:** from data-map (backlog `BatchOperationResult.results[]`)
-- **Data it spends:** `BatchOperationResult.results[].calendarId`, `.succeeded`
-- **Where it would surface:** the partial-success snackbar in `useBulkTaskAction.ts`, which could name the failed dates
-  or select them on the calendar
-- **Needs backend:** no
-- **Size:** S
-- **Value:** "Applied to 5 of 7 days" leaves the user hunting through a month for the two empty days, the kind of
-  fiddly cleanup that gets put off.
-
-### OP10. Show a repeating task's schedule, and why it is suggested today
-- **Source:** from data-map (backlog `RepeatingPlannerTask` rule fields, echo; `SuggestionResponse` rule fields, unread)
-- **Data it spends:** `RepeatingPlannerTask.scheduledDays`, `.scheduledDates`, `.activeFromDate`, `.activeToDate`,
-  `.scheduledForDayTypes`, `.isActive`, and the same six on `SuggestionResponse`
-- **Where it would surface:** a rule-summary column and dimmed inactive rows in `RepeatingTasksTab`, and a "why"
-  caption on each suggestion in `RepeatingTasksSection` ("every Tue · until 30 Nov")
-- **Needs backend:** no
-- **Size:** S. Formatting only. The day-of-week labels exist (`useDayOfWeekOptions`).
-- **Value:** Today the only way to check a recurrence is to open its dialog, and a suggestion appears with no reason
-  given. A wrong rule then shows up as a suggestion on a day it shouldn't, with no clue why.
-
-### OP13. Per-item time in the daily recap
-- **Source:** from data-map (backlog `DailyRecap.items[].timeLoggedSeconds`)
-- **Data it spends:** `DailyRecap.items[].timeLoggedSeconds`
-- **Where it would surface:** `DailyRecapCard` rows on `/todo-list/:id`
-- **Needs backend:** no
-- **Size:** S
-- **Value:** "Done today: 5 items, 2h logged" hides which item took the 2h. Per-row time is what makes the recap feel
-  earned, and it feeds the user's own sense of estimates.
+8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
 ### OP14. Show the baseline behind each "+40%"
 - **Source:** from data-map (backlog `ActivityStat.averageSeconds`, `HistorySummaryCard.averageSeconds`)
@@ -150,6 +111,82 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP13**, built 2026-10-04, app-side only. `DailyRecapItem` already sent and parsed `timeLoggedSeconds`, the
+  seconds linked to that exact item (OP6's follow-up), so the backend did not change. `DailyRecapCard` replaces the
+  comma-joined names with one row per item, in completion order: the name, then its time ("Write report 1h 30m"). An
+  item completed with no recording shows only its name, which is the ordinary case and not a gap. A time under a
+  minute prints in seconds ("40s"), because `fromSeconds` floors it to "0m". After five rows the rest fold behind
+  "+ N more" / *Show less* (`aria-expanded`), so a full day cannot push the list itself down. The name and the time
+  are separated by a real `&nbsp;`, not only a flex gap, which read "Gym45m" as text.
+  Checked live with the recap response route-patched to seven items: the five rows, the toggle and the sub-minute
+  row rendered as above. The real seed day showed one item with no time and no time label. No console errors.
+  `e2e/tests/daily-recap-item-time.spec.ts` (2 tests, route-patched) covers the per-row times with a zero row and a
+  sub-minute row, and the fold at five rows. Both passed on 2026-10-04 (16 s).
+
+- **OP10**, built 2026-10-04, in both repos. Both responses already sent every rule field, and the day and day-type
+  names on the wire already match the client enums, so no DTO changed. **"Needs backend: no" was wrong anyway:** the
+  suggestions endpoint checked `activeFromDate` / `activeToDate` only on DateRange rules. A weekly, monthly or day-type
+  rule with a window kept being suggested past its end date, so the new caption would have read "every Sun · until
+  03.10." on 4 Oct. The window now bounds every type, and an unset bound is open. The validator's from ≤ to rule
+  now applies to every type, not only DateRange. `WeeklyRule_OutsideItsWindow_IsNotSuggested` covers an ended window,
+  a future one, and an open start with today as the inclusive end (15/15 in `RepeatingPlannerTaskSuggestionsTests`).
+  This is a query change only, with no migration, but the running API needs a restart to pick it up.
+  `useRecurrenceSummary` (`dayPlanner/composable/`) formats a rule as one line: "every Mon, Wed · until 30.11.",
+  "on weekends", "days 4, 15 of each month", "on Workday, Weekend days", "01.10. – 15.01.2027". The year shows only
+  when it is not the current one. `RepeatingTasksTab` gains a *Schedule* column, and a paused rule is dimmed
+  everywhere except its switch. Each suggestion in `RepeatingTasksSection` gets a caption line with the rule that
+  matched, followed by "seen N×" for a pattern suggestion (the count used to sit on the time line).
+  **Fixed on the way:** the table's *Active* switch sent `{ isActive }` alone to the full-replace PUT, which the
+  validator rejects for its missing activity and importance. It now sends the whole rule.
+  Checked live with five rules created through the API: the table read as above, the switch PUT 200 and kept the
+  importance and dates, and the row dimmed. On 4 Oct, the not-yet-restarted API suggested the ended Sunday rule, which
+  is exactly the bug above. The other matching rules' activities were already planned that day. The rules were
+  deleted afterwards. No console errors.
+  `e2e/tests/repeating-task-schedule.spec.ts` (4 tests; it creates its rules through the API and deletes them) covers
+  the *Schedule* line for all four types with their windows and the year rule, the switch's full-rule PUT with the
+  importance and dates kept, the paused row dimmed while its switch is not, the caption on a matching rule, and a
+  route-patched pattern suggestion reading "every Tue · seen 4×". The same test also asserts that an ended window
+  and a future one are *not* suggested. On 2026-10-04, 3 of 4 passed. The fourth failed only on that window
+  assertion: the running API had started at 20:55:05, 25 s before the endpoint fix was saved, so it still
+  suggested both. It needs the API restart to pass.
+
+- **OP9**, built 2026-10-04, in both repos. **The sizing note was wrong about the backend:** `calendarId` and
+  `succeeded` say *which* day failed, but not *why*. On the day-type batch, the realistic failure is a week marked
+  Workday, where Saturday and Sunday are refused, and "Sat 12.09. failed" alone reads like a bug. The API's
+  `CalendarBatchResult` now carries a nullable `FailureReason` (`NotFound` / `DayTypeNotAllowed` / `Error`), set at
+  every `Failed(...)` site of the three batch endpoints. This is a response field only, with no migration.
+  `CalendarBatchEndpointTests`, `CalendarDayTypeRuleTests` and `ApplyTemplateEdgeTests` pin the reason on every failed
+  row (48/48 pass). On `/day-planner`, all three partial snackbars (template apply, copy day, day type) now name the
+  failed dates, grouped by reason, five per group before "+N more": "Day type updated — 1/3 days succeeded,
+  2 failed. Sa 12.09., Su 13.09.: a weekend day cannot be a workday. The failed days are still selected." The
+  day-type call site turns `DayTypeNotAllowed` into the specific direction (workday on a weekend, or weekend on a
+  weekday). The snackbar stays up for 10 s and can be closed. The failed days stay selected in bulk-select mode, so
+  the grid marks them. A `NotFound` day is left out of that selection because it has no cell. A clean batch closes
+  the mode as before. An API without the field falls back to *could not be saved*.
+  **Fixed on the way:** the bar's *Change day type* select was uncontrolled. Once the bar stayed open, it kept
+  showing the last pick, and picking the same type again (the retry) emitted nothing. It is now pinned to `null`.
+  `tasksCopyPartial` said "tasks succeeded", but it counts days.
+  Checked live with the day-type response route-patched to add the reason, because the running API predates it:
+  Fri–Sun → Workday gave the message above with 2 days selected, a second Workday pick fired again (0/2), and Fri
+  alone showed "Day type updated for 1 day" and left bulk mode. After the API restart, the same Fri–Sun run against
+  the real response, with no patch, gave the same message and the weekend-specific reason. No console errors. No e2e
+  spec yet. The seed's
+  Thu 10 and Fri 11 Sep were written as Workday during the check.
+
+- **OP8**, built 2026-10-04, app-side only. `FocusBlockDto` already sent `StartedAt` / `EndedAt` and `FocusBlock.fromJson`
+  already parsed them, so the backend did not change. `ActivityFocusStrip` adds a line under the block's label:
+  "11:00–11:30" for one active day, and "Mon, 9/28, 11:00–11:30" once `daysWithActivity` > 1, because the clock times
+  alone name no day. The times are server instants, so they go through `timeInUserZone`, and the day through
+  `Intl.DateTimeFormat` in `userTimeZone`. The timeline axis does not, because its bounds are calendar-day values. A
+  block with an unparseable time shows no line. Checked live on `/activity-tracking/desktop`: today showed
+  "11:00–11:30" under "JetBrains Rider", which matches its timeline session, and *Last 30 days* read "Mon, 9/28, 11:00–11:30". No
+  console errors. `FocusBlock.fromJson` turns a `null` or missing time into an Invalid Date, because
+  `new Date(null)` is the epoch and printed "09:00–09:00" in a UTC+9 browser (`FocusBlock.test.ts`).
+  `e2e/tests/focus-block-times.spec.ts` (4 tests, route-patched) covers the one-day line, the day prefix over several
+  active days, and no line when the times are omitted or `null`. All 4 passed on 2026-10-04 (17 s). The account's
+  zone follows the browser here (`syncBrowserTimeZone`), so the spec computes its expected strings in the page. Pinning
+  the zone with a CDP override instead writes that zone onto the seed account.
 
 - **OP7**, built 2026-10-04, in both repos. **The sizing note was wrong:** `isTodayComplete` alone could not say "today
   still has to be earned". Its `false` covers both an unfinished today, which breaks the run at midnight, and a today with
