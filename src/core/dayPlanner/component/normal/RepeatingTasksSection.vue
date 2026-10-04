@@ -60,12 +60,18 @@
 						</div>
 						<div class="text-caption text-medium-emphasis">
 							{{ task.startTime.getString() }} – {{ task.endTime.getString() }}
-							<span
-								v-if="task.occurrenceCount !== null"
-								class="ml-1"
-							>
-								· {{ $t('planner.misc.seenCount', { count: task.occurrenceCount }) }}
-							</span>
+						</div>
+						<!-- Why it is suggested today: the rule that matched, and for a pattern how often it was seen. -->
+						<div
+							v-if="whyCaption(task)"
+							class="text-caption text-medium-emphasis d-flex align-center ga-1"
+						>
+							<VIcon
+								icon="rotate"
+								size="10"
+								class="flex-shrink-0"
+							/>
+							<span>{{ whyCaption(task) }}</span>
 						</div>
 						<VChip
 							v-if="task.importance"
@@ -104,7 +110,9 @@
 </template>
 
 <script setup lang="ts">
+	import { useI18n } from 'vue-i18n'
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
+	import { useRecurrenceSummary } from '@/core/dayPlanner/composable/useRecurrenceSummary.ts'
 
 	const { tasks, addedIds } = defineProps<{
 		tasks: SuggestionResponse[]
@@ -114,6 +122,17 @@
 	const emit = defineEmits<{
 		add: [task: SuggestionResponse]
 	}>()
+
+	const { t } = useI18n()
+	const { describeRule } = useRecurrenceSummary()
+
+	function whyCaption(task: SuggestionResponse): string {
+		const parts = [describeRule(task)]
+		if (task.occurrenceCount !== null) {
+			parts.push(t('planner.misc.seenCount', { count: task.occurrenceCount }))
+		}
+		return parts.filter(Boolean).join(' · ')
+	}
 </script>
 
 <style scoped>

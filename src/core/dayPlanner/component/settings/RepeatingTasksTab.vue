@@ -13,8 +13,12 @@
 		@onAdd="taskDialog?.openAddDialog"
 		@onLoadItems="loadItems"
 	>
+		<!-- A paused rule is dimmed everywhere but its switch, which is how it is turned back on. -->
 		<template #item.activity="{ item }">
-			<div class="d-flex align-center ga-2">
+			<div
+				class="d-flex align-center ga-2"
+				:style="pausedStyle(item.id)"
+			>
 				<VSheet
 					:color="taskById(item.id)?.color || 'primary'"
 					width="10"
@@ -25,7 +29,9 @@
 			</div>
 		</template>
 		<template #item.time="{ item }">
-			{{ taskById(item.id)?.startTime.getString() }} – {{ taskById(item.id)?.endTime.getString() }}
+			<span :style="pausedStyle(item.id)">
+				{{ taskById(item.id)?.startTime.getString() }} – {{ taskById(item.id)?.endTime.getString() }}
+			</span>
 		</template>
 		<template #item.recurrenceType="{ item }">
 			<VChip
@@ -33,9 +39,15 @@
 				:prependIcon="getRecurrenceTypeIcon(taskById(item.id)!.recurrenceType)"
 				variant="tonal"
 				color="primaryOutline"
+				:style="pausedStyle(item.id)"
 			>
 				{{ $t(`planner.recurrenceType.${item.recurrenceType}`) }}
 			</VChip>
+		</template>
+		<template #item.schedule="{ item }">
+			<span :style="pausedStyle(item.id)">
+				{{ taskById(item.id) ? describeRule(taskById(item.id)!) : '' }}
+			</span>
 		</template>
 		<template #item.isActive="{ item }">
 			<VSwitch
@@ -77,10 +89,12 @@
 	import type { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { useRepeatingPlannerTaskApi } from '@/core/dayPlanner/api/repeatingPlannerTaskApi.ts'
 	import type { RepeatingPlannerTask } from '@/core/dayPlanner/dto/response/RepeatingPlannerTask.ts'
-	import type { RepeatingPlannerTaskRequest } from '@/core/dayPlanner/dto/request/RepeatingPlannerTaskRequest.ts'
+	import { RepeatingPlannerTaskRequest } from '@/core/dayPlanner/dto/request/RepeatingPlannerTaskRequest.ts'
 	import { getRecurrenceTypeIcon } from '@/core/dayPlanner/dto/enum/RecurrenceType.ts'
+	import { useRecurrenceSummary } from '@/core/dayPlanner/composable/useRecurrenceSummary.ts'
 
 	const { t } = useI18n()
+	const { describeRule } = useRecurrenceSummary()
 	const { fetchAll, fetchById, createWithResponse, update, deleteEntity } = useRepeatingPlannerTaskApi()
 
 	const tasks = ref<RepeatingPlannerTask[]>([])
@@ -96,6 +110,7 @@
 		new TableColumn('activity', t('planner.settings.columns.activity'), false),
 		new TableColumn('time', t('planner.settings.columns.time'), false),
 		new TableColumn('recurrenceType', t('planner.settings.columns.recurrence'), false),
+		new TableColumn('schedule', t('planner.settings.columns.schedule'), false),
 		new TableColumn('isActive', t('planner.settings.columns.active'), false),
 	]
 
@@ -118,6 +133,10 @@
 
 	function taskById(id: number) {
 		return tasks.value.find(t => t.id === id)
+	}
+
+	function pausedStyle(id: number) {
+		return taskById(id)?.isActive === false ? 'opacity: 0.5' : undefined
 	}
 
 	async function loadItems() {
@@ -145,9 +164,12 @@
 		pendingDeleteId.value = null
 	}
 
+	// The update is a full replace, validated like a create, so the toggle sends the whole rule. It used to
+	// send `{ isActive }` alone, which the server rejected for its missing activity and importance.
 	async function onToggleActive(item: RepeatingPlannerTask) {
-		const req: Partial<RepeatingPlannerTaskRequest> = { isActive: !item.isActive }
-		await update(item.id, req as RepeatingPlannerTaskRequest)
-		item.isActive = !item.isActive
+		const req = RepeatingPlannerTaskRequest.fromEntity(item)
+		req.isActive = !item.isActive
+		await update(item.id, req)
+		item.isActive = req.isActive
 	}
 </script>
