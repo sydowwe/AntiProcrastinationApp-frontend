@@ -131,18 +131,6 @@
 - **Value:** Telling a template task from a hand-added one is how a user sees whether their template still fits their
   days. The glossary already claims "the origin survives". This makes that true on screen.
 
-### OP16. Web domain detail: which pages took the time
-- **Source:** from data-map (backlog `DomainDetailsResponse.*`, `DayTotals.totalVisits`; G5, G7)
-- **Data it spends:** `DomainDetailsResponse` (endpoint uncalled) with `PageVisitDto.Path/TotalSeconds/ActiveSeconds/
-  BackgroundSeconds`, and `DayTotalsResponse.TotalEntries` in place of the phantom `totalVisits`
-- **Where it would surface:** the web dashboard's detail panel. The page list becomes a ranked list with times, and the
-  *Visits* row becomes *Entries* with a real number.
-- **Needs backend:** no
-- **Size:** M. Call the endpoint, rewrite `fromJson`, and add a ranked list. The `totalVisits` → `totalEntries` swap
-  alone is S.
-- **Value:** "YouTube: 2h" is a fact. "These three videos" is something the user can act on. The *Visits* row has shown
-  "-" since it was built.
-
 ### OP17. To-do lists and routine rows: category, counts and colour
 - **Source:** from data-map (backlog `TodoList.category`, `TodoListCategory.listCount`, `RoutineTodoListItem.color`)
 - **Data it spends:** `TodoList.category` (echo), `TodoListCategory.listCount` (phantom), `RoutineTodoListItem.color`
@@ -215,6 +203,31 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP16**, built 2026-10-04. The API already had `domain-details`, with ranked per-page times and integration tests
+  (`TrackingDetailsEndpointsTests`). **Follow-up, same day, in the API:** with that list in use, the pie rows' own
+  `pages` (web) and `windowTitles` (desktop) had no reader on either dashboard. They were every distinct URL or title
+  over the span, unbounded, so both were removed (the backend review's `PERF-5`). The totals keep the distinct counts,
+  and the parity tests now hold those against the details endpoints' lists. Selecting a domain on
+  `/activity-tracking` now calls it, with the same envelope and daily window as the desktop and Android lookups. The
+  call can be aborted, it is `_silent`, and it re-fetches when the range changes. `fromJson` parses `PageVisit`
+  (`path`, `totalSeconds`, `activeSeconds`, `backgroundSeconds`). It used to map to a `seconds` member that does not exist.
+  The page list sits **under the chart, at full section width**, not in the side panel. That column is about 155 px
+  even at 1920 px, too narrow for a path. Each row is a link to the page (http(s) only) with its time and the full URL
+  as a tooltip. It shows an "active · in background" caption when the page has background time, and five rows until
+  "+ N more" is clicked. Time the pages do not cover is shown as *Without a page address*. Those entries were tracked
+  to the domain only, and the endpoint leaves them out of `pages`. A domain with no pages at all says so. A 404 (a
+  stale `?selected=`) has its own sentence and no retry. The day total's *Visits* row, a phantom that always read "-",
+  is now *Entries* from `TotalEntries`.
+  **Layout fix found on the way:** the web side panel was a `VCard` placed directly in the flex row. Its
+  `overflow: hidden` drops the card's minimum width to 0, so at `lg` widths the pie (470 px, in a 424 px column)
+  squeezed the panel to 2 px. *Close details* had zero width and could not be clicked. It is now wrapped in a
+  `flex-fill` div, like the desktop and Android sections. The chart still overflows its column on all four dashboards
+  (the `chart-column` class has no CSS anywhere). That part is not fixed here.
+  Four route-mocked tests are in `e2e/tests/tracking-dashboards.draft.spec.ts` (request scope, ranking and "+ 2 more",
+  the remainder, *Entries* instead of *Visits*), and they pass. The 404 and 500 states were checked against the live app
+  with a `playwright-cli run-code` snippet. Checked live against the seed day: `github.com` read
+  `/sydowwe/adhd-time-organizer/pulls` 23m plus 8m without a page, which matches the 1410 s and 484 s in the response.
 
 - **OP11**, built 2026-10-03, app-side only. The API already sent `key`/`label` on all 12 per-source DTOs
   (`IDashboardItem`), so the backend did not change. All 12 client DTOs now parse the pair (`dto/DashboardItem.ts`).

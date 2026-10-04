@@ -58,35 +58,62 @@
 					/>
 				</div>
 
-				<ActivityDetailsPanel
-					class="flex-fill"
-					:mode="detailsMode"
-					:dayTotals="dayTotals"
-					:isRangeMode
-					:domainDetails="selectedDomainDetails"
-					@close="onDetailsClose"
-				/>
+				<!-- Wrapped, like the desktop and Android sections: the card itself is `overflow: hidden`, which
+				     drops its flex minimum to 0, so the chart beside it squeezed it to nothing. -->
+				<div class="flex-fill">
+					<ActivityDetailsPanel
+						:dayTotals
+						:isRangeMode
+						:domain="selectedDetails"
+						@close="onDetailsClose"
+					/>
+				</div>
 			</div>
+
+			<!-- Full width under the chart: the panel beside it is too narrow for a URL path. Keyed on the
+			     domain so a new selection starts collapsed. -->
+			<template v-if="selectedDetails">
+				<VDivider class="my-4" />
+				<DomainDetailsList
+					:key="selectedDetails.key"
+					:details="domainDetails"
+					:loading="detailsLoading"
+					:error="detailsError"
+					@retry="fetchDomainDetails"
+				/>
+			</template>
 		</template>
 	</VCard>
 </template>
 
 <script setup lang="ts">
-	import { computed, ref } from 'vue'
+	import { computed, onBeforeUnmount, ref, watch } from 'vue'
+	import { isAxiosError } from 'axios'
 	import ActivityPieChart from './ActivityPieChart.vue'
 	import ActivityDetailsPanel from './ActivityDetailsPanel.vue'
+	import DomainDetailsList, { type DomainDetailsError } from './DomainDetailsList.vue'
 	import ActivityEmptyState from '@/core/activityTracking/component/ActivityEmptyState.vue'
 	import { getDomainColor } from '@/_common/utils/domainColor.ts'
 	import { foldPieTail } from './PieSegment.ts'
+	import { getDomainDetails } from '@/core/activityTracking/api/activityTrackingApi.ts'
+	import { isRequestCanceled } from '@/_common/axiosConfig.ts'
 	import type { DomainPieData } from '@/core/activityTracking/dto/response/pieChart/DomainPieData.ts'
 	import type { DayTotals } from '@/core/activityTracking/dto/response/pieChart/DayTotals.ts'
+	import type { DomainDetailsResponse } from '@/core/activityTracking/dto/response/DomainDetailsResponse.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 
 	const props = defineProps<{
 		domains: DomainPieData[]
 		dayTotals?: DayTotals
 		loading?: boolean
 		error?: boolean
+		from: Date
+		to: Date
+		// The time-of-day window behind `from`/`to` — the details lookup needs it to count the same
+		// entries the slice it was opened from counts (see `getDomainDetails`).
+		timeFrom: Time
+		timeTo: Time
 		emptyProbeState?: ActivityEmptyProbeState
 		isRangeMode?: boolean
 	}>()
@@ -119,20 +146,56 @@
 		})
 	})
 
-	const selectedDomainDetails = computed(() => {
-		if (!selectedDomain.value) return null
+	// The instant half of the panel: the totals straight off the pie row, so it is never blank while
+	// `domain-details` is in flight. The folded tail is never selectable, so it never reaches here.
+	const selectedDetails = computed(() =>
+		selectedDomain.value ? (props.domains.find(d => d.key === selectedDomain.value) ?? null) : null,
+	)
 
-		const domain = props.domains.find(d => d.key === selectedDomain.value)
-		if (!domain) return null
+	const domainDetails = ref<DomainDetailsResponse | null>(null)
+	const detailsLoading = ref(false)
+	const detailsError = ref<DomainDetailsError | null>(null)
+	let detailsController: AbortController | null = null
 
-		return {
-			...domain,
-			entries: domain.entries ?? 0,
-			pages: domain.pages ?? [],
+	async function fetchDomainDetails() {
+		detailsController?.abort()
+		domainDetails.value = null
+		detailsError.value = null
+
+		const domain = selectedDetails.value
+		if (!domain) return
+
+		const controller = new AbortController()
+		detailsController = controller
+		detailsLoading.value = true
+		try {
+			domainDetails.value = await getDomainDetails(
+				domain.key,
+				props.from.toISOString(),
+				props.to.toISOString(),
+				{ startMinutes: props.timeFrom.getInMinutes, endMinutes: props.timeTo.getInMinutes },
+				controller.signal,
+			)
+		} catch (error) {
+			if (isRequestCanceled(error)) return
+			// 404 is the endpoint's "no entry of this domain inside the slice", a stale `?selected=` on
+			// reload rather than a failure, so it gets its own sentence and no retry.
+			detailsError.value = isAxiosError(error) && error.response?.status === 404 ? 'notFound' : 'failed'
+		} finally {
+			if (detailsController === controller) {
+				detailsLoading.value = false
+				detailsController = null
+			}
 		}
+	}
+
+	// Keyed on the domain and the envelope: a range change with the same domain selected must re-fetch,
+	// and a selection with no matching row must clear.
+	watch(() => [selectedDetails.value?.key, props.from.getTime(), props.to.getTime()], fetchDomainDetails, {
+		immediate: true,
 	})
 
-	const detailsMode = computed(() => (selectedDomain.value ? 'domain' : 'dayTotal'))
+	onBeforeUnmount(() => detailsController?.abort())
 
 	function onSegmentClick(domain: string | null) {
 		selectedDomain.value = domain

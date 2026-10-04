@@ -98,11 +98,12 @@ of its fields is `spent` on the planner's own screens, so it is not in the 121. 
   mapper. Selection, `?selected=` and the details lookup are therefore keyed on the display name, and two desktop
   processes that share a product name collide (`DesktopPieChartSection.vue:175`). The server's `Key`/`Label` pair (G4)
   exists to fix exactly this.
-- `DayTotals.totalVisits` · unread, **phantom**. The *Visits* row always shows "-". The server sends `TotalEntries`
-  instead, which the client drops (G5).
-- `DomainDetailsResponse.domain`, `.totalSeconds`, `.activeSeconds`, `.backgroundSeconds`, `.entries`, `.pages` · unread
-  (derived), 6 fields. `getDomainDetails` has no caller. Wired up (and with its `fromJson` fixed, G7), it turns the flat
-  page list into "which pages took the time".
+- ~~`DayTotals.totalVisits`~~ Removed 2026-10-04 by OP16; the row reads `totalEntries` (G5). Was: unread, **phantom**.
+  The *Visits* row always showed "-". The server sends `TotalEntries` instead, which the client dropped (G5).
+- ~~`DomainDetailsResponse.domain`, `.totalSeconds`, `.activeSeconds`, `.backgroundSeconds`, `.entries`, `.pages`~~
+  `pages` and `totalSeconds` spent 2026-10-04 by OP16: the ranked page list under the web pie, and the time tracked
+  without a URL. `domain`, `activeSeconds`, `backgroundSeconds` and `entries` stay unread, as duplicates of the pie row the
+  panel's instant rows already print. Was: unread (derived), 6 fields. `getDomainDetails` had no caller.
 - `ActivityStat.averageSeconds` · unread (derived), all four ledgers. The baseline average behind each card's ▲/▼ %.
   "+40%" says nothing without "usually 25m".
 - `DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`, `.soundSeconds` · unread
@@ -167,7 +168,8 @@ Not in the 121 (their status is `spent`), but they are the same defect seen from
   `.routineTimePeriodOption` (the server always sends `null`; the form fetches both lookups itself,
   `useActivitySelectionFormState.ts:131-135`).
 - **Duplicates of a value already shown, unread (11).** tracking: summary `totalSeconds` (W/U), pie `seconds` (A), pie
-  `entries` and `windowTitles` (D), details `processName` (D), Android details `packageName`/`appLabel`/`totalSeconds`,
+  `entries` and ~~`windowTitles`~~ (D; the list was dropped from the API and the DTO on 2026-10-04, PERF-5, along
+  with the web pie's `pages`), details `processName` (D), Android details `packageName`/`appLabel`/`totalSeconds`,
   bars `totalSeconds` (W/D). history: `CalendarActivityRoleSummary.roleId` (`roleName` is the key). dayPlanner:
   `DayPlan.date` (echo of the requested date).
 - **Echo by function (3).** `TrackerDesktopMapping.isActive` / Android twin (the switch is both control and display, and
@@ -193,13 +195,14 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
   `DesktopWindowActivity`, `AndroidWindowApp`, `TimelineSessionDto`, `DesktopTimelineSession`, `AndroidTimelineSession`.
   The server added them (`IDashboardItem.cs`) so the client would stop selecting on six differently named fields. The
   client parses neither.
-- **G5. `DayTotalsResponse.TotalEntries`** (tracking). Dropped, while the phantom `totalVisits` is rendered as "-".
+- ~~**G5. `DayTotalsResponse.TotalEntries`**~~ Parsed and spent 2026-10-04 by OP16 (the *Entries* row). Was
+  (tracking): dropped, while the phantom `totalVisits` was rendered as "-".
 - **G6. `LoginResponse.requiresTwoFactorSetup`; Google sign-in `requiresTwoFactor`, `requiresTwoFactorSetup`**
   (account). The client never branches on them, and the server's forced-setup step (`SetupTwoFactorForLoginEndpoint`)
   has no caller. A Google sign-in is always treated as complete.
-- **G7. `DomainDetailsResponse.pages[].{Path, TotalSeconds, ActiveSeconds, BackgroundSeconds}`** (tracking). `fromJson`
-  maps pages to `{url, seconds}`, and there is no `seconds` member, so per-page time is lost even at parse. Moot until
-  something calls the endpoint.
+- ~~**G7. `DomainDetailsResponse.pages[].{Path, TotalSeconds, ActiveSeconds, BackgroundSeconds}`**~~ Parsed and spent
+  2026-10-04 by OP16 (`PageVisit`). Was (tracking): `fromJson` mapped pages to `{url, seconds}`, and there is no
+  `seconds` member, so per-page time was lost even at parse.
 
 ### Deliberate or harmless
 
@@ -216,14 +219,15 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
 
 ### Endpoints with no client caller
 
-- `GET …/domain-details` (`getDomainDetails`, `activityTrackingApi.ts:45-55`).
+- ~~`GET …/domain-details` (`getDomainDetails`, `activityTrackingApi.ts:45-55`).~~ Called since OP16 (2026-10-04),
+  from `ActivityPieChartSection.vue`.
 - `/leisure/suggestion/draw`. The picker ranks client-side over the three grids.
 - `SetupTwoFactorForLoginEndpoint` (G6).
 
 ### The reverse: the client reads what the server never sends
 
 Phantoms: `TodoListCategory.listCount`, `RoutineTodoListItem.color`, `TodoList.description`, `PlannerTask.isFromTemplate`,
-`DayTotals.totalVisits`, `SummaryCardsData.totalSeconds` (web ledger only), `User.lastLoginAt`, `LoginResponse.email`, and
+~~`DayTotals.totalVisits`~~ (removed by OP16), `SummaryCardsData.totalSeconds` (web ledger only), `User.lastLoginAt`, `LoginResponse.email`, and
 the nested `sortOrder` on leisure lookup copies. `TemplatePlannerTask.gridRowStart`/`gridRowEnd`/`isDuringBackgroundTask`
 are phantoms too, but deliberately: they are client layout state.
 
@@ -382,7 +386,8 @@ What the flow shows:
 | summary `totalSeconds` · W U, `ActivityStat.averageSeconds` (2) | activityTracking | duration (observed / baseline average) | derived · unread |
 | desktop details `totalSeconds`, `activeSeconds`, `backgroundSeconds`, `fullscreenSeconds`, `soundSeconds`, `monitorBreakdown[].activeSeconds`, `windowTitles[].totalSeconds` (7) | activityTracking | duration (observed) | derived · spent |
 | desktop `windowTitles[].activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`, `.soundSeconds` (4) | activityTracking | duration (observed): per-title split | derived · unread |
-| `DomainDetailsResponse.totalSeconds`, `.activeSeconds`, `.backgroundSeconds` (3) | activityTracking | duration (observed); endpoint uncalled | derived · unread |
+| `DomainDetailsResponse.totalSeconds`, `pages[].totalSeconds`, `.activeSeconds`, `.backgroundSeconds` (4) | activityTracking | duration (observed): page list and its without-a-URL remainder (OP16) | derived · spent |
+| `DomainDetailsResponse.activeSeconds`, `.backgroundSeconds` (2) | activityTracking | duration (observed): duplicate of the pie row | derived · unread |
 | Android details `meanSessionSeconds`, `longestSessionSeconds`, `devices[].totalSeconds`, `days[].totalSeconds` (4) | activityTracking | duration (observed) | derived · spent |
 | Android details `totalSeconds` | activityTracking | duration (observed): duplicate of the pie row | derived · unread |
 | `FocusMetricsResponse.medianSessionSeconds`, `.longestGapSeconds`, `longestBlock.seconds` (3) | activityTracking | duration (observed) | derived · spent |
@@ -485,8 +490,9 @@ Counts are fields after the corrections below. "derived" figures are already ins
 - todo-lists inventory: "create, rename, prefilled reopen confirmed end-to-end". The Description field in the same dialog
   never persists (G2).
 - planner-day inventory and usecase imply *Show details panel by default* takes effect. No view reads it.
-- tracking-dashboards: `DayTotals.totalVisits` is not "unpopulated in this seed". No backend member exists.
-  `DomainDetailsResponse` is "fetched": it is never fetched.
+- ~~tracking-dashboards: `DayTotals.totalVisits` is not "unpopulated in this seed". No backend member exists.
+  `DomainDetailsResponse` is "fetched": it is never fetched.~~ Both settled by OP16 (2026-10-04): the field is gone and
+  the endpoint is fetched.
 - ~~tracking-dashboards: dashboards are "keyed on `processName` / `packageName`". The client keys selection on the
   display name.~~ True since OP11 (2026-10-03).
 

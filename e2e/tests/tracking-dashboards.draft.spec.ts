@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/auth'
+import { expect, seedDateParam, test } from '../fixtures/auth'
 
 // Structural-tier facts only, captured live via playwright-cli during the tracking-dashboards
 // inventory pass (docs/views/tracking-dashboards/). Semantic-tier claims — anything asserting a
@@ -56,6 +56,80 @@ test.describe('Web-extension dashboard (/activity-tracking)', () => {
 		// deliberately not asserting they match (see findings.md — wording is inconsistent), just that
 		// the empty state renders rather than an error.
 		await expect(authenticatedPage.getByText(/No activity recorded for this (period|day)/).first()).toBeVisible()
+	})
+})
+
+// OP16. The fixture tracks one URL per domain, so ranking, "show more" and the active/background caption
+// need more pages than it has. `domain-details` is served by a route mock and the pie stays real.
+test.describe('Web dashboard, which pages took the time (/activity-tracking — OP16)', () => {
+	// Seven pages, longest first as the server ranks them, plus 15 minutes the pages do not cover.
+	const PAGES = Array.from({ length: 7 }, (_, i) => ({
+		url: `https://example.org/page-${i}`,
+		path: `/page-${i}`,
+		totalSeconds: (7 - i) * 600,
+		activeSeconds: i === 0 ? 3900 : (7 - i) * 600,
+		backgroundSeconds: i === 0 ? 300 : 0,
+	}))
+	const PAGES_SECONDS = PAGES.reduce((sum, p) => sum + p.totalSeconds, 0)
+
+	test.beforeEach(async ({ authenticatedPage, seed }) => {
+		await authenticatedPage.route('**/api/activity-tracking/web-extension/domain-details?*', route => {
+			const domain = new URL(route.request().url()).searchParams.get('domain')
+			return route.fulfill({
+				json: {
+					domain,
+					totalSeconds: PAGES_SECONDS + 900,
+					activeSeconds: PAGES_SECONDS,
+					backgroundSeconds: 900,
+					entries: 40,
+					pages: PAGES,
+				},
+			})
+		})
+		await authenticatedPage.goto(`/activity-tracking?date=${seedDateParam(seed)}`)
+		await authenticatedPage.getByRole('heading', { name: 'Activity Dashboard' }).waitFor({ state: 'visible' })
+	})
+
+	test('the day total counts entries, not the visits the server never sends', async ({ authenticatedPage }) => {
+		const panel = authenticatedPage.locator('#app')
+		await expect(panel.getByText('Entries:')).toBeVisible()
+		await expect(panel.getByText('Visits:')).toHaveCount(0)
+	})
+
+	test('selecting a domain asks for that domain inside the dashboard\'s window', async ({ authenticatedPage }) => {
+		const requestPromise = authenticatedPage.waitForRequest(/\/web-extension\/domain-details/)
+		await authenticatedPage.getByRole('button', { name: /^View details for/ }).first().click()
+
+		const params = new URL((await requestPromise).url()).searchParams
+		expect(params.get('domain')).toBe(new URL(authenticatedPage.url()).searchParams.get('selected'))
+		expect(params.get('from')).toBeTruthy()
+		expect(params.get('to')).toBeTruthy()
+		expect(params.get('windowStartMinutes')).toMatch(/^\d+$/)
+		expect(params.get('windowEndMinutes')).toMatch(/^\d+$/)
+	})
+
+	test('the pages are listed longest first with their time, five at a time', async ({ authenticatedPage }) => {
+		await authenticatedPage.getByRole('button', { name: /^View details for/ }).first().click()
+
+		const pages = authenticatedPage.getByTestId('domain-details-pages').getByRole('link')
+		await expect(pages).toHaveCount(5)
+		await expect(pages.first()).toHaveAttribute('href', 'https://example.org/page-0')
+		await expect(pages.first()).toContainText('/page-0')
+		await expect(pages.first()).toContainText('in background')
+		await expect(pages.nth(4)).toContainText('/page-4')
+
+		await authenticatedPage.getByRole('button', { name: '+ 2 more' }).click()
+		await expect(pages).toHaveCount(7)
+		await expect(pages.last()).toContainText('/page-6')
+	})
+
+	test('time tracked without a URL is shown as the remainder', async ({ authenticatedPage }) => {
+		await authenticatedPage.getByRole('button', { name: /^View details for/ }).first().click()
+		await authenticatedPage.getByTestId('domain-details-pages').waitFor({ state: 'visible' })
+
+		const remainder = authenticatedPage.locator('#app').getByText('Without a page address:')
+		await expect(remainder).toBeVisible()
+		await expect(remainder.locator('..')).toContainText('15m')
 	})
 })
 
@@ -132,7 +206,6 @@ test.describe('Desktop dashboard, two processes under one product name (/activit
 						activeSeconds: p.seconds,
 						backgroundSeconds: 0,
 						totalSeconds: p.seconds,
-						windowTitles: [],
 						entries: 10,
 					})),
 					totals: {

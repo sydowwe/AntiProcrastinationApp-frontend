@@ -42,14 +42,30 @@ export async function getFocusMetrics(
 	return FocusMetricsResponse.fromJson(data)
 }
 
+/**
+ * The web sibling of `getDesktopProcessDetails`: the same envelope (`from`/`to` as instants) and the same
+ * optional daily window, which narrows it back to the time-of-day slice the pie was drawn with. See the
+ * desktop twin for why the window matters over a multi-day span. Answers 404 when no entry of that domain
+ * starts inside the slice, typically a stale `?selected=` on reload. `_silent` so the panel can word that
+ * itself.
+ */
 export async function getDomainDetails(
-	date: string,
-	timeFrom: string,
-	timeTo: string,
 	domain: string,
+	from: string,
+	to: string,
+	dailyWindow?: { startMinutes: number; endMinutes: number },
+	signal?: AbortSignal,
 ): Promise<DomainDetailsResponse> {
 	const { data } = await API.get(`${BASE_URL}/domain-details`, {
-		params: { date, timeFrom, timeTo, domain },
+		params: {
+			domain,
+			from,
+			to,
+			windowStartMinutes: dailyWindow?.startMinutes,
+			windowEndMinutes: dailyWindow?.endMinutes,
+		},
+		signal,
+		_silent: true,
 	})
 	return DomainDetailsResponse.fromJson(data)
 }

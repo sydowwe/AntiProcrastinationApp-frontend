@@ -9,7 +9,7 @@ export class DesktopProcessPieData implements DashboardItem {
 		public activeSeconds: number,
 		public backgroundSeconds: number,
 		public totalSeconds: number,
-		public windowTitles: string[],
+		// No window-title list: the API dropped it (PERF-5). `process-details` has the ranked one.
 		public entries: number,
 	) {}
 
@@ -23,7 +23,6 @@ export class DesktopProcessPieData implements DashboardItem {
 			json.activeSeconds,
 			json.backgroundSeconds,
 			json.totalSeconds,
-			json.windowTitles ?? [],
 			json.entries,
 		)
 	}

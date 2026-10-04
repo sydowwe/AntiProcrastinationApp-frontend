@@ -8,7 +8,7 @@ export class DomainPieData implements DashboardItem {
 		public activeSeconds: number,
 		public backgroundSeconds: number,
 		public totalSeconds: number,
-		public pages: string[],
+		// No page list: the API dropped it (PERF-5). `domain-details` has the ranked one (OP16).
 		public entries: number,
 	) {}
 
@@ -21,7 +21,6 @@ export class DomainPieData implements DashboardItem {
 			json.activeSeconds,
 			json.backgroundSeconds,
 			json.totalSeconds,
-			json.pages,
 			json.entries,
 		)
 	}

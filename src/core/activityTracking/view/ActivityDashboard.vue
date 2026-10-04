@@ -83,6 +83,10 @@
 						:dayTotals="pieChartData?.totals"
 						:loading="pieChartLoading"
 						:error="pieChartError"
+						:from="timelineFrom"
+						:to="timelineTo"
+						:timeFrom
+						:timeTo
 						:emptyProbeState
 						:isRangeMode
 						@retry="fetchPieChart"

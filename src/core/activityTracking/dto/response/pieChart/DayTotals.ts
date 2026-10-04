@@ -5,7 +5,8 @@ export class DayTotals {
 		public backgroundSeconds: number,
 		public totalDomains: number,
 		public totalPages: number,
-		public totalVisits?: number,
+		/** Count of tracked window records, the same unit as `DomainDetailsResponse.entries`. */
+		public totalEntries: number,
 	) {}
 
 	static fromJson(json: any): DayTotals {
@@ -15,7 +16,7 @@ export class DayTotals {
 			json.backgroundSeconds,
 			json.totalDomains,
 			json.totalPages,
-			json.totalVisits,
+			json.totalEntries ?? 0,
 		)
 	}
 }
