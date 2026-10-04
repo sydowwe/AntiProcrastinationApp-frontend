@@ -168,6 +168,285 @@
 - **Risk:** if §S3 lands and the server starts discounting unconfigured channels, P6's new sentence is still true. It
   describes the in-app exemption, which §S3 does not touch.
 
+## S1. Run history on job detail has a 0 px scroll box
+> ✅ **FIXED 2026-10-04** (framework `ff91bec`). Took the local fix. `JobRunHistory`'s root is a
+> `min(70vh, 900px)` flex column, its toolbar is `flex-shrink-0`, and the table is `flex-1-1` + `min-height: 0`. A
+> definite height there makes the job page taller than the main area. Its parent is `SchedulerDetailPage`'s flex
+> column, so the job page's own cards then shrank the S2 way. Both cards got `flex-shrink-0`. The orphaned alert got
+> `flex-0-0`, because `VAlert` declares `flex: 1 1 0%` and shrink-0 alone leaves a zero basis at padding height (found
+> on S18). The draft spec's *"the run-history grid shows its rows"* is now a real test, the replay test uses `.click()`,
+> and the matching comment in run detail's `beforeEach` was left alone. **Verified** in the browser (`playwright-cli`,
+> 1440×900): `/planovac/ulohy/59` measured `.v-table__wrapper` 524/524 (was 0/108), with its row on screen. The page
+> scrolls (836/944), nothing is clipped, and the footer sits at the table's bottom. Grepped `BasicTable` under
+> `modules/`. The other five mounts (the jobs list, the reminder register, upcoming, my reminders and dispatch history)
+> all sit in a full-page `h-100 d-flex flex-column` container, so the chain is intact. Only the history page was
+> measured (S18). The orphaned alert was checked with the job response routed to `isOrphaned: true`, since no real job
+> is orphaned. The page was 1044 px of content in an 836 px column, the alert 84/84 (`flex-basis: auto`) and both cards
+> unclipped. **e2e** (2026-10-04): `scheduler.draft.spec.ts` gave 19 passed and 12 skipped (the remaining `fixme`s),
+> including the new run-history test and the replay `.click()`. Neither new test was run against the pre-fix
+> framework to watch it fail.
+- **Scope:** **[framework]** `src/_common/modules/scheduler/` (submodule commit + pointer bump)
+- **Closes:** `scheduler/X1`
+- **Root cause:** `BasicTable`'s root is `h-100 d-flex flex-column` and needs a definite-height flex parent (the
+  contract `FW4` documented in `components.md › Data tables › Layout`). `JobRunHistory` is mounted in a plain `VCard`
+  inside `SchedulerDetailPage`'s content-height `VContainer`, so `.v-table__wrapper` resolves to 0 px at every viewport:
+  the header row and every data row are clipped, and the footer and toolbar intercept clicks. The jobs list works only
+  because its own `VContainer` is `h-100 d-flex flex-column`. This is the same shape as the app's `F12`.
+- **Files:** `component/JobRunHistory.vue` (root `div.d-flex.flex-column`, `BasicTable`), `view/SchedulerJobDetailView.vue:143-154`
+  (the wrapping `VCard`), `component/SchedulerDetailPage.vue` (container).
+- **What to change:** give the run grid a definite height inside the job page. Simplest: a fixed/min height on the
+  `JobRunHistory` root (e.g. `height: min(70vh, 900px)`) with the table `flex-fill` + `min-height: 0`. Alternative:
+  make the detail page a height-bounded flex column down to the card — but that also changes run detail's scrolling,
+  so prefer the local fix.
+- **Do not change:** `BasicTable`'s default layout (a framework-wide default; `FW4` chose documentation).
+- **Verification:** `scheduler/X1` `Verify:`; also un-`fixme` *"the run-history grid shows its rows"* in
+  `e2e/tests/scheduler.draft.spec.ts` and switch the replay test from `focus()`+Enter to `.click()`.
+- **Risk:** any other framework page that nests `BasicTable` in a card has the same bug. Grep `BasicTable` under
+  `src/_common/modules/` while you are there, but fix only what you measure.
+
+## S2. Needs-attention children shrink — rollup card crushed
+> ✅ **FIXED 2026-10-04** (framework `d21119c`). `flex-shrink-0` on every direct child of the page column: the header,
+> spinner, count row, rollup card, all-clear card and list row. The load-error alert got `flex-0-0` (see S1's note on
+> `VAlert`). The `d-sr-only` live region is absolutely positioned, so it is not a flex item and was left alone. The
+> draft spec's B5 `fixme` became a real test, asserting the rollup card is not clipped. **Verified** at 1440×900 with
+> the overdue list populated: the rollup card measured 104/104 (was 32/104), and the container scrolls (836/1668)
+> instead of clipping. With `/scheduler-dashboard/health` routed, the all-clear branch showed every card at full height
+> (rollup 104/104, all-clear 200/200), and a 500 showed the load-error alert at 60/60 (`flex-basis: auto`). Both fit
+> inside the viewport, so they confirm the classes rather than exercise the squeeze. The B5 e2e test passes (in the
+> S1 run above).
+- **Scope:** **[framework]** `view/SchedulerNeedsAttentionView.vue`
+- **Closes:** `scheduler/B5`
+- **Root cause:** the page's `VContainer` is `d-flex flex-column ga-4` and, inside the app's height-bounded main area, a
+  836 px scroll box holding 1596 px of content. Every child is `flex-shrink: 1`, and the rollup `VCard`
+  (`overflow: hidden`) is the one that gives way — 32 px of a 104 px card.
+- **Files:** `SchedulerNeedsAttentionView.vue:2-5` (container), `:118-176` (rollup card).
+- **What to change:** `flex-shrink-0` on the container's direct children (the count row, the rollup card, the list
+  row, the all-clear card), or drop `d-flex flex-column` for a plain block stack.
+- **Verification:** `scheduler/B5` `Verify:` at 1440×900 with the overdue list populated.
+- **Risk:** none beyond this view.
+
+## S18. Reminder pages clip their own content — detail cards and the history notice shrink
+> ✅ **FIXED 2026-10-04** (framework `7c048c2`). Detail and overview: `flex-shrink-0` on every direct child, keeping
+> the flex column and its `ga-4`. History: the header row is `flex-shrink-0` and the alert `flex-0-0`. The first try,
+> `flex-shrink-0` on the alert, changed nothing (16/44 px), because `VAlert` declares `flex: 1 1 0%`. A 0% basis that
+> cannot shrink still renders as just its padding. The announcer is `d-sr-only` and absolutely positioned, so it was
+> left alone; it reads 1/24 by design. `components.md › Data tables › Layout` gained a paragraph on the
+> shrinking-sibling case and the `VAlert` basis. **Verified** as `adminUser`, since the seed's `primaryUser` gets 403
+> on every reminder-admin endpoint. At 1440×900, `/pripomienky/register/23203` and `/23201` showed all six cards at
+> full height (Content 277/277, was 192/277), and the container scrolls. On `/pripomienky/historia` the alert measured
+> 44/44, the table filled the rest (696 px, which adds up to the 836 px column exactly), and the footer was flush with
+> the table's bottom. At 1440×720, `/pripomienky/prehlad` had no card or alert with `scrollHeight > clientHeight`, and
+> the history grid scrolled internally (458/497) with its footer at 704 px of 720. **e2e** (2026-10-04): the
+> X1 and B6 `fixme`s in `reminders-admin.draft.spec.ts` became real tests (no clipped card on the recurring
+> definition's detail; the history notice not clipped), and the file gave 47 passed and 11 skipped. **Not verified:** the
+> overview's failure list was not long enough to need its own scroll area.
+- **Scope:** **[framework]** `src/_common/modules/reminders/view/` — three containers
+- **Closes:** `reminders-admin/X1`, `reminders-admin/B6`
+- **Root cause:** the `scheduler/B5` shape (S2) again. Each page's `VContainer` is a `d-flex flex-column` inside the
+  app's height-bounded main area, and its children keep `flex-shrink: 1`, so `overflow: hidden` children give way
+  instead of the page scrolling. Detail: all six cards shrink below their content (e.g. Content 192/277 px), so key,
+  lifecycle, due date, lead chips and recipients show only their top pixels at 1440×900, and the container does not
+  scroll. History: the table is meant to fill (`h-100`), but the info `VAlert` above it shrinks to 16/44 px and its
+  sentence disappears.
+- **Files:** `ReminderDefinitionDetailView.vue:2-5`; `ReminderDispatchHistoryView.vue:2-5, 79-85`;
+  `ReminderOverviewView.vue:2-5` (same container as the detail; not yet clipping, fix it in the same edit).
+- **What to change:** detail and overview: drop `d-flex flex-column` for a block stack (keep the spacing), or add
+  `flex-shrink-0` to every direct child. History: `flex-shrink-0` on the alert and the announcer row only. The table
+  must keep filling.
+- **Do not change:** S2's scheduler view, which is its own batch, or `BasicTable`'s layout contract (`FW4`).
+- **Verification:** `reminders-admin/X1` and `B6` `Verify:` at 1440×900. Then open `/pripomienky/prehlad` at 1440×720
+  and confirm no card has `scrollHeight > clientHeight` except the failure list's own scroll area.
+- **Risk:** the history table's height. Check that its footer stays pinned and the grid still scrolls internally.
+
+## S19. Reminder grid DTOs drop schedule fields the server sends
+> ✅ **FIXED 2026-10-04** (framework `f103416`). `ReminderDefinitionGridResponse` maps `dueAt`, `intervalPreset` and
+> `cron` → `cronExpression`. `UpcomingReminderGridResponse` maps `dueAt`, which is null on the personal route. Both admin
+> views pass all four `ReminderScheduleDisplay` props with `:dueAt="item.dueAt"`, and the `TODO(Bn)` is gone.
+> `hasLeadOffsets` counts only `offsetMinutes < 0`. `MyRemindersView` still passes `nextOccurrenceAt`, as the batch
+> required. **Verified** as `adminUser` (seed dates had moved since the unit, so #23001 is now due 05.10): the
+> register's #23003 reads "Monthly". #23001 reads "Due 05.10.2026 17:00:00" on both the register and upcoming, while
+> Next occurrence reads 16:30. "With lead time" shows on #23101 and #23001 and not on #23002. Side effect, as intended:
+> the paused and cancelled one-shots (#23004, #23005) now show their due date instead of a bare "One-shot", because
+> they have no next occurrence to fall back on. A `RecurringCron` row is not in the seed. Its mapping was checked by
+> feeding a `cron`-shaped row through `fromJson` in the page (→ `cronExpression` set, `dueAt` null), and the display
+> path is the one Upcoming already used. e2e: B1, B2 (register and upcoming) and P4 are now real tests in
+> `reminders-admin.draft.spec.ts`, read against the detail page's *Due at* rather than a hardcoded time.
+- **Scope:** **[framework]** `modules/reminders/dto/response/{ReminderDefinitionGridResponse,UpcomingReminderGridResponse}.ts`,
+  `view/{ReminderDefinitionsView,ReminderUpcomingView}.vue`
+- **Closes:** `reminders-admin/B1`, `B2`, `P4`
+- **Root cause:** the admin grid endpoints (`POST /reminder-definition/grid`, `POST /reminder-dashboard/upcoming`)
+  now return the full definition row: `dueAt`, `intervalPreset`, `cron`, `anchorDate`, `endsAt`, `leadOffsets[]`,
+  `recipients[]` and `payloadJson`. `ReminderDefinitionGridResponse.fromJson` maps eight fields and drops the schedule,
+  so the register's recurring row reads "⟳ —". Neither DTO maps `dueAt`, so both views pass `nextOccurrenceAt` as
+  "Due", which is the next lead-time nudge. #23101 reads "Due … 12:00" but is due at 13:00. The register's
+  `TODO(Bn)` premise ("grid response has no cronExpression/intervalPreset") is stale, and no ask was ever written.
+  Separately, `hasLeadOffsets = leadOffsets.length > 0` counts a lone `0` offset (the deadline itself) as a lead time.
+- **Files:** `ReminderDefinitionGridResponse.ts:21-32`; `UpcomingReminderGridResponse.ts:60-81` (`:76`
+  `hasLeadOffsets`); `ReminderDefinitionsView.vue:94-100` (and its `TODO(Bn)`); `ReminderUpcomingView.vue:120-125`.
+- **What to change:** add `dueAt`, `intervalPreset`, `cronExpression` (wire key `cron`, the mapping Upcoming already
+  uses) to the register DTO, and `dueAt` to the upcoming DTO. Pass all four `ReminderScheduleDisplay` props with
+  `:dueAt="item.dueAt"` in both views, and delete the `TODO(Bn)`. `hasLeadOffsets` becomes "any offset < 0".
+- **Do not change:** `MyRemindersView` / the personal `my-upcoming` projection. Per the DTO's own header it is a
+  narrower route, and its missing `intervalPreset` is `reminders-user/B4`, escalated as §S6, not this.
+- **Verification:** the three findings' `Verify:` blocks.
+- **Risk:** the upcoming DTO is shared with `MyRemindersView`. `dueAt` is absent on that route, so it must default to
+  `null` and the personal view must keep passing what it passes today.
+
+## S20. Date-only filter bounds are sent as instants, so "to" excludes its own day
+> ✅ **FIXED 2026-10-04** (framework `4920a5b`). The server compares `<=` in all three places
+> (`ReminderDashboardQueries` for upcoming, my-upcoming and history; `ReminderDefinitionGridEndpoint`), so the
+> end-of-day form was chosen, which needs no server change. New `dto/request/dateOnlyBound.ts` (`endOfLocalDay`). Each
+> of the four filters has a `toJSON` that sends its `to` field as local 23:59:59.999. The filter object, the `from`
+> bounds and the URL codec are unchanged. All eight date chips use `formatToDate`. The overview's `dueSoonRoute`
+> comment was rewritten: the list can now exceed the card only by rows later on the window's last day than now.
+> **Verified** as `adminUser`: `/pripomienky/nadchadzajuce?to=2026-10-05` lists #23101 and #23001 (05.10 16:30), and the
+> request body carries `"nextOccurrenceTo":"2026-10-05T21:59:59.999Z"`. The chip reads "Next occurrence to:
+> 05.10.2026". `/pripomienky/historia?from=2026-09-28&to=2026-09-28` keeps both 28.09 rows, and the chips show dates
+> only. `MyReminderFilter` was checked by importing it through Vite in the page: `from` serializes to the start of the
+> day and `to` to the end, and the object still holds midnight. On screen as `primaryUser`,
+> `/pripomienky/moje?to=2026-10-05` keeps the 05.10 16:30 row, and its chip reads "Next occurrence to: 05.10.2026"
+> (`reminders-user/B3`). e2e: B4/P8 on upcoming and history's B4 are real tests; the day is read off a row, not
+> computed. **Not verified:** the overview card count against its drill-down.
+- **Scope:** **[framework]** `modules/reminders/dto/request/{reminderFilterParams,*Filter}.ts`, the three list views'
+  `chipFormatters`, `view/ReminderOverviewView.vue` (`dueSoonRoute`)
+- **Closes:** `reminders-admin/B4`, `P8`, `reminders-user/B3` (the same codec, reached through `MyReminderFilter`.
+  Observed: `?to` = 2 Oct sends `2026-10-01T22:00:00.000Z` and lists 0 rows, and the chip reads "… 0:00:00").
+- **Root cause:** every date filter in the module is a `VDateInput` day, carried as a `Date` at local midnight and
+  sent as that instant. The server compares instants, so an upper bound named "2 Oct" ends at the *start* of 2 Oct
+  (`?to=2026-10-02` → `"nextOccurrenceTo":"2026-10-01T22:00:00.000Z"`, and #23001 at 02.10 16:30 is excluded).
+  History's `to` has the same problem: `?to=2026-09-25` drops both 25.09 dispatches. The chips then print the bound as
+  an instant ("… 03.10.2026 0:00:00"), which invites that same misreading.
+- **Files:** `reminderFilterParams.ts:69-75` (`writeDate`/`readDate`); `ReminderDefinitionFilter`,
+  `UpcomingReminderFilter`, `DispatchHistoryFilter`, `MyReminderFilter` (serialization of the `to` fields); chip
+  formatters at `ReminderDefinitionsView.vue:281-288`, `ReminderUpcomingView.vue:265-272`,
+  `ReminderDispatchHistoryView.vue:248-261`; `ReminderOverviewView.vue:411-415`.
+- **What to change:** decide the wire meaning of a date-only upper bound once, for all four filters. Either send the
+  start of the *next* local day (and confirm the server's comparison is `<`), or send local 23:59:59.999. Keep the URL
+  codec as a calendar day. It round-trips cleanly and is not the bug. Chips use `formatToDate`, not `formatInstant`.
+  First, read the server's comparison in `Sydowwe.Reminders` (`<` vs `<=`) and pick the matching option. If it is
+  `<=` on an instant, the end-of-day form is the one that needs no server change.
+- **Do not change:** the `from` bounds (start of day is right for them), or the URL param names that the overview
+  drill-downs build.
+- **Verification:** `reminders-admin/B4`, `P8` and `reminders-user/B3` `Verify:`; the overview's due-soon card count should now equal the
+  upcoming list it links to, including a row due on the window's last day.
+- **Risk:** the overview's due-soon link will gain rows that fall on its last day. That is the intent, since the source
+  comment there already apologises for the mismatch. The timezone is the browser's, not the account's
+  (`reminders-user/U3` asks about that separately).
+
+## S21. Dispatch history renders a raw key for skip reasons the client does not know
+> ✅ **FIXED 2026-10-04** (framework `60c85f0`). `SkipReason` now mirrors the server's eight members, in its order.
+> Both locales gained `AlreadyDispatched`, `QuietHours`, `Cancelled`, `Other` and a `skipReasonUnknown` fallback
+> (sk first). The caption goes through the new `useReminderFormat().formatSkipReason`, which checks the value against
+> `AllSkipReasonList` before building the key. **Verified** as `adminUser`: the seed's QuietHours row (now 30.09, #23203)
+> reads "Skipped / Quiet hours", and `main`'s text contains no `reminderDashboard.` substring (now an e2e test). **Not verified:** the
+> unknown-value fallback live (no such row exists; it was read from source only).
+- **Scope:** **[framework]** `modules/reminders/dto/enum/SkipReason.ts`, `_locales/remindersDashboard.{sk,en}.ts`,
+  `view/ReminderDispatchHistoryView.vue:137-142`
+- **Closes:** `reminders-admin/B5`
+- **Root cause:** contract drift. The server's `SkipReason` (`framework/Sydowwe.Reminders/domain/enum/SkipReason.cs`)
+  has eight members and the client four. The row renders `$t(\`reminderDashboard.skipReason.${item.skipReason}\`)`
+  unchecked, so `QuietHours` shows as "reminderDashboard.skipReason.QuietHours". `Other` is written by the live
+  scanner. Three more are "reserved" server-side.
+- **What to change:** add `AlreadyDispatched`, `QuietHours`, `Cancelled`, `Other` to the enum and both locales (sk
+  first). Route the caption through a helper that falls back to a generic "Skipped (other reason)" key for any value
+  outside the enum, so the next server addition cannot leak a key.
+- **Verification:** `reminders-admin/B5` `Verify:`.
+- **Risk:** none.
+
+## S22. A reminder has no identity on screen — row actions, detail heading, upcoming rows
+> ✅ **FIXED 2026-10-04** (framework `dcd6b11`). `reminderLabel(row)` is exported from `useReminderFormat.ts` (and
+> returned by the composable): `{subjectType} #{subjectId}`, else `#{id}`. The `{kind}` param became `{label}` on
+> `reminders.a11y.{pause,resume,cancel,showDetail}For` and on `reminderDashboard.a11y.viewHistoryFor`, which now read
+> "Pause reminder for Reminder #23001". `snoozeFor` / `dismissFor` keep `{kind}`, because `MyRemindersView` has no
+> subject (§S6). `ReminderActionButtons` builds the label from the `reminderKey` it already receives, so no new prop
+> was needed. The detail `h1` and final crumb use the label, with the kind as a monospace caption. The register's
+> Subject cell uses the same helper. The upcoming caption is now a `RouterLink` to the definition. **Verified** as
+> `adminUser`: on the register, the four Pause buttons have four distinct names (#23101, #23001, #23002, #23003), and
+> Show detail and Cancel are likewise distinct. On upcoming, the four `link "Reminder #…"` go to
+> `/pripomienky/register/233xx|232xx`, and clicking #23001 lands on `/23201` with h1 "Reminder #23001". `/23202` has
+> h1 "Reminder #23002". e2e: A1 (register and upcoming), P3 and P5 are now real tests. The breadcrumb still shows
+> "Reminder register" twice; that is `reminders-admin/B3`, which belongs to S5.
+- **Scope:** **[framework]** `modules/reminders/view/{ReminderDefinitionsView,ReminderUpcomingView,ReminderDefinitionDetailView}.vue`,
+  `component/ReminderActionButtons.vue`, locales
+- **Closes:** `reminders-admin/A1`, `P3`, `P5`
+- **Root cause:** every reminder is named by its `kind`, which is a type and not an identity. With six
+  `PersonalReminder`s, all row actions share names ("Pause reminder PersonalReminder" ×4), every detail `h1` and final
+  crumb reads "PersonalReminder", and the upcoming row, which does show `Reminder #23001` as a caption, is not a link.
+  The register's Subject cell (`{subjectType} #{subjectId}`, linking to the definition) is already the identity the
+  module uses. It just is not used everywhere.
+- **Files:** `ReminderDefinitionsView.vue:127, 262-266` (`kindOf`); `ReminderUpcomingView.vue:107-117, 172, 245-249`;
+  `ReminderActionButtons.vue` (aria-labels); `ReminderDefinitionDetailView.vue:21, 386`.
+- **What to change:** one helper, `reminderLabel(row) → "{subjectType} #{subjectId}"` (fallback `#{id}`), in
+  `useReminderFormat`. Use it in every row action's `aria-label` (existing `a11y.*` keys take `{kind}`, so rename the
+  param or add a `{label}` variant), and as the detail `h1` and crumb, with kind as a caption. Wrap the upcoming
+  caption in the register's `RouterLink`.
+- **Do not change:** the Subject/definition-id split (intended per the unit prompt), or `RecipientChips` (no PII by
+  design). Resolving a human title is `reminders-admin/O1`, which is deferred. Do not widen the helper to
+  `MyRemindersView`: the personal `my-upcoming` row carries no `subjectType`/`subjectId`, so `reminders-user/B1` needs
+  the server field asked for in §S6.
+- **Verification:** the three findings' `Verify:` blocks.
+- **Risk:** `e2e/tests/reminders-admin.draft.spec.ts` scopes rows by `getByRole('row', { name: /Reminder #…/ })`,
+  which still works. Its fixme stubs for A1/P3/P5 can become assertions.
+
+## S24. Dispatch history: an empty actions column, and a correction that names an id nobody can see
+> ✅ **FIXED 2026-10-04** (framework `113fcaf`). P6: `:showActions="false"`; `BasicTable` already declared and
+> forwarded the prop, so no pass-through was needed. P7: the server's `ReminderDispatchDto` carries only
+> `reversesDispatchId`, so both ends of a correction are resolved against the loaded rows, with no fetch. The
+> correction's chip reads "Corrects the {time} record" when the corrected row is on the page, and "Corrects an earlier
+> record" otherwise (never an id). The corrected row gets a "Corrected by the {time} record" chip (`pen`,
+> `secondaryOutline`), with a hint saying to read the two together. New keys `correctsEarlier`, `correctedBy`,
+> `correctedByHint`; `corrects` now takes `{time}` (sk + en). **Verified** as `adminUser`: the header row is exactly
+> Dispatched, Reminder ID, Outcome, Notification type, Recipients. The 28.09 21:00 row reads "Corrects the 28.09.2026
+> 20:00:00 record", and the 28.09 20:00 Failed row reads "Corrected by the 28.09.2026 21:00:00 record". Under
+> `?outcome=Reversed` the corrected row is filtered out, and the chip falls back to "Corrects an earlier record".
+> e2e: P6 and P7 are real tests. **Not verified:** a correction split across a page boundary (only the filter case
+> was exercised).
+- **Scope:** **[framework]** `modules/reminders/view/ReminderDispatchHistoryView.vue`, locales
+- **Closes:** `reminders-admin/P6`, `P7`
+- **Root cause:** two presentation choices in the ledger's table. (P6) The table passes `hasEdit/hasDelete/hasCreate =
+  false` and no `#additionalActions`, but `DataTable`'s `showActions` defaults to `true`, leaving a 42 px unnamed,
+  empty column. (P7) The *Corrected* chip reads "Corrects #23501", a dispatch-row id, while no column shows dispatch
+  ids and the next column uses `#n` for definition ids.
+- **Files:** `ReminderDispatchHistoryView.vue:92-105` (table), `:127-135` (chip); `_common/component/dataTable/DataTable.vue:140`
+  (`showActions`, read only).
+- **What to change:** (P6) pass `:showActions="false"` and confirm `BasicTable` forwards it to `DataTable` (fallthrough
+  attrs). If it does not, add the pass-through, since that is the framework-level fix. (P7) label the chip by the
+  corrected row's time if the response carries it, else mark the corrected row itself ("Corrected by a later
+  record"). A dispatch-id column is the fallback. Do not fetch per row.
+- **Verification:** `reminders-admin/P6`, `P7` `Verify:`.
+- **Risk:** P7 may need a field the response lacks (`reversesDispatchId` is there; its `dispatchedAt` may not be).
+  If so, the row-marking option needs nothing new.
+
+## S25. `BasicTable`'s select column checkboxes have no name (framework-wide component)
+> ✅ **FIXED 2026-10-04** (framework `e46b50f`). `DataTable` overrides `header.data-table-select` (on
+> `VDataTableServer`) and `item.data-table-select` (on its own `VDataTableRow`). Both are `VCheckboxBtn`s driven by
+> Vuetify's slot props. The row calls `toggleSelect(internalItem, index, $event)`, exactly as Vuetify's default does,
+> so shift-click ranges survive. New optional prop `itemLabel?: (item) => string` on `DataTable`, forwarded by
+> `BasicTable`. New framework namespace `table` (`selectAll`, `selectRow` `{label}`, `selectRowById` `{id}`; sk + en),
+> and `docs/components.md` documents both. The register passes `reminderLabel`. `TableGrid` defaults
+> `showSelect = true` and passes no `itemLabel`, so its tables get the id fallback. **Verified:** as `adminUser`, the
+> register's checkboxes read "Select all rows", "Select Reminder #23101" … "#23005".
+> `getByRole('checkbox', { name: 'Select Reminder #23001' })` toggles that one row and the bulk bar appears ("1
+> reminder selected"). The header then reports `aria-checked="mixed"`, select-all checks all six, and a second click
+> clears them. App-side, as `primaryUser`, `/activity-settings/activities` (`ActivityTable`, `showSelect`, no
+> `itemLabel`) reads "Select row 12027" …, and toggling one row checks it and puts the header in the mixed state.
+> e2e: A2 is a real test, and the bulk-bar test now ticks the row by its checkbox's name. **Not verified:** shift-click
+> range selection, and other apps' tables (only this app was checked).
+- **Scope:** **[framework]** `src/_common/component/dataTable/BasicTable.vue` (+ `DataTable.vue`), `docs/components.md`.
+  Its own batch under rule 4, because every `showSelect` table in every app renders these.
+- **Closes:** `reminders-admin/A2`
+- **Root cause:** Vuetify's `VDataTable` select column renders bare `VCheckboxBtn`s, and the framework does not override
+  `header.data-table-select` / `item.data-table-select`. The register's select-all and all six row checkboxes are
+  unnamed. The bulk bar they drive is carefully named, so the gap is only the checkbox.
+- **What to change:** override both slots. Header `aria-label` from a framework key ("Select all rows"); rows from an
+  optional `itemLabel?: (item) => string` prop, falling back to "Select row {id}". The register passes S22's
+  `reminderLabel`. Document the prop.
+- **Do not change:** selection semantics (`selected` as ids, the register's "only rows you can see" pruning).
+- **Verification:** `reminders-admin/A2` `Verify:`; then one app-side `showSelect` table, if any exists (grep), still
+  selects.
+- **Risk:** overriding the select slots re-implements indeterminate / select-all behaviour. Use Vuetify's slot props
+  (`allSelected`, `someSelected`, `selectAll`, `isSelected`, `toggleSelect`) rather than local state.
+
 ## Closed verification items
 
 _None yet._

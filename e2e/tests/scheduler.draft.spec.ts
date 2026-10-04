@@ -97,11 +97,10 @@ test.describe(`Job detail (${JOBS}/:id)`, () => {
 	test('the replay dialog focuses its acknowledgement, gates confirm, and closes on Escape', async ({
 		authenticatedPage,
 	}) => {
-		// Opened by focus + Enter, NOT a click: the run grid's scroll box is 0 px high (X1), so a mouse
-		// click on any row button is intercepted by the footer. Switch to `.click()` once X1 is fixed.
-		const replay = authenticatedPage.getByRole('button', { name: /^Replay the run started at/ }).first()
-		await replay.focus()
-		await authenticatedPage.keyboard.press('Enter')
+		await authenticatedPage
+			.getByRole('button', { name: /^Replay the run started at/ })
+			.first()
+			.click()
 		const confirm = authenticatedPage.getByRole('button', { name: 'Replay run' })
 		await expect(confirm).toBeDisabled()
 		await expect(authenticatedPage.getByRole('checkbox', { name: /repeat real side effects/ })).toBeFocused()
@@ -119,8 +118,13 @@ test.describe(`Job detail (${JOBS}/:id)`, () => {
 		await expect(authenticatedPage.getByText('Page not found')).toBeVisible()
 	})
 
-	test.fixme('the run-history grid shows its rows (non-zero scroll box)', async () => {
-		// X1: `.v-table__wrapper` is 0 px high at every viewport.
+	test('the run-history grid shows its rows (non-zero scroll box)', async ({ authenticatedPage }) => {
+		// X1: `.v-table__wrapper` was 0 px high at every viewport — rows in the a11y tree, none on screen.
+		const wrapper = authenticatedPage.locator('#main-content .v-table__wrapper')
+		const firstRow = wrapper.locator('tbody tr').first()
+		await firstRow.waitFor()
+		expect(await wrapper.evaluate(el => el.clientHeight)).toBeGreaterThan(0)
+		await expect(firstRow).toBeInViewport()
 	})
 
 	test.fixme('the breadcrumb names "Scheduled jobs" once', async () => {
@@ -202,8 +206,18 @@ test.describe(`Needs attention (${ATTENTION})`, () => {
 		await expect(authenticatedPage).toHaveURL(new RegExp(`${JOBS}(\\?|$)`))
 	})
 
-	test.fixme('the run-outcome rollup card shows its chips', async () => {
-		// B5: crushed to 32 px when the lists are long.
+	test('the run-outcome rollup card is not crushed by the lists below it', async ({ authenticatedPage }) => {
+		// B5: every child of the page column could shrink, and this `overflow: hidden` card was the
+		// one that gave way — 32 of its 104 px when the lists are long.
+		const card = authenticatedPage
+			.locator('#main-content .v-card')
+			.filter({ has: authenticatedPage.getByRole('heading', { name: /^Run outcomes over the last/ }) })
+		await card.waitFor()
+		const { clientHeight, scrollHeight } = await card.evaluate(el => ({
+			clientHeight: el.clientHeight,
+			scrollHeight: el.scrollHeight,
+		}))
+		expect(scrollHeight).toBeLessThanOrEqual(clientHeight + 1)
 	})
 
 	test.fixme('counts on each card match the jobs list it links to', async () => {

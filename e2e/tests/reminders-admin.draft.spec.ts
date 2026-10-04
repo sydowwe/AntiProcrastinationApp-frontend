@@ -11,8 +11,8 @@ import { expect, test } from '../fixtures/auth'
 // Two id spaces for the same six rows: `seed.reminderDefinitions` is what these routes take;
 // `seed.reminders` is the portal id the register's Subject cell *shows*.
 //
-// Row action buttons all share one accessible name (findings A1), so rows are addressed through
-// `getByRole('row', { name: /Reminder #…/ })` — that scoping is the finding's argument, not a style choice.
+// Rows are addressed by their subject ("Reminder #23001"), which since S22 is also what names every row
+// action and select checkbox — so a role locator can now reach a single row's control directly.
 
 const REGISTER = '/pripomienky/register'
 const UPCOMING = '/pripomienky/nadchadzajuce'
@@ -76,28 +76,40 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 	})
 
 	test('ticking a row shows the bulk bar, and Unselect hides it', async ({ adminPage, seed }) => {
-		// Row checkboxes have no accessible name (A2); scoped through the row instead.
-		await adminPage
-			.getByRole('row', { name: new RegExp(`Reminder #${seed.reminders.callTheDentist}`) })
-			.getByRole('checkbox')
-			.click()
+		await adminPage.getByRole('checkbox', { name: `Select Reminder #${seed.reminders.callTheDentist}` }).click()
 		const bar = adminPage.getByRole('group', { name: 'Actions for the selected reminders' })
 		await expect(bar.getByRole('button', { name: 'Pause 1 reminder' })).toBeVisible()
 		await bar.getByRole('button', { name: 'Unselect' }).click()
 		await expect(bar).toBeHidden()
 	})
 
-	// B1 — the grid response carries intervalPreset/cron, but the DTO drops them.
-	test.fixme('the recurring-interval row states its interval', async () => {})
+	// B1 (S19) — the DTO used to drop intervalPreset/cron, so this row read "—".
+	test('the recurring-interval row states its interval', async ({ adminPage, seed }) => {
+		await expect(dataRow(adminPage, seed.reminders.payRentRecurring)).toContainText('Monthly')
+	})
 
-	// B2 — "Due …" renders nextOccurrenceAt (the lead-time nudge), not dueAt.
-	test.fixme('a one-shot row\'s "Due" matches the detail page\'s Due at', async () => {})
+	// B2 (S19) — "Due …" used to render nextOccurrenceAt, the lead-time nudge.
+	test('a one-shot row\'s "Due" matches the detail page\'s Due at', async ({ adminPage, seed }) => {
+		const dueAt = await detailDueAt(adminPage, seed.reminderDefinitions.callTheDentist)
+		await adminPage.goto(REGISTER)
+		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toContainText(`Due ${dueAt}`)
+	})
 
-	// A1 — every row's action buttons share one name built from `kind`.
-	test.fixme('each row action has a distinct accessible name', async () => {})
+	// A1 (S22) — names were built from `kind`, identical on every row.
+	test('each row action has a distinct accessible name', async ({ adminPage, seed }) => {
+		const names = await accessibleNames(adminPage.getByRole('button', { name: /^Pause reminder for / }))
+		expect(names.length).toBeGreaterThan(1)
+		expect(new Set(names).size).toBe(names.length)
+		expect(names).toContain(`Pause reminder for Reminder #${seed.reminders.callTheDentist}`)
+	})
 
-	// A2 — the select column's checkboxes are unnamed (BasicTable, framework-wide).
-	test.fixme('row checkboxes are named after their row', async () => {})
+	// A2 (S25) — the select column's checkboxes were unnamed (BasicTable, framework-wide).
+	test('row checkboxes are named after their row', async ({ adminPage, seed }) => {
+		await expect(adminPage.getByRole('checkbox', { name: 'Select all rows' })).toBeVisible()
+		await expect(
+			adminPage.getByRole('checkbox', { name: `Select Reminder #${seed.reminders.callTheDentist}`, exact: true }),
+		).toHaveCount(1)
+	})
 
 	// A3 — FilterPanel chip remove buttons are all named "Close".
 	test.fixme('a filter chip\'s remove button names the filter it removes', async () => {})
@@ -145,8 +157,16 @@ test.describe(`Reminder detail (${REGISTER}/:id)`, () => {
 		await expect(adminPage).toHaveURL(new RegExp(`${REGISTER}(\\?|$)`))
 	})
 
-	// X1 — the page's flex column shrinks every card below its content; values are clipped at 1440×900.
-	test.fixme('no detail card is clipped at 1440×900', async () => {})
+	// X1 — the page's flex column shrank every card below its content; values were clipped at 1440×900.
+	// The recurring definition is the tallest page, so it is the one that overflows the viewport.
+	test('no detail card is clipped at 1440×900', async ({ adminPage, seed }) => {
+		await adminPage.goto(`${REGISTER}/${seed.reminderDefinitions.payRentRecurring}`)
+		await adminPage.getByRole('heading', { name: 'Content', level: 2 }).waitFor()
+		const clipped = await adminPage
+			.locator('#main-content .v-card')
+			.evaluateAll(cards => cards.filter(card => card.scrollHeight > card.clientHeight + 1).length)
+		expect(clipped).toBe(0)
+	})
 
 	// B3 — the view prepends a register crumb the host's nav already supplies.
 	test.fixme('the breadcrumb names the register exactly once', async () => {})
@@ -154,8 +174,13 @@ test.describe(`Reminder detail (${REGISTER}/:id)`, () => {
 	// P2 — the 404 is stated by the page and again by the interceptor's snackbar.
 	test.fixme('a not-found id shows no error snackbar', async () => {})
 
-	// P3 — the h1 is the kind, identical for every seeded reminder.
-	test.fixme('two different reminders have different headings', async () => {})
+	// P3 (S22) — the h1 was the kind, identical for every seeded reminder.
+	test('two different reminders have different headings', async ({ adminPage, seed }) => {
+		for (const key of ['callTheDentist', 'fileTaxReturn'] as const) {
+			await adminPage.goto(`${REGISTER}/${seed.reminderDefinitions[key]}`)
+			await expect(adminPage.getByRole('heading', { level: 1 })).toHaveText(`Reminder #${seed.reminders[key]}`)
+		}
+	})
 
 	// Semantic: the occurrence preview's instants and labels are server-computed business rules.
 	test.fixme('the occurrence preview lists the nudge and the deadline for callTheDentist', async () => {})
@@ -209,23 +234,45 @@ test.describe(`Upcoming reminders (${UPCOMING})`, () => {
 		await expect(adminPage.getByText(/^Next occurrence to: /)).toBeVisible()
 	})
 
-	// B2 — same "Due = nextOccurrenceAt" stand-in as the register.
-	test.fixme('a one-shot row\'s "Due" is its dueAt', async () => {})
+	// B2 (S19) — same "Due = nextOccurrenceAt" stand-in as the register had.
+	test('a one-shot row\'s "Due" is its dueAt', async ({ adminPage, seed }) => {
+		const dueAt = await detailDueAt(adminPage, seed.reminderDefinitions.callTheDentist)
+		await adminPage.goto(UPCOMING)
+		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toContainText(`Due ${dueAt}`)
+	})
 
-	// B4 — the "to" bound is sent as the start of the named day, excluding it.
-	test.fixme('"Next occurrence to" includes reminders on the chosen day', async () => {})
+	// B4 (S20) — the "to" bound used to be sent as the start of the named day, excluding it.
+	test('"Next occurrence to" includes reminders on the chosen day', async ({ adminPage, seed }) => {
+		// The day is read off the row itself, so the test holds whatever the seed's clock-relative dates are.
+		const nextCell = await dataRow(adminPage, seed.reminders.callTheDentist).getByRole('cell').nth(5).innerText()
+		const [, dd, mm, yyyy] = /(\d{2})\.(\d{2})\.(\d{4})/.exec(nextCell)!
+		await adminPage.goto(`${UPCOMING}?to=${yyyy}-${mm}-${dd}`)
+		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toBeVisible()
+		// P8 (S20): the chip echoes a day, not a midnight instant.
+		await expect(adminPage.getByText(`Next occurrence to: ${dd}.${mm}.${yyyy}`, { exact: true })).toBeVisible()
+	})
 
-	// A1 — "Show dispatch history of reminder PersonalReminder" on every row.
-	test.fixme('each row\'s history button has a distinct accessible name', async () => {})
+	// A1 (S22) — "Show dispatch history of reminder PersonalReminder" was on every row.
+	test('each row\'s history button has a distinct accessible name', async ({ adminPage, seed }) => {
+		const names = await accessibleNames(adminPage.getByRole('button', { name: /^Show dispatch history of reminder for / }))
+		expect(names).toHaveLength(seed.counts.upcomingReminders)
+		expect(new Set(names).size).toBe(names.length)
+	})
 
 	// A4 — the open menu joins the button's name; items are listitems.
 	test.fixme('Export formats are menu items reachable by role', async () => {})
 
-	// P4 — a reminder whose only offset is 0 still gets "With lead time".
-	test.fixme('"With lead time" appears only for negative offsets', async () => {})
+	// P4 (S19) — a reminder whose only offset is 0 (the deadline itself) used to get "With lead time".
+	test('"With lead time" appears only for negative offsets', async ({ adminPage, seed }) => {
+		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toContainText('With lead time')
+		await expect(dataRow(adminPage, seed.reminders.fileTaxReturn)).not.toContainText('With lead time')
+	})
 
-	// P5 — no link from a row to its detail.
-	test.fixme('a row links to its reminder detail', async () => {})
+	// P5 (S22) — there was no link from a row to its detail.
+	test('a row links to its reminder detail', async ({ adminPage, seed }) => {
+		await adminPage.getByRole('link', { name: `Reminder #${seed.reminders.callTheDentist}` }).click()
+		await expect(adminPage).toHaveURL(new RegExp(`${REGISTER}/${seed.reminderDefinitions.callTheDentist}$`))
+	})
 })
 
 test.describe(`Dispatch history (${HISTORY})`, () => {
@@ -269,20 +316,46 @@ test.describe(`Dispatch history (${HISTORY})`, () => {
 		await expect(adminPage).toHaveURL(new RegExp(UPCOMING))
 	})
 
-	// B4 — `?to=` excludes the day it names (the two 25.09 dispatches drop out of `to=2026-09-25`).
-	test.fixme('"Dispatched to" includes dispatches on the chosen day', async () => {})
+	// B4 (S20) — `?to=` used to exclude the day it names.
+	test('"Dispatched to" includes dispatches on the chosen day', async ({ adminPage }) => {
+		const firstRow = adminPage.locator('main tbody tr').first()
+		const dispatched = await firstRow.getByRole('cell').first().innerText()
+		const [day, dd, mm, yyyy] = /(\d{2})\.(\d{2})\.(\d{4})/.exec(dispatched)!
+		await adminPage.goto(`${HISTORY}?from=${yyyy}-${mm}-${dd}&to=${yyyy}-${mm}-${dd}`)
+		await expect(adminPage.locator('main tbody tr').filter({ hasText: day }).first()).toBeVisible()
+		await expect(adminPage.getByText(`Dispatched to: ${day}`, { exact: true })).toBeVisible()
+	})
 
-	// B5 — `reminderDashboard.skipReason.QuietHours` renders raw.
-	test.fixme('no raw i18n key renders in the Outcome column', async () => {})
+	// B5 (S21) — `reminderDashboard.skipReason.QuietHours` rendered raw.
+	test('no raw i18n key renders in the Outcome column', async ({ adminPage }) => {
+		await expect(adminPage.locator('main tbody').getByText('Quiet hours')).toBeVisible()
+		await expect(adminPage.locator('main')).not.toContainText('reminderDashboard.')
+	})
 
-	// B6 — the read-only notice is crushed to 16 px by the flex column.
-	test.fixme('the read-only notice is fully visible above the table', async () => {})
+	// B6 — the read-only notice was crushed to 16 px by the flex column. VAlert's own `flex: 1 1 0%`
+	// is why `flex-shrink-0` alone did not fix it.
+	test('the read-only notice is fully visible above the table', async ({ adminPage }) => {
+		const notice = adminPage.locator('#main-content .v-alert').first()
+		await expect(notice).toBeVisible()
+		const { clientHeight, scrollHeight } = await notice.evaluate(el => ({
+			clientHeight: el.clientHeight,
+			scrollHeight: el.scrollHeight,
+		}))
+		expect(scrollHeight).toBeLessThanOrEqual(clientHeight + 1)
+	})
 
-	// P6 — an empty, unnamed trailing column.
-	test.fixme('the ledger has no empty trailing column', async () => {})
+	// P6 (S24) — there was an empty, unnamed trailing column.
+	test('the ledger has no empty trailing column', async ({ adminPage }) => {
+		await expect(adminPage.locator('main thead th')).toHaveCount(5)
+	})
 
-	// P7 — "Corrects #23501" names a dispatch id no column shows.
-	test.fixme('a correction identifies the record it corrects', async () => {})
+	// P7 (S24) — "Corrects #23501" named a dispatch id no column shows. Both ends are now named by time.
+	test('a correction identifies the record it corrects', async ({ adminPage }) => {
+		const main = adminPage.locator('main')
+		await expect(main.getByText(/^Corrects the \d{2}\.\d{2}\.\d{4} .+ record$/)).toBeVisible()
+		await expect(main.getByText(/^Corrected by the \d{2}\.\d{2}\.\d{4} .+ record$/)).toBeVisible()
+		await expect(main).not.toContainText(/Corrects #\d/)
+	})
 })
 
 test.describe(`Reminders overview (${OVERVIEW})`, () => {
@@ -329,6 +402,23 @@ test.describe(`Reminders overview (${OVERVIEW})`, () => {
 	// U2 — the failure card's cap and "N of M" line.
 	test.fixme('the failure card caps its rows and states the true total', async () => {})
 })
+
+// The data row whose subject is the given portal id. Exact-number match, so #23001 cannot hit #230011.
+function dataRow(page: Page, reminderId: number) {
+	return page.getByRole('row', { name: new RegExp(`Reminder #${reminderId}(?!\\d)`) })
+}
+
+// The detail page's "Due at" value, as the lists format it — the oracle for the lists' "Due …" text.
+async function detailDueAt(page: Page, definitionId: number): Promise<string> {
+	await page.goto(`${REGISTER}/${definitionId}`)
+	const value = page.getByText('Due at', { exact: true }).locator('xpath=following-sibling::*[1]')
+	await expect(value).toHaveText(/\d{2}\.\d{2}\.\d{4}/)
+	return (await value.innerText()).trim()
+}
+
+function accessibleNames(buttons: ReturnType<Page['getByRole']>): Promise<string[]> {
+	return buttons.evaluateAll(els => els.map(el => el.getAttribute('aria-label') ?? ''))
+}
 
 // `YYYY-MM-DD` of seedDateUtc + offset. Not `seedDateParam`: that returns the planner's `DD-MM-YYYY`,
 // while the reminders filter codec reads ISO dates.
