@@ -20,7 +20,7 @@
 | --- | --- | --- | --- | --- |
 | S1 | ✅ **FIXED 2026-10-04** (`ff91bec`) — Run history on job detail has a 0 px scroll box | **framework** | `scheduler/X1` | low |
 | S2 | ✅ **FIXED 2026-10-04** (`d21119c`) — Needs-attention children shrink — rollup card crushed | **framework** | `scheduler/B5` | trivial |
-| S3 | Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker | **framework** | `scheduler/B1`, `P1` | low |
+| S3 | ✅ **FIXED 2026-10-04** (`21d230e`) — Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker | **framework** | `scheduler/B1`, `P1` | low |
 | S4 | ✅ **FIXED 2026-10-04** (`62451f7`) — Disabled Trigger / Replay explain themselves only via an unreachable `title` | **framework** | `scheduler/B2` | low |
 | S5 | ✅ **FIXED 2026-10-04** (`6154af1`, `524312a`) — Detail-page breadcrumbs: duplicate crumb on job **and reminder**, stale crumb on run not-found | **framework** | `scheduler/B3`, `B4`, `reminders-admin/B3` | low |
 | S6 | ✅ **FIXED 2026-10-04** (`62451f7`) — Ambiguous accessible names — run links and copy buttons | **framework** | `scheduler/A1`, `A2` | trivial |
@@ -40,7 +40,7 @@
 | S20 | ✅ **FIXED 2026-10-04** (`4920a5b`) — Date-only filter bounds are sent as instants, so "to" excludes its own day | **framework** | `reminders-admin/B4`, `P8`, `reminders-user/B3` | low |
 | S21 | ✅ **FIXED 2026-10-04** (`60c85f0`) — Dispatch history renders a raw key for skip reasons the client does not know | **framework** | `reminders-admin/B5` | trivial |
 | S22 | ✅ **FIXED 2026-10-04** (`dcd6b11`) — A reminder has no identity on screen — row actions, detail heading, upcoming rows | **framework** | `reminders-admin/A1`, `P3`, `P5` | low |
-| S23 | Reminder list default sorts omit `BasicTable`'s tie-breaker | **framework** | `reminders-admin/P1`, `reminders-user/P2` | trivial |
+| S23 | ✅ **FIXED 2026-10-04** (`5d03e01`) — Reminder list default sorts omit `BasicTable`'s tie-breaker | **framework** | `reminders-admin/P1`, `reminders-user/P2` | trivial |
 | S24 | ✅ **FIXED 2026-10-04** (`113fcaf`) — Dispatch history: an empty actions column, and a correction that names an id nobody can see | **framework** | `reminders-admin/P6`, `P7` | low |
 | S25 | ✅ **FIXED 2026-10-04** (`e46b50f`) — `BasicTable`'s select column checkboxes have no name (framework-wide component) | **framework** | `reminders-admin/A2` | low |
 | S26 | `FilterPanel` chip remove buttons are all named "Close" (framework-wide component) | **framework** | `reminders-admin/A3`, `reminders-user/A4` | trivial |
@@ -56,21 +56,7 @@
 
 <!-- S2 (Needs-attention children shrink — rollup card crushed — scheduler/B5) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S3. Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker
-- **Scope:** **[framework]** `view/SchedulerJobsView.vue`
-- **Closes:** `scheduler/B1`, `scheduler/P1`
-- **Root cause:** two independent issues in the same `columns` / `useServerTable` block. (1) Eight columns including a
-  270 px *Handler key* (usually equal to the job key) and a three-line *Schedule* cell overflow a 1094 px box, pushing
-  *Next run* — the default sort — and *Actions* off-screen. (2) `defaultSortBy` is `[nextRunAt asc]` while `BasicTable`
-  appends its first column (`jobKey`), so state ≠ default on every mount: the URL is always rewritten and *Job key*
-  shows a "2" badge.
-- **Files:** `SchedulerJobsView.vue:242` (`defaultSortBy`), `:302-310` (`columns`), `:65-100` (key + schedule cells);
-  `_common/component/dataTable/BasicTable.vue:197-198` (read only).
-- **What to change:** (1) move *Handler key* into the job-key cell's caption (or detail only) and keep *Schedule* to one
-  line. (2) `defaultSortBy: [new VSortItem('nextRunAt', 'asc'), new VSortItem('jobKey', 'asc')]`.
-- **Do not change:** `BasicTable`'s tie-breaker push; the run grid's default (it already matches).
-- **Verification:** `scheduler/B1` and `P1` `Verify:`; the draft spec's two related `fixme`s.
-- **Risk:** the old URL form (`sortBy=nextRunAt:asc,jobKey:asc`) is exactly the new default, so bookmarks survive.
+<!-- S3 (Jobs grid too wide; default sort pushes a tie-breaker — scheduler/B1, P1) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S4 (Disabled Trigger / Replay explain themselves only via an unreachable title — scheduler/B2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -179,20 +165,7 @@
 
 <!-- S22 (A reminder has no identity on screen — reminders-admin/A1, P3, P5) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S23. Reminder list default sorts omit `BasicTable`'s tie-breaker
-- **Scope:** **[framework]** `modules/reminders/view/{ReminderDefinitionsView,ReminderUpcomingView,MyRemindersView}.vue`
-  (`defaultSortBy`)
-- **Closes:** `reminders-admin/P1`, `reminders-user/P2` (`MyRemindersView.vue:217`)
-- **Root cause:** identical to S3 part (2). `BasicTable.vue:198` appends its first column when the sort lacks it, so a
-  default of `[nextOccurrenceAt asc]` never equals the state. Every mount rewrites the URL
-  (`…sortBy=nextOccurrenceAt:asc,ownerModule:asc` / `…,kind:asc`), and the first column shows a "2" badge. The
-  history view is immune because its default is its first column.
-- **What to change:** register `[nextOccurrenceAt asc, ownerModule asc]`; upcoming and my-reminders
-  `[nextOccurrenceAt asc, kind asc]`.
-- **Do not change:** `BasicTable`'s push (S3 settled that).
-- **Verification:** `reminders-admin/P1` and `reminders-user/P2` `Verify:`. Old bookmarks carry exactly the new
-  default, so they survive.
-- **Risk:** none. Can ride with S3 in one session.
+<!-- S23 (Reminder list default sorts omit BasicTable's tie-breaker — reminders-admin/P1, reminders-user/P2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S24 (Dispatch history: an empty actions column, and a correction that names an id nobody can see — reminders-admin/P6, P7) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

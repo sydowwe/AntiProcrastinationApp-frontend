@@ -709,6 +709,39 @@
 - **Root cause:** the lists rendered the server's order, which is neither by key nor by lateness. A presentational
   sort of a complete list, not a server rule.
 
+## S3. Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker
+> ✅ **FIXED 2026-10-04** (framework `21d230e`, session 3). (B1) The *Handler key* column is gone. It is a caption under
+> the job key, shown only when it differs from the job key. On this fixture that is every per-instance
+> `history.timer-boundary.*` row, so the information stays on screen. Dropping the column was **not enough**: the
+> grid was still 54 px over, set by three no-wrap minimums (the unbreakable
+> `Tracking.PurgeExpiredActivityTrackingEntries` key, 265 px; *Status*'s "Active + Overdue" chips; *Last run*'s
+> outcome chip + relative time). Two more changes. First, `ScheduleDisplay` got a `compact` prop: the grid renders a
+> one-shot as "One-shot" alone, because the instant is already the row's *Next run* (and *Last run* once it fires).
+> The detail page keeps the full "once at …". Second, *Status* and *Last run* use `flex-wrap`, so their chip pairs
+> stack under pressure instead of setting a minimum. The *Schedule* cell is `text-no-wrap`, so it really is one line.
+> (P1) `defaultSortBy: [nextRunAt asc, jobKey asc]`.
+> **Verified** at 1440×900, sidebar open, as `seed.adminUser`. Wrapper `clientWidth` 1094 = `scrollWidth` 1094, and
+> *Next run* ends at 1258 and *Actions* at 1411 (≤ 1411) on pages 1, 2 and 3, and with `?perPage=100` (all 73 rows).
+> A bare `/planovac/ulohy` keeps `location.search === ''`.
+> **Not done:** the draft spec's two `fixme`s (`scheduler.draft.spec.ts:62, 66`) are left as stubs, like the earlier
+> sessions' fixmes. *Actions* fits with 0 px to spare: a longer job key or a wider locale string brings the
+> scroll back, and the next lever is breaking keys at their dots (`<wbr>`).
+- **Scope:** **[framework]** `view/SchedulerJobsView.vue`, `component/ScheduleDisplay.vue`, `docs/modules/scheduler.md`
+- **Closes:** `scheduler/B1`, `scheduler/P1`
+- **Root cause:** (1) eight columns, with a 270 px *Handler key* and a wrapping three-line *Schedule*, overflowed a
+  1094 px box. (2) `defaultSortBy` omitted the `jobKey` tie-breaker that `BasicTable` appends, so state ≠ default on
+  every mount.
+- **Do not change:** `BasicTable`'s tie-breaker push. The run grid's default already matched.
+
+## S23. Reminder list default sorts omit `BasicTable`'s tie-breaker
+> ✅ **FIXED 2026-10-04** (framework `5d03e01`, session 3). Register `[nextOccurrenceAt asc, ownerModule asc]`. Upcoming
+> and my reminders `[nextOccurrenceAt asc, kind asc]`. **Verified:** bare `/pripomienky/register`, `/nadchadzajuce`
+> and `/moje` keep `location.search === ''`, and `/historia` is still unaffected. **Not met:** the "no rank badge"
+> half of `reminders-admin/P1`'s *Verify* (Contradiction 5).
+- **Scope:** **[framework]** `modules/reminders/view/{ReminderDefinitionsView,ReminderUpcomingView,MyRemindersView}.vue`
+- **Closes:** `reminders-admin/P1`, `reminders-user/P2`
+- **Root cause:** identical to S3 part (2).
+
 ## Closed verification items
 
 _None yet._
@@ -739,6 +772,15 @@ Numbered from 1 here. Passes 1–3 recorded theirs inline, and those are kept ve
    (S29). `UpcomingReminderGridResponse.ts` header: `MyRemindersView` "renders none of" the omitted fields "except
    `cronExpression`", but it renders `intervalPreset` too (§S6's client half corrects it). The module README's
    "Slovak-only" claim, already noted on the third pass, is stale again (`reminders-user` *Intent sources*).
+5. **`reminders-admin/P1`'s *Verify* vs its own suggested fix** (found closing S23). The *Verify* passes when the
+   default "is `nextOccurrenceAt:asc,ownerModule:asc` — and the Owner module header carries no rank badge on a fresh
+   load". It cannot have both. A two-key sort is a multi-sort, and Vuetify ranks every key in it, so the declared
+   tie-breaker still reads "Owner module 2" ("Kind 2" on upcoming and my reminders, "Job key 2" on the scheduler).
+   The fix that shipped is the one S3 and S23 prescribed: the URL half. The badge is now a sort the view declares
+   rather than one nobody chose, which satisfies `scheduler/P1`'s *Expected* ("visible sort = the sort set").
+   Hiding the rank for a tie-breaker would be a `BasicTable` change in every app. File it only if the owner wants the
+   badge gone. `reminders-admin.draft.spec.ts:118`'s fixme title asserts the badge half, so it should be re-titled
+   to the URL check before it is enabled.
 
 ### Re-grades
 
