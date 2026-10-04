@@ -517,8 +517,11 @@
 > `{"reminderDefinitionId":23201,"occurrenceAt":"2026-10-06T14:30:00.000Z","snoozeUntil":"2026-10-06T15:30:00.000Z"}`
 > → **204**. Dismiss on the 09.10 row sent `{"reminderDefinitionId":23202,"occurrenceAt":"2026-10-09T09:00:00.000Z"}`
 > → **204**. As predicted, the snoozed row came back on the reload (§S7 / `B6`). The e2e run's global setup reseeded
-> afterwards. **Not verified:** the custom picker's floor in the browser (validation reviewed in code only). The
-> exact-match risk below was not observed either, because the e2e seed's occurrences fall on whole minutes. **Found while
+> afterwards. The custom picker's floor, checked in a follow-up pass the same day on the 06.10 16:30 row: the date
+> picker disables 05.10 and earlier, and 06.10 is the first selectable day. With nothing chosen, *Snooze* is disabled
+> under "Choose a time after the occurrence (06.10.2026 16:30:00)." 06.10 at 10:00 stays disabled with the same
+> warning. 06.10 at 18:00 enables it, with "You'll be reminded 06.10.2026 18:00:00." **Not verified:** the
+> exact-match risk below was not observed, because the e2e seed's occurrences fall on whole minutes. **Found while
 > investigating, not filed:** the server's `OccurrenceAt != NextOccurrenceAt` check is exact, and JS `Date` keeps
 > milliseconds only. An occurrence stored with sub-millisecond precision (`DevReminderSeeder`'s `now.AddDays(…)`,
 > or anything computed from `UtcNow`) would still get a 400 from the fixed client. If that shows up, it is a backend
@@ -598,7 +601,9 @@
 > "The list could not be loaded. / Try again", the live region said the same, and no snackbar appeared. After
 > `unroute`, *Try again* brought back 3 rows ("3 results found"). `?kind=NoSuchKind` showed the filtered-empty state,
 > and *Clear filters* dropped the param and restored the rows. On `/pripomienky/register`, a routed 500 showed the same
-> failure state. **Not verified:** the unfiltered empty copy, because the seed always gives the primary user rows.
+> failure state. The unfiltered empty state was checked in a follow-up pass the same day by routing `my-upcoming` to
+> `{"items":[],"itemsCount":0}` on a bare URL. The body read "No upcoming reminders." with no button, and the live
+> region said "0 results found". The seed always gives the primary user rows, so this one needs a mocked response.
 - **Scope:** **[framework]** `modules/reminders/composable/useReminderTableErrors.ts`, the four list views
   (`MyRemindersView`, `ReminderDefinitionsView`, `ReminderUpcomingView`, `ReminderDispatchHistoryView`),
   `component/TableResultAnnouncer.vue`, `_locales/remindersDashboard.{sk,en}.ts`
