@@ -882,7 +882,15 @@
 
 ## Closed verification items
 
-_None yet._
+### `notifications` — closed 2026-10-04
+- **`U1`** ✅ — paging and "filtering never refetches page 1". 22 `Test` rows raised through the app's API client (28 total),
+  then `/notifikacie?type=DeadlineApproaching` (a type present only past page 1): filtered-empty with *Load older*; one
+  click sent `mine?beforeId=22105&limit=20`, the row appeared, the button went away. `mine?limit=20` fired once overall.
+  Rows deleted afterwards (204). No batch results.
+- **`U2`** ✅ — the row's due line. With `GET /notification/mine` routed to one row carrying `originallyDueAt`, it reads
+  "Was due at 9/28/26, 8:30 AM" in EN / `Europe/Bratislava`, and the day header reads "SEPTEMBER 28, 2026" (also settles
+  `notifications/B2` on a real header). Mocked, so it proves rendering only. The finding's "Originally due" wording was
+  stale. No batch results.
 
 ## Contradictions & re-grades
 

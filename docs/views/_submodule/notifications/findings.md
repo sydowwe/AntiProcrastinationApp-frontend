@@ -5,6 +5,9 @@
 
 **Tally:** blocker 0 · bug 4 · a11y 7 · polish 6 · opportunity 0 · unverified 2  (19 entries: B1–B4, A1–A7, P1–P6, U1–U2)
 
+**Status (2026-10-04):** 14 fixed (B1, B2, A1–A7, P1–P4, P6) · 3 escalated to the backend (B3 → §S2, B4 → §S3, P5 → §S4) ·
+U1 and U2 verified (pass). Fix batches are in `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
+
 **Cleanup (round 2):** the mutation pass toggled quiet hours on/off/undo and edited the window, unticked *Personal
 reminder › In-app* and *Test › In-app*, created one reminder-kind row (`Portal`/`PersonalReminder`) and muted it, and
 raised two `Test` notifications (22103, 22104). All of it was undone by `POST /api/test/seed` (200, fixture `e2e-v4`)
@@ -48,7 +51,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** in `connect()`, start `loadNotifications()` in parallel with `hub.start()` (or before it) rather than after; on a failed initial `start()`, schedule a retry with the same `reconnectForever` delays; label the pre-first-connect state "Connecting…" or hide it.
 
 ### B2. Day headers older than yesterday are formatted in Slovak on an English account — `formatLocalized` hard-codes `'sk'` [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S11, framework `2cbc085`; EN gives "September 28, 2026" — checked through `notificationDayLabel`, not on a dated `/notifikacie` header, since the seed has only Today/Yesterday groups)
 - **Severity:** bug
 - **Where:** `/notifikacie` → day group header (`role=group` label, e.g. `group "28. september 2026"`) → `src/_common/modules/notifications/utils/groupNotificationsByDay.ts:46` → `src/_common/utils/DateTimeHelper.ts:102-104` (`dayjs(date).locale('sk')`)
 - **Expected:** EN account → "September 28, 2026" (or the `Intl` equivalent), as the same view already does for `originallyDueAt` (`NotificationsView.vue:311`, `Intl.DateTimeFormat(locale.value.toLowerCase(), …)`). CLAUDE.md: SK primary, EN fallback — the account locale decides.
@@ -60,7 +63,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** take the locale from the registered translator / i18n instance inside `formatLocalized`, or add a locale parameter; update `docs/utils.md`.
 
 ### B3. "Reminder types" can never mute anything — the card lists only rows that already exist, and nothing creates one [framework]
-- **Status:** open
+- **Status:** escalated — backend ask §S2 in `_fix-queue.md` (needs a kind catalog; client half is appended as a batch once it lands)
 - **Severity:** bug
 - **Where:** `/nastavenia/pripomienky` → *Reminder types* card → `src/_common/modules/notifications/reminderPreference/component/ReminderKindList.vue:17-41`; the only caller of `upsertReminderKind` is `ReminderKindRow.vue:74-75`, i.e. an already-rendered row
 - **Expected:** the card's own subtitle — "Mute a specific reminder type without silencing all of them" — and the page intro ("…mute individual reminders…"). The day-planner settings tab sends users here for exactly this: "Reminders delivered even with the app closed — including turning them off entirely, and quiet hours — live under *Reminder preferences*" (`dayPlanner.en.ts:27`), and its source comment names the `("Portal", "PersonalReminder")` row as "the single switch that stops a reminder from being delivered" (`PlannerRemindersTab.vue:32-37`). CLAUDE.md's ownership table puts per-kind muting in reminder preferences.
@@ -72,7 +75,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** a `GET /reminder-preference/kinds` (or fold the catalog into `GET /reminder-preference`, returning every kind with its effective `enabled`), then render every kind.
 
 ### B4. Unticking a type's In-app box says "not even in the notification list", but the notification still lands in the inbox [framework]
-- **Status:** open
+- **Status:** escalated — backend ask §S3 in `_fix-queue.md` (dispatcher's `activeIds`; no client change if the server discounts unconfigured channels)
 - **Severity:** bug
 - **Where:** `/nastavenia/pripomienky` → *Notification delivery* → any row whose Push (or E-mail) default is on, e.g. *Test* / *Personal reminder* → In-app checkbox. Client: `NotificationTypeSettingsRow.vue:28-37` (the `row.silenced` caption), `notificationPreferenceMatrix.ts` (silenced = no *deliverable* channel on). Server: `Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75` in the API repo.
 - **Expected:** what the caption says, and what the usecase entity lifecycle and the row's own source comment rely on: with no channel that can reach the user, the server "writes no history row, so the notification never reaches the inbox either". A user who mutes a type expects it gone.
@@ -95,7 +98,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** give the `VBadge` an `aria-label` carrying the count via `notifications.unreadCount`, or `aria-hidden` it and put the count in the button's `aria-label`.
 
 ### A2. Closing a `useDialog()` confirm drops focus to `<body>` instead of returning it to the button that opened it [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S13, framework `60bef5b`; verified live: focus returns to the row's *Dismiss* after Escape and after Cancel. An app-side `confirm()` was not driven separately)
 - **Severity:** a11y
 - **Where:** `/notifikacie` → row trash button → *Dismiss notification?* → Cancel or Escape. Mechanism: `src/_common/component/dialog/MyDialog.vue:144-155` records `openerElement` in a `watch(dialog)` that only fires on a *change*; a `useDialog()`/`DialogHost` dialog is presumably mounted already open, so the open transition is never seen and there is nothing to restore.
 - **Expected:** focus returns to the trash button (WAI-ARIA dialog pattern). `_shell/inventory.md` recorded exactly this working for a template-declared `MyDialog`.
@@ -141,7 +144,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** `aria-labelledby="<th id> <column header id>"` on each box — it names the control *from* the same headers, so nothing is read twice, and it keeps the comment's intent.
 
 ### A6. The quiet-hours *Undo* is on screen for ~3 s, and it is the only way back from switching them off [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S15, framework `825dfb4`; action toasts now default to 10 s, measured 10.2 s. The quiet-hours Clear → Undo flow itself was not driven, to avoid writing the seed account's quiet hours)
 - **Severity:** a11y
 - **Where:** `/nastavenia/pripomienky` → *Enable quiet hours* switch off → snackbar "Quiet hours were cleared" + *Undo*. Source: `QuietHoursCard.vue:345-353` passes no `timeout`, so the toast inherits `SnackbarComposable.ts:98`'s `config?.timeout ?? 3000`.
 - **Expected:** the card's own design makes the undo the recovery path, in place of a confirm dialog ("Recovery for the one destructive path is the undo in the snackbar, not a second button", `QuietHoursCard.vue:17-23`). A recovery control must be reachable in time: WCAG 2.2.1 (timing adjustable). Material's guidance for an action snackbar is 4–10 s, and an undo is commonly held until dismissed.
@@ -164,7 +167,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** `:aria-label="kindLabel"` on the `VSwitch` (or `aria-labelledby` the label span). Fold it into B3's rework if the card is rebuilt on a catalog.
 
 ### P1. The breadcrumb reads only "Home" on `/notifikacie` and `/nastavenia/pripomienky` [framework]
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S17, framework `7033ca2`; verified: `Home › Notifications` and `Home › Notifications & reminders`)
 - **Severity:** polish
 - **Where:** top bar breadcrumb on both routes → `src/_common/composable/general/useBreadcrumbs.ts:49-59` (a route absent from every nav tree gets the home crumb alone, rendered as the current page)
 - **Expected:** "Home › Notifications" / "Home › Notifications & reminders" — the same `useSetBreadcrumbExtra` mechanism `F28` used for `/activity-history/detail`.
@@ -208,7 +211,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Root cause guess:** two vocabularies — app locale keys vs. the backend `NotificationTextRenderer`. Deciding which wins is a wording call, possibly on the backend side; the label keys are app-side (`src/app/notifications/`), so this one may be app-side rather than framework. The same labels head the delivery-matrix rows on `/nastavenia/pripomienky`.
 
 ### P5. A developer "Test" alert type is offered to users as a delivery setting [framework]
-- **Status:** open
+- **Status:** escalated — backend ask §S4 in `_fix-queue.md` (catalog decision; a client filter is the documented anti-pattern)
 - **Severity:** polish
 - **Where:** `/nastavenia/pripomienky` → *Notification delivery* → second row `rowheader "Test"`; also the `/notifikacie` Type filter's last option "Test"
 - **Expected:** the settings screen lists alerts a user can actually receive in normal use. `POST /notification/test` is Admin-only ("send a Test notification to self (dev/QA)", `Sydowwe.Notifications/docs/domain-map.md:223`).
@@ -231,7 +234,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** one sentence in both locales: "The notification list still updates; phone and e-mail alerts, and scheduled reminders, wait until it ends."
 
 ### U1. Paging (`Load older`) and "filtering does not refetch page 1" could not be exercised [framework]
-- **Status:** open
+- **Status:** verified 2026-10-04 — **pass**. Raised 22 `Test` rows through the app's own API client (28 total; first page 20), then opened `/notifikacie?type=DeadlineApproaching` (that type exists only in the seed rows past page 1). Page 1 showed the filtered-empty state with *Clear filter* + *Load older*. One click sent `mine?beforeId=22105&limit=20`, the *Deadline approaching* row appeared and *Load older* disappeared (`hasMore` false). Requests for the whole sequence: `mine?limit=20` once (no cursor) and the `beforeId` request once, so filtering did not refetch page 1. Only one *Load older* click was needed, not two (28 rows, not 45). The 22 rows (22103–22124) were deleted afterwards (204); the account is back to the six seed rows, 3 unread.
 - **Severity:** unverified
 - **Where:** `/notifikacie` → *Load older* (`NotificationsView.vue:199-206`, `loadMore()` in `useNotifications.ts`)
 - **Claim (N3/N6):** the inbox pages older items via `beforeId`, filtering never refetches page 1, and the filtered-empty state keeps offering *Load older* while `hasMore`.
@@ -239,7 +242,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **What would verify it:** a fixture account with ≥ 21 notifications (ideally 45, three pages, with a type present only on page 3). Then: open `/notifikacie?type=<page-3 type>` → filtered-empty with *Load older* → click twice → the row appears; `requests` shows `mine?limit=20&beforeId=…` twice and `mine?limit=20` (no cursor) exactly once.
 
 ### U2. The "Originally due …" line for notifications held by quiet hours could not be seen [framework]
-- **Status:** open
+- **Status:** verified 2026-10-04 — **pass, with a copy note**. The server was not asked for a row: `GET /notification/mine` was routed (`playwright-cli route`, removed afterwards) to return one row, created 2026-09-28T07:00Z with `originallyDueAt` 2026-09-28T06:30Z. On `/notifikacie` (EN, `Europe/Bratislava`) the row's third line read **"Was due at 9/28/26, 8:30 AM"**: English, in the viewer's zone (06:30Z → 08:30), and the row's own time read 09:00. The finding's expected wording "Originally due …" is stale; the shipped string is "Was due at …". The day header above it read "SEPTEMBER 28, 2026", which also settles B2 on a real dated header (previously only checked through `notificationDayLabel`). Mocked, so this proves the rendering, not that a server ever produces the field.
 - **Severity:** unverified
 - **Where:** `/notifikacie` → row third line (`NotificationRow.vue:47-58`), formatted in the viewer's zone (`NotificationsView.vue:309-317`)
 - **Claim (N10/B1 of the notifications set):** a notification deferred by quiet hours carries `originallyDueAt` and the row says when it was originally due, in the viewer's locale and zone.

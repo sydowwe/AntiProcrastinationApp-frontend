@@ -221,15 +221,7 @@ can go.
   be exercised, because no job is orphaned. It needs a job row whose `handlerKey` has no registered handler. The e2e
   fixture has no scheduler data, and a test-only handler that registers and then disappears is the cleanest source.
 
-### `notifications`
-- **`U1`** — paging (*Load older*, `beforeId`) and "filtering never refetches page 1". The seed's primary account has
-  13–14 rows against a page size of 20, so `hasMore` is always false. Needs a fixture account with ≥ 21 notifications
-  (ideally 45, with one type present only on page 3). The finding's *What would verify it* has the exact request counts.
-- **`U2`** — the "Originally due …" row line. Round 2 narrowed it: a quiet-hours hold never stamps
-  `originallyDueAt` on the in-app row (`NotificationService.cs:122-125`), so the only producer is a Reminders-module
-  occurrence delivered > 30 min late. A seeded row with `originallyDueAt` set settles it in seconds. A live repro
-  takes ~40 minutes. If it renders, check it is English-formatted. It uses `Intl`, not `DateTimeHelper`, so S11 does
-  not touch it.
+<!-- `notifications` U1, U2 verified 2026-10-04 — moved to _fix-queue-log.md → Closed verification items. -->
 
 ### `reminders-admin`
 - **`U1`**: the overview's 5-minute poll, its pause while the tab is hidden, and the "Updated N minutes ago" tick.
