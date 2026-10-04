@@ -892,6 +892,49 @@
   `notifications/B2` on a real header). Mocked, so it proves rendering only. The finding's "Originally due" wording was
   stale. No batch results.
 
+### `scheduler` — closed 2026-10-05
+- **`U1`** ✅ — does a Trigger from the jobs-grid row show the new run? Yes, for a fast job. As `primaryUser` (form
+  sign-in), *Trigger job Portal.SuggestionPatternRefresh now* returned correlation `2999987a…`, and the one immediate
+  `jobs-overview` reload already carried `lastRunAt 22:02:57.867`. Run history shows the same instant as the `Manual`
+  run (id 75009, 11 ms), and the 10 s cron cannot explain it (22:02:57 is not a fire second). **Not covered:** a job
+  slower than the reload round-trip would show the old *Last run* until the 120 s poll, and no slow harmless job exists
+  to try. Re-open only if seen. No batch results.
+- **`U2`** ✅ — do the pollers pause while the tab is hidden? Settled for the needs-attention poller with a *simulated*
+  hidden tab: headless Chrome never reports hidden, so `document.visibilityState` was overridden and `visibilitychange`
+  dispatched, which is what `usePolling` reads. On `/planovac/pozornost` (60 s): hidden 135 s → +0 `GET
+  /scheduler-dashboard/health` (two polls would have fired); back to visible → +1 at once; 65 s later → +1. **Not
+  covered:** the jobs list's 120 s poller (same composable, not run separately) and a real hidden tab, which needs a
+  headed browser. `reminders-admin/U1` stays open for that reason. No batch results.
+
+### `reminders-admin` — closed 2026-10-05
+- **`U2`** ✅ — the failure card's cap and "showing N of M". As `adminUser` (form sign-in), with
+  `POST /reminder-dashboard/overview` routed to `failedNeedingAttention: 40` and 20 `failures` rows (the server-capped
+  sample shape `OverviewFailureList`'s header documents), `/pripomienky/prehlad` rendered the headline **40**, **8**
+  rows (`MAX_ROWS`), the line "Showing 8 of 40", and a link to `/pripomienky/historia?needsAttention=true`. The
+  headline is the server's count, not `items.length`, and `total` in the line is read from `count`. Mocked, so it
+  proves the client logic only. It does not prove the server's count equals the history list's `needsAttention` total
+  (the seed's one real failure was settled by the unit). `reminders-admin/U1` stays open. No batch results.
+
+### `reminders-user` — closed 2026-10-05
+- **`U3`** ✅ — do instants follow the browser's timezone rather than the account's? Settled by source, **not a defect**.
+  `User.timezone` is a server-side field that `timeZoneSync.ts` keeps equal to the browser's zone (set from
+  `Intl.DateTimeFormat().resolvedOptions().timeZone` on login, registration and Google sign-in, with no manual picker on
+  purpose), so the two cannot differ for long, and `DateTimeHelper`'s local-zone dayjs needs no zone handling. **Not
+  driven:** a `timezoneId: 'America/New_York'` browser run. Re-open it, and S20's date bounds, if a manual zone picker
+  is ever added. No batch results.
+
+## Closed opportunities
+
+### `scheduler` — closed 2026-10-05
+- **`O1`** ✅ — *Trigger now* fired on one click while *Replay* needed an acknowledged warning. It now opens a plain
+  `useDialog().confirm` on the grid row and on the job detail. The confirm's `detail` line says what the button cannot:
+  a paused job runs anyway and stays paused, and a run already in flight means a `disallowConcurrent` job's fire will
+  likely be vetoed. That needed a server half, `ScheduledJobDto.RunningSince`, projected raw. It is worded "likely"
+  because a server killed mid-run leaves the marker set. Framework `3fd289c` (client), `Sydowwe.Scheduler` `dfd999a`
+  (server, pinned by two `SchedulerJobSignalsTests`). **Verified:** on `/planovac/ulohy/10`, Cancel sent no request and
+  confirming sent one `trigger-now` → 200. **Mocked only:** the paused/in-flight line, checked on the grid with a routed
+  `jobs-overview`, because the API under Rider ran the old build.
+
 ## Contradictions & re-grades
 
 ### Contradictions

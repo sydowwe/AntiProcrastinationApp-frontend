@@ -3,6 +3,7 @@
 > Pass: inventory · captured 2026-10-01 · commit `4d890646` (framework `b1b82a1`)
 
 **Tally:** blocker 1 · bug 6 · a11y 4 · polish 8 · opportunity 1 · unverified 2  (22 entries)
+**Open after round 2 (2026-10-05):** 19 fixed (S5, S7, S18–S27) · 1 deferred (O1) · 1 verified (U2) · 1 unverified (U1)
 
 Visual sweep: one screenshot read back per view. It found X1 (detail cards clipped) and B6 (history notice crushed),
 neither visible in the accessibility snapshot, and the empty last column (P6). The register, Upcoming and overview
@@ -21,13 +22,14 @@ honest paused/cancelled copy. The README's "module is Slovak-only" note is stale
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
 | 1 | 2026-10-01 | `4d890646` | initial inventory pass |
+| 2 | 2026-10-05 | `0a7c9b25` | closed against `_fix-queue-log.md`: X1, B1–B6, A1–A4, P1–P8 fixed; O1 deferred; U2 verified (mocked overview); U1 still open |
 
 All findings are **[framework]** — `src/_common/modules/reminders/` or a framework component it mounts.
 
 ---
 
 ### X1. [framework] Detail view: every card is clipped — the values are unreadable at 1440×900
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S18, framework `7c048c2`; `flex-shrink-0` on every direct child of the detail and overview containers; Content card 277/277 was 192/277, the container scrolls; the e2e test is real)
 - **Severity:** blocker
 - **Where:** `/pripomienky/register/23201` (any id) → all six cards · `view/ReminderDefinitionDetailView.vue:2-5`
   (`VContainer class="d-flex flex-column ga-4"`)
@@ -57,7 +59,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   stack with `ga-4` → margins.
 
 ### B1. [framework] Register's Schedule column is "—" for recurring rows, though the grid response carries the schedule
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S19, framework `f103416`; the grid DTO maps `dueAt`, `intervalPreset`, `cron` → `cronExpression`; #23003 reads "Monthly", the `TODO(Bn)` is gone; a `RecurringCron` row is not in the seed, so that mapping was checked through `fromJson` only)
 - **Severity:** bug
 - **Where:** `/pripomienky/register` → row "Reminder #23003", Schedule type cell ·
   `dto/response/ReminderDefinitionGridResponse.ts:21-32`, `view/ReminderDefinitionsView.vue:94-100`
@@ -79,7 +81,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   `ReminderScheduleDisplay` as the upcoming view does.
 
 ### B2. [framework] Register and Upcoming: "Due …" shows the next lead-time nudge, not the due date
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S19, framework `f103416`; both views pass `:dueAt="item.dueAt"`; #23001 reads "Due 05.10.2026 17:00:00" while Next occurrence stays 16:30; paused/cancelled one-shots now show their due date too)
 - **Severity:** bug
 - **Where:** `/pripomienky/register` and `/pripomienky/nadchadzajuce` → Schedule type cell of every active one-shot ·
   `ReminderDefinitionsView.vue:96-99` and `ReminderUpcomingView.vue:120-125` (both `:dueAt="item.nextOccurrenceAt"`);
@@ -102,7 +104,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** as B1; map `dueAt` in both grid DTOs and pass `:dueAt="item.dueAt"`.
 
 ### B3. [framework] Detail breadcrumb shows "Reminder register" twice
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S5, framework `6154af1`; `useBreadcrumbs` skips an extra already in the chain, so no view edit; `/23201` → `Home › Reminder register › Reminder #23001`, cold `/999999` → `Home › Reminder register`)
 - **Severity:** bug
 - **Where:** `/pripomienky/register/23201` → top-bar breadcrumb · `ReminderDefinitionDetailView.vue:382-387`
 - **Expected:** one crumb per level: *Home › Reminder register › {reminder}*.
@@ -121,7 +123,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   last nav-derived crumb's, which fixes both modules at once.
 
 ### B4. [framework] A "to" date filter excludes the day it names
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S20, framework `4920a5b`; the server compares `<=`, so each filter's `toJSON` sends `to` as local 23:59:59.999; `?to=2026-10-05` lists #23101 and #23001; the overview card count against its drill-down was not verified)
 - **Severity:** bug
 - **Where:** `/pripomienky/nadchadzajuce` → Filter → *Next occurrence to* (same codec and DTO shape on the register's
   *Next occurrence to* and the history's *Dispatched to*) · `dto/request/reminderFilterParams.ts:69-75`
@@ -148,7 +150,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   (`<` or `<=`) before choosing.
 
 ### B5. [framework] Dispatch history renders a raw i18n key for skip reasons the client does not know
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S21, framework `60c85f0`; `SkipReason` mirrors the server's eight members, unknown values fall back to `skipReasonUnknown`; the fallback itself was read from source only)
 - **Severity:** bug
 - **Where:** `/pripomienky/historia` → 27.09.2026 Skipped row → Outcome caption · `dto/enum/SkipReason.ts`,
   `_locales/remindersDashboard.{en,sk}.ts` (`skipReason.*`), `ReminderDispatchHistoryView.vue:137-142`
@@ -167,7 +169,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   generic fallback key rather than `$t` on an unchecked key.
 
 ### B6. [framework] Dispatch history's read-only notice is crushed to a 16 px sliver
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S18, framework `7c048c2`; alert is `flex-0-0` because `VAlert` declares `flex: 1 1 0%`, measured 44/44, table fills the rest, footer flush; the e2e test is real)
 - **Severity:** bug
 - **Where:** `/pripomienky/historia` → the info `VAlert` above the table · `ReminderDispatchHistoryView.vue:2-5`
   (`VContainer class="d-flex flex-column h-100"`) and `:79-85`
@@ -185,7 +187,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** `class="mb-3 flex-shrink-0"` on the alert (and the result announcer row, to be safe).
 
 ### A1. [framework] Row actions on the register and Upcoming all share one accessible name
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S22, framework `dcd6b11`; `reminderLabel(row)` = `{subjectType} #{subjectId}` names every row action; the four Pause buttons have four distinct names; the e2e tests are real)
 - **Severity:** a11y
 - **Where:** `/pripomienky/register` → Actions column · `ReminderDefinitionsView.vue:127` (`kindOf(id)`),
   `component/ReminderActionButtons.vue` (same `kind` naming); `/pripomienky/nadchadzajuce` → history button,
@@ -206,7 +208,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   helper in `ReminderActionButtons`, the eye button, and the upcoming view's history button.
 
 ### A2. [framework] Row-selection checkboxes have no accessible name
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S25, framework `e46b50f`; `DataTable` overrides both select slots, new `itemLabel` prop, register passes `reminderLabel`; "Select all rows" / "Select Reminder #23001"; shift-click range selection and other apps' tables not verified)
 - **Severity:** a11y
 - **Where:** `/pripomienky/register` → select column (header and every row) · `BasicTable` `showSelect`
   (`_common/component/dataTable/BasicTable.vue:15`) — framework-wide table component
@@ -224,7 +226,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   `itemLabel` function, falling back to the row id).
 
 ### A3. [framework] Every filter chip's remove button is named "Close"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S26, framework `67d4a72`; `closeLabel` from the new `general.removeFilter`, read "Remove filter: Kind: Personal" on `/pripomienky/moje`; the `?status=Paused` admin case was not driven)
 - **Severity:** a11y
 - **Where:** `/pripomienky/register?status=Paused` → chip "Paused" → its × · `_common/component/FilterPanel.vue`
   (framework-wide; the upcoming and dispatch-history views mount the same panel)
@@ -239,7 +241,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** `VChip`'s `closeLabel` prop, from a framework key taking `{ label }`.
 
 ### A4. [framework] Export menu: the open list joins the button's name and its items have no role
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S27, framework `67d4a72`; the join came from `aria-owns` on the activator, so an explicit `aria-label` plus `role="menu"` / `role="menuitem"`; verified on `/activity-history`, the admin grids and Enter-to-download not driven)
 - **Severity:** a11y
 - **Where:** `/pripomienky/nadchadzajuce` → Export · `_common/component/ExportMenu.vue` (framework-wide; the dispatch
   history mounts the same component)
@@ -259,7 +261,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   does this when the list is a proper `VList` inside `VMenu`).
 
 ### P1. [framework] Register and Upcoming default sorts get a tie-breaker pushed, so the URL is always rewritten and a column shows a "2"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S23, framework `5d03e01`; URL half only: a bare `/pripomienky/register` and `/nadchadzajuce` keep `location.search === ''`. The "no rank badge" half is won't-fix by owner decision: the "2" now reports the view's real, declared order, and hiding it would be a `BasicTable` change in every app)
 - **Severity:** polish
 - **Where:** `/pripomienky/register` → header · `ReminderDefinitionsView.vue:181` (`defaultSortBy`);
   `/pripomienky/nadchadzajuce` → header ("Kind 2", URL `sortBy=nextOccurrenceAt:asc,kind:asc`) ·
@@ -281,7 +283,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   Check the other three tables' defaults against their first column at the same time.
 
 ### P2. [framework] Detail's 404 (and the overview's load failure) is reported twice — on the page and in an error snackbar
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S7, framework `62451f7`; `_silent: true` on the detail `fetchById` and `fetchReminderOverview`; source and typecheck only, the routed 404 / 503 paths were not driven in the browser)
 - **Severity:** polish
 - **Where:** `/pripomienky/register/999999` (and `/23001`, a portal id) · `ReminderDefinitionDetailView.vue:361-380`
   (`fetchById` without `_silent`). Same on `/pripomienky/prehlad` when the overview request fails: the page says
@@ -302,7 +304,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** `_silent: true` on both requests (the idiom S7 uses).
 
 ### P3. [framework] The detail page is titled by the reminder's kind, so every reminder has the same heading
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S22, framework `dcd6b11`; `h1` and last crumb are `reminderLabel`, kind kept as a caption; `/23201` reads "Reminder #23001", `/23202` "Reminder #23002")
 - **Severity:** polish
 - **Where:** `/pripomienky/register/:id` → `h1` and the last breadcrumb · `ReminderDefinitionDetailView.vue:21, 386`
 - **Expected:** a detail page's heading identifies the record. The register names a row by its Subject
@@ -316,7 +318,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** `{subjectType} #{subjectId}` as the heading and crumb, kind beside it. Same identity string as A1.
 
 ### P4. [framework] "With lead time" is shown for a reminder whose only offset is the deadline itself
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S19, framework `f103416`; `hasLeadOffsets` counts only `offsetMinutes < 0`; the chip shows on #23101 and #23001, not #23002)
 - **Severity:** polish
 - **Where:** `/pripomienky/nadchadzajuce` → Reminder #23002 → Schedule type chip · `UpcomingReminderGridResponse.ts:76`
   (`countOf(json.leadOffsets) > 0`)
@@ -332,7 +334,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** `leadOffsets.some(o => o.offsetMinutes < 0)`.
 
 ### P5. [framework] Upcoming rows cannot open the reminder they list
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S22, framework `dcd6b11`; the upcoming caption is a `RouterLink` to the definition; #23001 lands on `/pripomienky/register/23201`)
 - **Severity:** polish
 - **Where:** `/pripomienky/nadchadzajuce` → Kind cell (`Reminder #23001` caption) · `ReminderUpcomingView.vue:107-117`
 - **Expected:** consistency with the sibling register, whose Subject cell links to the detail; the row `id` here is
@@ -347,7 +349,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 - **Suggested fix:** wrap the caption in the same `RouterLink` the register uses.
 
 ### P6. [framework] Dispatch history has an empty, unnamed last column
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S24, framework `113fcaf`; `:showActions="false"`, the header row is exactly the five named columns)
 - **Severity:** polish
 - **Where:** `/pripomienky/historia` → rightmost column · `ReminderDispatchHistoryView.vue:92-105` (`BasicTable` with
   `hasEdit/hasDelete/hasCreate` false and no `#additionalActions`)
@@ -362,7 +364,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   there is none, that is the framework-level fix (it would apply to every read-only table).
 
 ### P7. [framework] "Corrects #23501" points at a dispatch id the table never shows
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S24, framework `113fcaf`; the chip reads "Corrects the {time} record" and the corrected row gets a "Corrected by the {time} record" chip; a correction split across a page boundary was not verified, only the filter case)
 - **Severity:** polish
 - **Where:** `/pripomienky/historia` → 25.09.2026 21:00 row → chip "Corrects #23501" · `ReminderDispatchHistoryView.vue:127-135`
 - **Expected:** the corrected record is identifiable from the screen — that is the chip's whole job.
@@ -379,7 +381,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   ("Corrected by a later record"); a dispatch-id column is the fallback.
 
 ### P8. [framework] Date-only filter chips print a midnight time
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S20, framework `4920a5b`; all eight date chips use `formatToDate`; "Next occurrence to: 05.10.2026")
 - **Severity:** polish
 - **Where:** filter chips on all three list views — "Next occurrence to: 03.10.2026 0:00:00", "Dispatched from:
   24.09.2026 0:00:00" · `chipFormatters` in `ReminderDefinitionsView.vue:281-288`, `ReminderUpcomingView.vue:265-272`,
@@ -399,7 +401,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 ## Opportunities
 
 ### O1. [framework] Reminders are named by type and id everywhere, while the row already carries a human title
-- **Status:** open
+- **Status:** deferred (`_fix-queue.md` → *Deferred to opportunities*; S22 shipped the no-decision half, `reminderLabel`. The resolver / `displayLabel` half is a product and PII decision, to be weighed with `reminders-user/B1` / §S6)
 - **Severity:** opportunity
 - **Where:** register Subject, Upcoming Kind cell, detail `h1`, overview failure rows, dispatch history Reminder ID
 - **What exists:** every grid and detail response carries `payloadJson`, and for this app's Portal reminders it holds
@@ -429,7 +431,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 ## Unverified
 
 ### U1. [framework] Overview's 5-minute poll, its pause while hidden, and the ticking "Updated N minutes ago"
-- **Status:** open
+- **Status:** open (queued under `_fix-queue.md` → *Needs verification*; needs the headed two-tab run, together with `scheduler/U2`)
 - **Severity:** unverified
 - **Where:** `/pripomienky/prehlad` · `ReminderOverviewView.vue:321-371` (poll, visibility handling),
   `:298-307` (freshness label)
@@ -443,7 +445,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
   requests), then back (expect 1). Same shape as `scheduler/U2`.
 
 ### U2. [framework] The overview's failure card with more failures than it renders
-- **Status:** open
+- **Status:** verified 2026-10-05 (mocked overview, 40 failures / 20 rows: headline 40, 8 rows, "Showing 8 of 40", link to `?needsAttention=true`; proves the client logic only, not that the server's count equals the history list's)
 - **Severity:** unverified
 - **Where:** `/pripomienky/prehlad` → *Failures needing attention* · `component/OverviewFailureList.vue`
 - **Claim (R9 problem 3):** the card caps what it renders and says "showing N of M" honestly, linking through for the

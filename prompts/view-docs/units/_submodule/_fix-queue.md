@@ -211,12 +211,7 @@ can go.
 ## Needs verification (unverified findings, and what would settle each)
 
 ### `scheduler`
-- **`U1`** — does a Trigger from the jobs-grid row show the new run? The row reloads once, immediately (source). It is
-  settled by a mutation pass on a harmless job (`Portal.SuggestionPatternRefresh`): trigger from the row and watch
-  *Last run* for 30 s. If it does not update, it becomes a batch that gives the grid the job-detail's
-  `usePollForRun` treatment.
-- **`U2`** — do both pollers pause while the tab is hidden? It needs a headed browser with a second tab in front for 3
-  minutes, counting `GET /health` and `POST jobs-overview`.
+<!-- `scheduler` U1, U2 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 - **`U3`** — none of the orphan surfaces (grid chip, detail alert, disabled Trigger, replay gate, *Orphaned* list) can
   be exercised, because no job is orphaned. It needs a job row whose `handlerKey` has no registered handler. The e2e
   fixture has no scheduler data, and a test-only handler that registers and then disappears is the cleanest source.
@@ -226,24 +221,15 @@ can go.
 ### `reminders-admin`
 - **`U1`**: the overview's 5-minute poll, its pause while the tab is hidden, and the "Updated N minutes ago" tick.
   Only the focus path was observed (throttled within 30 s, fires after 32 s). Settled by the same headed two-tab run as
-  `scheduler/U2`: 6 min visible (+1 `GET …/overview`, label "5 minutes ago"), 6 min hidden (+0), return (+1).
-  Worth doing in one sitting with `scheduler/U2`.
-- **`U2`**: the failure card's cap and "showing N of M" line (R9 problem 3). The seed has one uncorrected failure.
-  Needs a fixture with more uncorrected failed dispatches than `OverviewFailureList`'s cap. Then compare the
-  headline, the rendered rows, the N-of-M line and `/pripomienky/historia?needsAttention=true`.
+  a real headed hidden tab: 6 min visible (+1 `GET …/overview`, label "5 minutes ago"), 6 min hidden (+0), return (+1).
+  `scheduler/U2` was settled with a simulated hidden tab (same `usePolling`), so this one still needs the real run.
+<!-- `reminders-admin` U2 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 
-### `reminders-user`
-- **`U3`**: do reminder instants follow the browser's timezone rather than the account's? `useReminderFormat` goes
-  through `DateTimeHelper` in dayjs's local zone. The pass could not tell the two apart, because browser and account
-  are both `Europe/Bratislava`. Settled by running the browser with `timezoneId: 'America/New_York'` (or changing the
-  seed account's timezone) and comparing row 1 with `2026-10-02T14:30Z`. If confirmed, it is a framework batch on the
-  `useUserClock` / `userTimeZone` collaborator, separate from S11 (locale, not zone). S20's date bounds would follow
-  the same answer (its *Risk*).
+<!-- `reminders-user` U3 settled 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 
 ## Deferred to opportunities
 
-- **`scheduler/O1`** — *Trigger now* is one click with real side effects, while *Replay* has an acknowledged warning.
-  A light confirm, at least on the icon-only grid row, is a product decision.
+<!-- `scheduler/O1` built 2026-10-05 — moved to _fix-queue-log.md → Closed opportunities. -->
 - **`scheduler/O2`** — 50 of the 73 rows are spent or removed `History.TimerBoundaryAlarm` one-shots. Hide `Removed`
   by default and group per-instance one-shots by handler, so the 11 recurring jobs stay visible.
 - **`reminders-admin/O1`**: reminders are named by kind and id everywhere, although each row's `payloadJson` carries

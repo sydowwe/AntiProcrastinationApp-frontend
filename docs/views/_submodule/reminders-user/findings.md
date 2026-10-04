@@ -2,8 +2,14 @@
 
 > Pass: inventory + mutation · captured 2026-10-01 (both rounds) · commit `4d890646` (framework `b1b82a1`)
 
-**Tally:** blocker 1 · bug 6 · a11y 4 · polish 7 · opportunity 1 · unverified 2  (21 entries: X1, B1–B6, A1–A4,
-P1–P7, O1, U2–U3. U1 became B6. U2 is `stale`, settled in round 2, and stays listed so the ids do not move.)
+**Tally (as captured):** blocker 1 · bug 6 · a11y 4 · polish 7 · opportunity 1 · unverified 2  (21 entries: X1, B1–B6, A1–A4,
+P1–P7, O1, U2–U3. U1 became B6. U2 is `stale`, settled in round 2, and stays listed so the ids do not move.) The
+current state is in the status line below.
+
+**Status (2026-10-05):** 14 fixed or fixed-in-part (X1, B2, B3, B5, A1, A2, A3, A4, P1, P2, P4, P5, P6, P7; A2's *Snooze*
+half and P2's badge half are won't-fix by owner decision) · 4 escalated to the backend (B1 and B4 → §S6, B6 → §S7, P3 →
+§S2) · O1 deferred behind §S7 · U2 stale · U3 settled as not a defect. Fix batches are in
+`prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the pass wrote to the database for real. Through the real API: one snooze marker (23202, the
 05.10 occurrence snoozed to 07:27:20Z), which the scanner delivered as notification **22103** at 07:27:58Z. Also two
@@ -15,7 +21,7 @@ moved by a day). The reseed signed the session out, as expected: it invalidates 
 
 Every finding is **[framework]**: the view, its components and the endpoint all live in
 `src/_common/modules/reminders/` or the framework's shared components. Fixes are a `vue_framework` commit plus a
-pointer bump; B1/B4/U1 also need the framework's reminder service (`Sydowwe.Reminders`). Where a finding is a new
+pointer bump; B1/B4/B6 also need the framework's reminder service (`Sydowwe.Reminders`). Where a finding is a new
 instance of a batch already in `prompts/view-docs/units/_submodule/_fix-queue.md`, it says so — triage should fold it
 into that batch rather than open a new one.
 
@@ -30,17 +36,17 @@ into that batch rather than open a new one.
 | claim (source) | observed |
 | --- | --- |
 | Dismiss copy states it cannot be undone (R10 §1) | holds — "This cannot be undone from here." |
-| Dialog closes before the row drops; pager refetches instead of lying (R10 §2–3) | holds mechanically (round 2, success mocked: dialog closes, row drops, `reload()` fires once). But the refetch returns the row again (**B6**), and unmocked the action never succeeds (**X1**) |
-| Snooze / dismiss reach the server and are recorded (R10, the whole feature) | **fails**: wrong JSON keys, 404 every time (**X1**, round 2) |
-| Presets show their resolved instant; *tomorrow* and *next week* both anchor to 09:00 (R10 §4) | holds — see snooze dialog in inventory. But see **B2**: the presets are relative to *now*, not to the occurrence |
+| Dialog closes before the row drops; pager refetches instead of lying (R10 §2–3) | holds mechanically (round 2, success mocked: dialog closes, row drops, `reload()` fires once). But the refetch returns the row again (**B6**, still open, §S7). The action now reaches the server (**X1**, fixed 2026-10-04) |
+| Snooze / dismiss reach the server and are recorded (R10, the whole feature) | **failed in round 2**: wrong JSON keys, 404 every time (**X1**). Fixed 2026-10-04 (S28): both now return 204 |
+| Presets show their resolved instant; *tomorrow* and *next week* both anchor to 09:00 (R10 §4) | holds — see snooze dialog in inventory. Round 2 found them relative to *now*, not to the occurrence (**B2**); fixed 2026-10-04 (S28), they now count from the occurrence |
 | One reset path in the snooze dialog; stale presets explained (R10 §5–6) | holds in source (`SnoozeDialog.vue` open-time watch only; warning alert covers the stale case); staleness not waited out |
 | `canAct` uses a reactive clock (R10 §7, README) | holds in source (`useCurrentTime`); no occurrence passed during the pass |
-| Icon-only row buttons have an accessible name naming the reminder (R8 §1) | names exist, but are identical on every row — **B1** |
+| Icon-only row buttons have an accessible name naming the reminder (R8 §1) | names exist, but are identical on every row — **B1** (still open, §S6) |
 | Actions column has header text (R8 §2) | holds — sr-only "Actions" |
-| A polite live region announces the result count (R8 §5) | holds — `status "3 results found"`; but it announces a failed load as "0 results found" — **B5** |
+| A polite live region announces the result count (R8 §5) | holds — `status "3 results found"`; but it announced a failed load as "0 results found" — **B5**, fixed 2026-10-04 (S29) |
 | No horizontal page scroll at 375 px (R8 §6) | holds |
-| Focus lands somewhere sane after a dialog closes (R8 §7) | only partly — **A1** |
-| List views' error state deferred to R2/R5 (R2 *Out of scope*, `useReminderTableErrors.ts` comment) | still deferred — **B5** |
+| Focus lands somewhere sane after a dialog closes (R8 §7) | was only partly met — **A1**, fixed 2026-10-04 (S13) |
+| List views' error state deferred to R2/R5 (R2 *Out of scope*, `useReminderTableErrors.ts` comment) | was still deferred — **B5**; taken by S29 on 2026-10-04 |
 | Filter/page/sort absent from the URL (README) | stale — all in the URL, survive reload and Back |
 | "The module is Slovak-only… do not add an EN locale" (README *Not in scope*) | stale — `reminders.en.ts` / `remindersDashboard.en.ts` exist and the view renders English |
 | Slovak plurals (R3) | not checked — EN session; left to the X3 Slovak sweep as the unit prompt says |
@@ -48,7 +54,7 @@ into that batch rather than open a new one.
 ---
 
 ### X1. Snooze and Dismiss always fail with 404: the client sends the wrong JSON keys, and the UI calls it "no longer available"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S28, framework `4e385e5`; verified live: Snooze and Dismiss both send `reminderDefinitionId` / `occurrenceAt` and get 204. `SnoozeOccurrenceRequest.test.ts` pins the keys. Not verified: a sub-millisecond occurrence would still 400 on the server's exact-match check, which is a backend truncation ask if it shows up)
 - **Severity:** blocker
 - **Where:** `/pripomienky/moje` → any row's *Snooze* → *Snooze*, and any row's *Dismiss* → *Dismiss delivery*;
   `src/_common/modules/reminders/dto/request/SnoozeOccurrenceRequest.ts`, `DismissOccurrenceRequest.ts` (fields
@@ -86,7 +92,7 @@ into that batch rather than open a new one.
   succeed, B6 is what the user sees next.
 
 ### B1. The three rows are indistinguishable — nothing says what any reminder is about
-- **Status:** open
+- **Status:** escalated — backend ask §S6 in `_fix-queue.md` (needs a recipient-safe display title on `my-upcoming`; the client half is appended as a batch once it lands. S22 does not cover it, because the personal row has no `subjectType`/`subjectId`)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → table rows; `MyRemindersView.vue:86-96` (kind cell), `:124-149` (row actions);
   server `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs`
@@ -120,7 +126,7 @@ into that batch rather than open a new one.
   that: render it as the row's primary text and in both `a11y.*For` labels instead of `kind`.
 
 ### B2. Snooze presets are relative to *now*, so the default moves a future occurrence *earlier*
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S28, framework `4e385e5`; client half. Presets now count from the occurrence and the custom picker is floored at it; verified live: 17:30 same day, 07.10 9:00, 13.10 16:30 for a 06.10 16:30 row. Whether the *server* should refuse an earlier `snoozeUntil` is §S7(c), still open)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → row *Snooze* → *Snooze reminder* dialog; `SnoozeDialog.vue:96` (default
   `in1Hour`), `:104-121` (presets); server `SnoozeReminderOccurrenceEndpoint.cs:50` (only checks
@@ -154,7 +160,7 @@ into that batch rather than open a new one.
   so raise it alongside B1's ask.
 
 ### B3. "Next occurrence to" excludes the day you pick
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S20, framework `4920a5b`; `MyReminderFilter.toJSON` sends the `to` bound as local 23:59:59.999. Verified live: `/pripomienky/moje?to=2026-10-05` keeps the 05.10 16:30 row and the chip reads "05.10.2026")
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → *Filter* → *Next occurrence to*; `MyRemindersView.vue:57-61` (VDateInput),
   `reminderFilterParams.ts:115,127` (read/write), server `ReminderDashboardQueries.cs` (`NextOccurrenceAt <= To`)
@@ -176,7 +182,7 @@ into that batch rather than open a new one.
   day's midnight with `<`. Show the chip as a date, not an instant.
 
 ### B4. A recurring-interval reminder's schedule reads "—"
-- **Status:** open
+- **Status:** escalated — backend ask §S6 in `_fix-queue.md` (`intervalPreset` and `cron` missing from `MyUpcomingReminderDto`; the client half is appended as a batch once it lands)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → row 3 (`seed.reminderDefinitions.payRentRecurring`) → *Schedule type* cell;
   `MyRemindersView.vue:97-104`, `ReminderScheduleDisplay.vue` (`intervalLabel`)
@@ -197,7 +203,7 @@ into that batch rather than open a new one.
   it in the same ask as B1. Until then, render the schedule-type name ("Recurring") rather than "—".
 
 ### B5. A failed load renders as "no reminders" and is announced as "0 results found"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S29, framework `639814a`; verified live with `my-upcoming` routed to 500: "The list could not be loaded." + *Try again*, the live region announces the failure, and *Try again* restores 3 rows after `unroute`. The admin tables got the same state, checked once on `/pripomienky/register`)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje`; `useReminderTableErrors.ts` (`reportTableLoadError`, deliberately terminal),
   `TableResultAnnouncer.vue`
@@ -219,7 +225,7 @@ into that batch rather than open a new one.
   alert with retry = `reload()`, and skip the announcer while `error` is set.
 
 ### B6. A snoozed or dismissed occurrence stays in the list unchanged, and can be dismissed again (was U1)
-- **Status:** open
+- **Status:** escalated — backend ask §S7 in `_fix-queue.md` (`my-upcoming` must project the caller's effective action, and a repeat dismiss needs a defined outcome; the client half replaces `dropActiveRow()` + `reload()` with O1's chip once it lands. Confirmed unchanged after S28 made the actions reach the server: the snoozed row comes back on the reload)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje`; `MyRemindersView.vue:287-294` (`dropActiveRow` → `reload()`); server
   `GetMyUpcomingRemindersEndpoint.cs:40-41` (filters on recipient only), `DismissReminderOccurrenceEndpoint.cs` (no
@@ -252,7 +258,7 @@ into that batch rather than open a new one.
   "dismiss twice" should be idempotent is part of the same ask.
 
 ### A1. The first Snooze dialog of a page load drops focus to `<body>` when it closes
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S13, framework `60bef5b`; `MyDialog` records the opener when it mounts open and restores on unmount. Verified live: row 1 *Snooze* → Enter → *Cancel* returns focus to that button, and a snooze with `snooze` routed to 204 drops the row and parks focus on the heading, as designed)
 - **Severity:** a11y
 - **Where:** `/pripomienky/moje` → any row's *Snooze* → *Cancel*; `MyRemindersView.vue:152-158` (`SnoozeDialog
   v-if="activeOccurrence"`), `MyDialog.vue:144-151` (opener recorded in a non-immediate `watch`)
@@ -276,7 +282,7 @@ into that batch rather than open a new one.
   loses focus, not only the first of the page load.
 
 ### A2. Escape does not close the Snooze or Dismiss dialog
-- **Status:** open
+- **Status:** fixed 2026-10-04 for *Dismiss* (S30, framework `0d04853`; Escape closes it and focus returns to the row's *Dismiss*). **Won't fix for *Snooze***: FW1 (owner decision 2026-09-23) keeps it persistent because it carries a custom-time form (log, Contradictions §1). The e2e spec should assert that *Snooze* resists Escape
 - **Severity:** a11y
 - **Where:** `/pripomienky/moje` → *Snooze* / *Dismiss* dialogs; `MyDialog.vue:86` (`persistent = true` default),
   `:136-137` (`onEscKey` returns when persistent)
@@ -294,7 +300,7 @@ into that batch rather than open a new one.
   custom snooze time). Or decide the default once in MyDialog as its own batch, like S13/S15.
 
 ### A3. The custom snooze time field has no accessible name
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S31, framework `67d4a72`; verified live: the time input is `textbox "Remind me on — Time"`. Other labelled `DateTimePicker` call sites were not checked)
 - **Severity:** a11y
 - **Where:** *Snooze reminder* → *Custom time* → time input; `DateTimePicker.vue:17-25`
   (`:label="label ? '' : $t('dateTime.time')"`)
@@ -310,7 +316,7 @@ into that batch rather than open a new one.
 - **Suggested fix:** keep the visual label empty but set an `aria-label` (e.g. `` `${label} — ${t('dateTime.time')}` ``).
 
 ### A4. Filter chips' remove button is named just "Close"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S26, framework `67d4a72`; verified live: the chip's button reads "Remove filter: Kind: Personal" and nothing is named "Close")
 - **Severity:** a11y
 - **Where:** `/pripomienky/moje?kind=Personal` → chip "Kind: Personal" → its ✕; `FilterPanel.vue:13-14`
   (`closable`, `@click:close`)
@@ -326,7 +332,7 @@ into that batch rather than open a new one.
 - **Suggested fix:** pass Vuetify's `closeLabel` on the chip, built from the chip's own label.
 
 ### P1. The breadcrumb calls this page "Home"
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S17, framework `7033ca2`; verified live: `Home › My reminders`)
 - **Severity:** polish
 - **Where:** `/pripomienky/moje` → top-bar breadcrumb
 - **Expected:** the crumb names the page ("My reminders").
@@ -338,7 +344,7 @@ into that batch rather than open a new one.
   S5's shell-level option if that is taken.
 
 ### P2. The default sort is rewritten on every mount and badges *Kind* "2"
-- **Status:** open
+- **Status:** fixed 2026-10-04 for the URL half (S23, framework `5d03e01`; default is now `[nextOccurrenceAt asc, kind asc]` and a bare `/pripomienky/moje` keeps `location.search === ''`). The "Kind 2" badge half is **won't fix** by owner decision (log, Contradictions §5): it now reports the view's real, declared order
 - **Severity:** polish
 - **Where:** `/pripomienky/moje`; `MyRemindersView.vue:217` (`defaultSortBy: [nextOccurrenceAt asc]`)
 - **Expected:** opening the page with no query leaves a clean URL state equal to the default, and only the column
@@ -352,7 +358,7 @@ into that batch rather than open a new one.
   `[nextOccurrenceAt asc, kind asc]` as the default.
 
 ### P3. Raw internal codes on screen, and free-text filters that need them typed exactly
-- **Status:** open
+- **Status:** escalated — waits on the kind catalog, backend ask §S2 in `_fix-queue.md` (with it both filters become selects and the cells take its labels; without it the interim is to drop the two filters from this view, an owner call. Largely moot once §S6 gives rows a title)
 - **Severity:** polish
 - **Where:** Kind / Owner module columns; *Filter* → *Owner module*, *Kind* (`MyRemindersView.vue:34-43`)
 - **Expected:** a user-facing page shows names, not identifiers, and a text field implies search.
@@ -367,7 +373,7 @@ into that batch rather than open a new one.
   `notificationTypeMeta` labels notification types. Largely moot once B1 gives rows a title.
 
 ### P4. No page-specific empty state
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S29, framework `639814a`; verified live: filtered-empty reads "Nothing matches the current filters." + *Clear filters*, and a mocked empty list reads "No upcoming reminders.")
 - **Severity:** polish
 - **Where:** `/pripomienky/moje` table body
 - **Expected:** an empty personal list says so in the page's own words ("No upcoming reminders", or "No reminders
@@ -379,7 +385,7 @@ into that batch rather than open a new one.
   filter.
 
 ### P5. The Dismiss confirmation does not say which occurrence it dismisses
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S30, framework `0d04853`; verified live: the dialog shows "Occurrence 06.10.2026 16:30:00". The reminder's own title joins it when §S6 lands)
 - **Severity:** polish
 - **Where:** row *Dismiss* → *Dismiss reminder* dialog; `MyRemindersView.vue:160-168`
 - **Expected:** a confirmation for an irreversible action names its object. The sibling Snooze dialog shows an
@@ -391,7 +397,7 @@ into that batch rather than open a new one.
 - **Suggested fix:** reuse the Snooze dialog's `InfoRow` with `formatInstant(activeOccurrence)`.
 
 ### P6. Instants are Slovak-shaped in EN, with inconsistent hour padding
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S11, framework `2cbc085`; `DateTimeHelper` resolves the locale per call. Verified live in EN: cells read `10/06/2026 4:30:00 PM`, matching the date inputs' order. The SK shape is covered by a unit test only)
 - **Severity:** polish
 - **Where:** Next occurrence cells, schedule cells, snooze presets, filter chips; `useReminderFormat.formatInstant` →
   `DateTimeHelper.formatToTimeWithSec` (`dayjs(...).locale('sk').format('LTS')`, `:93`)
@@ -402,7 +408,7 @@ into that batch rather than open a new one.
 - **Root cause guess:** `_fix-queue` **S11**. Recorded so S11's verification walks this view. No separate batch.
 
 ### P7. A stale row's 400 is reported as "no longer in the future" even when the occurrence is still ahead
-- **Status:** open
+- **Status:** fixed 2026-10-04 (S30, framework `0d04853`; `actions.occurrenceChanged`, "This occurrence has changed or passed — the list was refreshed.", sk + en. Verified live with `dismiss` routed to a 400 carrying `errors.occurrenceAt`. The server's third 400, `SnoozeUntil` not in the future, is not described by it; the dialog's `isValid` rules it out except under clock skew)
 - **Severity:** polish
 - **Where:** `MyRemindersView.vue:361-367` (`handleActionError`, 400 branch) → `reminderDashboard.actions.pastOccurrence`;
   server `Snooze/DismissReminderOccurrenceEndpoint.cs:46-49`
@@ -422,7 +428,7 @@ into that batch rather than open a new one.
   refreshed."), or branch on whether `activeOccurrence` is still in the future when the 400 arrives.
 
 ### O1. The list cannot show that an occurrence is already snoozed or dismissed
-- **Status:** open
+- **Status:** deferred — it is §S7's client half (the chip is B6's fix), so it waits on that backend ask. Listed under *Deferred to opportunities* in `_fix-queue.md`
 - **Severity:** opportunity
 - **Where:** `/pripomienky/moje`
 - **What exists:** the server keeps per-recipient `ReminderOccurrenceAction` markers (dismiss, and snooze with
@@ -454,7 +460,7 @@ into that batch rather than open a new one.
   `page.clock` fast-forward.
 
 ### U3. Instants follow the browser's timezone, not the account's
-- **Status:** open
+- **Status:** settled 2026-10-05 by source, not by a browser run: not a defect. `User.timezone` is a server-side field that `timeZoneSync.ts` keeps equal to the browser's zone (it is set from `Intl.DateTimeFormat().resolvedOptions().timeZone` on login, registration and Google sign-in, and the framework offers no manual picker on purpose), so the account zone and the browser zone cannot differ for long. `DateTimeHelper` has no zone handling and does not need any for that reason. A `timezoneId: 'America/New_York'` run was **not** driven. If a manual zone picker is ever added, re-open this and S20's date bounds
 - **Severity:** unverified
 - **Where:** `useReminderFormat.formatInstant` → `DateTimeHelper` (dayjs local zone)
 - **Suspected:** an account whose `timezone` differs from the browser sees reminder times in the browser's zone.
