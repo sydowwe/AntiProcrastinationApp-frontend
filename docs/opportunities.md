@@ -10,7 +10,7 @@
 ## Top picks
 
 1. ~~**OP1. Routine periods: warn before the reset, and stop saving over the warning.**~~ Done. See *Closed*.
-2. **OP2. Make "Show details panel by default" do something.** It is a saved setting that nothing reads.
+2. ~~**OP2. Make "Show details panel by default" do something.**~~ Done. See *Closed*.
 3. **OP3. Keep what's typed into a list's description.** Today the form accepts it and the round trip loses it both ways.
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
 5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
@@ -18,15 +18,6 @@
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP2. Make "Show details panel by default" do something
-- **Source:** from data-map (backlog `UserPlannerSettings.detailsPanelExpandedByDefault`)
-- **Data it spends:** `UserPlannerSettings.detailsPanelExpandedByDefault`
-- **Where it would surface:** the day planner view's details panel, starting open or closed as saved
-- **Needs backend:** no
-- **Size:** S. One read in the day view, where the panel's initial state is set.
-- **Value:** The View Defaults tab promises what a new day view starts out looking like. A toggle that changes nothing
-  teaches the user to stop trusting the settings page.
 
 ### OP3. Keep what's typed into a list's description (and let a step carry a note)
 - **Source:** from data-map (backlog `TodoList.description`, G2; reverse gap `TodoListItemStep.note`)
@@ -189,6 +180,21 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP2**, built 2026-10-04, app-side only. The API already stored, returned and saved
+  `detailsPanelExpandedByDefault`, so the backend did not change. `useRoutinePlacement` takes an optional
+  `openByDefault` getter, and `DayPlannerView` passes the setting. A wide day view starts open or closed as saved. A
+  compact one still starts closed. The setting is read through a watcher, so it applies after a full reload, when the
+  settings arrive after mount. It also applies when the layout crosses the compact threshold. **The sizing note was
+  wrong:** this was more than one read. A wide planner showed the panel whatever `panelOpen` said
+  (`v-show="panelOpen || !compact"`), and its ✕ and the header's ☰ were compact-only, so there was nothing for the
+  setting to close. The shell now obeys `panelOpen` at every width. The ✕ and the ☰ (day header, template header,
+  and the template not-found alert) now show at every width, so the template planner's panel can be closed on a
+  wide screen too. The setting itself stays day-view only, like the rest of *View Defaults*: the template planner
+  always starts open.
+  Checked live at 1600 px: with the setting off, the panel started closed after in-app navigation and after a full
+  reload. ☰ opened it and ✕ closed it. With the setting back on (the seed value), it started open, and at 700 px it
+  started closed. On template 20001, ✕ and ☰ closed and reopened the panel. No console errors. No e2e spec yet.
 
 - **OP1**, built 2026-10-04, app-side only. The API already accepted, validated and returned both fields
   (`RoutineTimePeriodValidator`: lead 1 to length − 1 or null, budget 0–10), and `RoutinePeriodNudgeJob` already

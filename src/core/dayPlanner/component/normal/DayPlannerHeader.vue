@@ -6,7 +6,6 @@
 		<!-- Left: Date + Edit -->
 		<div class="left-section">
 			<VIconBtn
-				v-if="compact"
 				variant="tonal"
 				color="secondaryOutline"
 				icon="bars"

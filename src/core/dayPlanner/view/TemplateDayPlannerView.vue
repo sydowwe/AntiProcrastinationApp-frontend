@@ -48,9 +48,8 @@
 					>
 						<template #append>
 							<!-- The alert replaces TemplatePlannerHeader, and with it the header's reopen toggle —
-							     so in a compact planner a panel closed here stayed closed until a reload (F51). -->
+							     so a panel closed here stayed closed until a reload (F51). -->
 							<VIconBtn
-								v-if="compact"
 								variant="tonal"
 								color="secondaryOutline"
 								icon="bars"

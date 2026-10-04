@@ -22,19 +22,35 @@ export const SELECTED_ROUTINE_ITEM_KEY = Symbol('selectedRoutineItem') as Inject
  *
  * `store` is narrowed to the one field this touches: both concrete stores satisfy it, and the split
  * view's two panels each pass their own store, so nothing here may reach for a store by id.
+ *
+ * `openByDefault` is the user's "Show details panel by default" (OP2). It is a getter, not a value,
+ * because the settings may still be loading at setup: it starts at the store's `true` and the watcher
+ * below applies the saved value once it arrives.
  */
-export function useRoutinePlacement(store: Pick<AnyDayPlannerStore, 'placingItem'>, compact?: Readonly<Ref<boolean>>) {
+export function useRoutinePlacement(
+	store: Pick<AnyDayPlannerStore, 'placingItem'>,
+	compact?: Readonly<Ref<boolean>>,
+	openByDefault: () => boolean = () => true,
+) {
 	const activePanel = ref<PlannerSidePanelTab>('details')
-	const panelOpen = ref(!compact?.value)
+	const panelOpen = ref(initialOpen())
 	const selectedRoutineItem = ref<RoutineTodoListItemEntity | null>(null)
 
 	provide(SELECTED_ROUTINE_ITEM_KEY, selectedRoutineItem)
 
+	function initialOpen() {
+		return !compact?.value && openByDefault()
+	}
+
 	// A compact planner floats the panel over the grid (F88), so it starts closed there and opens on
-	// demand. A wide one always shows it. Re-applied whenever the layout crosses the threshold.
+	// demand. A wide one starts as the user's setting says. Re-applied whenever the layout crosses the
+	// threshold, and when the setting itself arrives or changes.
+	watch(openByDefault, () => {
+		panelOpen.value = initialOpen()
+	})
 	if (compact) {
-		watch(compact, isCompact => {
-			panelOpen.value = !isCompact
+		watch(compact, () => {
+			panelOpen.value = initialOpen()
 		})
 		// Picking an item is the step before placing it on the grid, which the open overlay covers.
 		watch(selectedRoutineItem, item => {

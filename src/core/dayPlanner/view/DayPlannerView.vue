@@ -220,7 +220,11 @@
 	// Measured on this view's root, not the window (F88).
 	const rootRef = ref<HTMLElement>()
 	const compact = providePlannerLayout(rootRef)
-	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(store, compact)
+	const { activePanel, panelOpen, selectedRoutineItem } = useRoutinePlacement(
+		store,
+		compact,
+		() => settingsStore.detailsPanelExpandedByDefault,
+	)
 
 	const { templatePreview, applyTemplate } = useTemplatePreview(store, calendar, fetchTemplateTasks)
 	const { navigateDate, navigateToDate, handleUndo, missingDate } = useDayNavigation(

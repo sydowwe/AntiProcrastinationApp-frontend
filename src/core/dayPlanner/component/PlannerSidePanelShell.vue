@@ -1,7 +1,9 @@
 <!-- PlannerSidePanelShell.vue - panel chrome shared by the day planner and the template planner -->
 <template>
+	<!-- Closable at every width, not only when compact: a wide planner used to show it unconditionally,
+	     so "Show details panel by default" off had nothing to act on (OP2). -->
 	<VCard
-		v-show="panelOpen || !compact"
+		v-show="panelOpen"
 		class="flex-column align-self-stretch"
 		:elevation="compact ? 12 : 2"
 		:style="panelStyle"
@@ -14,7 +16,6 @@
 				<div class="d-flex align-center ga-2">
 					<slot name="titleActions"></slot>
 					<VIconBtn
-						v-if="compact"
 						color="secondaryOutline"
 						icon="xmark"
 						variant="tonal"
