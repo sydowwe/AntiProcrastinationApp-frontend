@@ -145,6 +145,8 @@ const todoList = {
 		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
 		recap: {
 			summary: `Dnes si dokončil {count} vec — {time} zaznamenaných | Dnes si dokončil {count} veci — {time} zaznamenaných | Dnes si dokončil {count} vecí — {time} zaznamenaných`,
+			showMore: `+ {count} ďalšia | + {count} ďalšie | + {count} ďalších`,
+			showLess: `Zobraziť menej`,
 		},
 	},
 	routineTodoList: {

@@ -133,6 +133,8 @@ const todoList = {
 		},
 		recap: {
 			summary: `{count} thing finished today — {time} logged | {count} things finished today — {time} logged`,
+			showMore: `+ {count} more`,
+			showLess: `Show less`,
 		},
 	},
 	routineTodoList: {
