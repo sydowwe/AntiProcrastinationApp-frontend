@@ -3,6 +3,7 @@ import { Time } from '@/_common/dto/dto/Time.ts'
 import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	/**
@@ -11,6 +12,13 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 	 * out of the request body. Declared here because `PlannerTaskDialog` assigns it.
 	 */
 	date?: Date
+
+	/**
+	 * The task completes itself once its slot ends, if it is in progress by then — for blocks that do not
+	 * need a tick to have happened (rest booked with the leisure picker's "do it now"). Create-only: the
+	 * server ignores it on a PUT, so a full update can never switch it off by omission.
+	 */
+	autoCompleteAtEnd = false
 
 	constructor(
 		public startTime: Time = new Time(7, 0),
@@ -51,6 +59,16 @@ export class PlannerTaskRequest implements IBasePlannerTaskRequest {
 
 	static fromSpan(startTime: Time, endTime: Time): PlannerTaskRequest {
 		return new PlannerTaskRequest(startTime, endTime)
+	}
+
+	/**
+	 * `date` goes out as `YYYY-MM-DD`, never as the `Date` itself. A local-midnight `Date` serialises to
+	 * the UTC instant before it (`2026-10-03T22:00:00Z` for 4 October in Bratislava), and the server's
+	 * `DateOnly` converter resolves that in the *server's* zone — the right day only while the API
+	 * happens to run in the user's zone, the day before in a UTC container.
+	 */
+	toJSON() {
+		return { ...this, date: this.date ? formatDateForApi(this.date) : undefined }
 	}
 
 	static fromEntity(entity: PlannerTask): PlannerTaskRequest {

@@ -13,6 +13,8 @@ import { BatchOperationResponse } from '@/core/dayPlanner/dto/response/BatchOper
 import { PlanVsActualTrend } from '@/core/dayPlanner/dto/response/PlanVsActualTrend.ts'
 import { SkipSummary } from '@/core/dayPlanner/dto/response/SkipSummary.ts'
 import type { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
+import { CarryOverCandidate } from '@/core/dayPlanner/dto/response/CarryOverCandidate.ts'
+import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 
 export function useTaskPlannerCrud() {
 	const url = 'planner-task'
@@ -20,14 +22,11 @@ export function useTaskPlannerCrud() {
 		responseClass: PlannerTask,
 		entityName: url,
 	})
-	const { createWithResponse, create, update, patch, batchedToggle, deleteEntity, batchDelete } = useEntityCommand<
-		PlannerTask,
-		PlannerTaskRequest,
-		PlannerTaskRequest
-	>({
-		responseClass: PlannerTask,
-		entityName: url,
-	})
+	const { createWithResponse, create, update, updateWithResponse, patch, batchedToggle, deleteEntity, batchDelete } =
+		useEntityCommand<PlannerTask, PlannerTaskRequest, PlannerTaskRequest>({
+			responseClass: PlannerTask,
+			entityName: url,
+		})
 
 	async function batchedToggleIsDone(ids: number[]): Promise<void> {
 		return await batchedToggle('is-done', ids)
@@ -60,6 +59,22 @@ export function useTaskPlannerCrud() {
 		return BatchOperationResponse.fromJson(data)
 	}
 
+	/**
+	 * Moves an unfinished task forward to `date` and keeps the record that it slipped — the server sets
+	 * `originalDate` once and bumps `carryOverCount`. The task arrives NotStarted with its actual times
+	 * cleared; its time of day is kept. 400 for a completed/skipped task or a day not after its own.
+	 */
+	async function carryOver(id: number, date: Date): Promise<PlannerTask> {
+		const { data } = await API.post(`${url}/${id}/carry-over`, { date: formatDateForApi(date) })
+		return PlannerTask.fromJson(data)
+	}
+
+	/** Open tasks from the user's last seven days, newest day first — what the day view offers to carry over. */
+	async function fetchCarryOverCandidates(): Promise<CarryOverCandidate[]> {
+		const { data } = await API.get(`${url}/carry-over-candidates`)
+		return CarryOverCandidate.listFromObjects(data)
+	}
+
 	// One call per range the surface shows. There is deliberately no per-day form — fanning out over
 	// days to aggregate client-side is the pattern P5 removed from this module.
 	// `_silent`: this feeds a secondary line under the calendar, and a failed aggregate should not
@@ -86,6 +101,7 @@ export function useTaskPlannerCrud() {
 		createWithResponse,
 		create,
 		update,
+		updateWithResponse,
 		patch,
 		batchedToggleIsDone,
 		patchStatus,
@@ -93,5 +109,7 @@ export function useTaskPlannerCrud() {
 		deleteEntity,
 		batchDelete,
 		copyToDays,
+		carryOver,
+		fetchCarryOverCandidates,
 	}
 }

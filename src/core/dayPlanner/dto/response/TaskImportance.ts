@@ -1,6 +1,17 @@
 import type { ITextColorResponse } from '@/_common/dto/response/interface/ITextColorResponse.ts'
 
 export class TaskImportance implements ITextColorResponse {
+	/**
+	 * The `importance` value that marks a user's "optional" row — the server's
+	 * `TaskImportance.OptionalMarkerValue`. A task carrying it never counts toward the planner streak
+	 * (`PlannerStreakReader`). Every user gets one such row from the default seeder.
+	 */
+	static readonly OPTIONAL_MARKER = 666
+
+	get isOptionalMarker(): boolean {
+		return this.importance === TaskImportance.OPTIONAL_MARKER
+	}
+
 	constructor(
 		public id: number,
 		public text: string,

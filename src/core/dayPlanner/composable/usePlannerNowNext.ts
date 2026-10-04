@@ -104,7 +104,8 @@ export function usePlannerNowNext(store: IDayPlannerStore) {
 
 	/**
 	 * The next block to start. A task whose window has passed while still `NotStarted` is neither now
-	 * nor next — it is overdue, and saying so is `OverdueTasksBanner`'s job, not this one's.
+	 * nor next — it is overdue. Nothing says so yet: `OverdueTasksBanner` covers only *earlier days'* open
+	 * tasks, so today's missed blocks get no prompt (F1-01).
 	 */
 	const nextSlot = computed<ViewSlot | null>(() => {
 		const current = nowSlot.value

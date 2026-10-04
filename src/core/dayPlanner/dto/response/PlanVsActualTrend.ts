@@ -38,10 +38,16 @@ export class PlanVsActualTrend {
 		public readonly ranLongerCount: number,
 		/** NotStarted / InProgress / OnHold on a day that is over. Cancelled is excluded from `taskCount` entirely. */
 		public readonly neverHappenedCount: number,
+		/**
+		 * Times tasks first planned in the range were carried over to a later day — a task pushed three
+		 * times counts three. Its own number, deliberately *not* part of `neverHappenedCount`: a carried
+		 * task left its day, so counting it there too would count one slip twice. Outside `taskCount`.
+		 */
+		public readonly carriedOverCount: number = 0,
 	) {}
 
 	static empty(): PlanVsActualTrend {
-		return new PlanVsActualTrend(0, 0, 0, 0, 0, 0)
+		return new PlanVsActualTrend(0, 0, 0, 0, 0, 0, 0)
 	}
 
 	static fromJson(json: any): PlanVsActualTrend {
@@ -52,6 +58,7 @@ export class PlanVsActualTrend {
 			startedLateCount = 0,
 			ranLongerCount = 0,
 			neverHappenedCount = 0,
+			carriedOverCount = 0,
 		} = json ?? {}
 		return new PlanVsActualTrend(
 			taskCount,
@@ -60,6 +67,7 @@ export class PlanVsActualTrend {
 			startedLateCount,
 			ranLongerCount,
 			neverHappenedCount,
+			carriedOverCount,
 		)
 	}
 }

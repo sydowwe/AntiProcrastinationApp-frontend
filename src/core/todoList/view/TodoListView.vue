@@ -151,7 +151,6 @@
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import NormalTodoListItem from '@/core/todoList/component/normal/NormalTodoListItem.vue'
@@ -444,28 +443,20 @@
 	async function createPlannerTask(request: PlannerTaskRequest) {
 		await createPlannerTaskWithResponse(request)
 		showSuccessSnackbar(i18n.t('successFeedback.added'))
-		await adoptPlannerSlotAsDueDate(request)
+		await refreshPlannedItem(request.todolistId)
 	}
 
 	/**
-	 * Booking a slot in the planner is what "scheduling" means to the user, but the list reads
-	 * `dueDate` — without this the "not scheduled" chip and the header nudge would survive the very
-	 * action that resolves them, and the count would never drop. An existing due date is left alone:
-	 * that one is a deadline the user chose, not something the planner gets to overwrite.
+	 * Re-reads the item a block was just planned from, so its `nextPlannedSlot` — what the "not
+	 * scheduled" chip and the header nudge read — reflects the booking. This used to write the block's
+	 * date into an empty `dueDate` instead, which made a missed block turn the to-do overdue and left a
+	 * moved block's time stale on the item: `dueDate` is the user's deadline, and the planner owns the
+	 * schedule (bugs-to-investigate #8).
 	 */
-	async function adoptPlannerSlotAsDueDate(request: PlannerTaskRequest) {
-		const itemId = request.todolistId
-		if (itemId == null || !request.date) return
+	async function refreshPlannedItem(itemId: number | null) {
+		if (itemId == null) return
 		const index = items.value.findIndex(item => item.id === itemId)
 		if (index === -1) return
-		// Re-read first: the backend may already stamp the date when a planner task links to an item.
-		const fresh = await fetchById(itemId)
-		items.value[index] = fresh
-		if (fresh.dueDate) return
-		const updateRequest = ToDoListItemRequest.fromEntity(fresh)
-		updateRequest.dueDate = formatDateForApi(request.date)
-		updateRequest.dueTime = request.startTime ?? null
-		await update(itemId, updateRequest)
 		items.value[index] = await fetchById(itemId)
 	}
 

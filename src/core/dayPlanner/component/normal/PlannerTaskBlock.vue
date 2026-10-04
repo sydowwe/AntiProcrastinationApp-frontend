@@ -22,6 +22,15 @@
 			>
 				{{ formattedTime(task.actualStartTime, task.actualEndTime) }}
 			</div>
+			<!-- How many times this was pushed to a later day: "pushed 4×" is the cue to split or drop it. -->
+			<div
+				v-if="!task.isTaskOneRow && task.carryOverCount > 0"
+				class="task-time d-flex align-center ga-1"
+				:title="carriedOverLabel"
+			>
+				<VIconSmall icon="forward" />
+				{{ t('planner.calendar.carriedOverBadge', { count: task.carryOverCount }) }}
+			</div>
 		</template>
 		<template #checkbox>
 			<VMenu
@@ -115,8 +124,13 @@
 	// The status is the one thing on the block that is signalled purely by a coloured chip, and the
 	// base block's `role="button"` keeps that chip out of the accessibility tree entirely. Hand the
 	// localized status down so it lands in the block's accessible name instead.
+	const carriedOverLabel = computed(() =>
+		t('planner.a11y.carriedOverPart', { count: task.carryOverCount }, task.carryOverCount),
+	)
+
 	const extraLabelParts = computed(() => [
 		t('planner.a11y.statusPart', { status: t(`planner.status.${task.status}`) }),
+		...(task.carryOverCount > 0 ? [carriedOverLabel.value] : []),
 	])
 
 	const classes = computed(() => {

@@ -58,6 +58,7 @@ const todoList = {
 		alreadyOnDestination: `"{list}" already has a "{activity}" task`,
 		notScheduled: `Not scheduled`,
 		notScheduledHint: `Click to pick when you'll do it`,
+		plannedChipTitle: `Planned in the day planner`,
 		quickStartTimer: `Quick start timer`,
 		// `home.markDone` has the same shape, but it is another module's key — this pair is minted
 		// here rather than imported across the boundary (F71).

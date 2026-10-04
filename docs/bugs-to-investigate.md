@@ -6,6 +6,34 @@
 > **Nothing here was reproduced in a running app.** F1 was a reading pass. Each entry says how far it was checked, gives a
 > way to confirm it, and suggests a direction for the fix. Ordered by impact, highest first.
 
+## Status — 2026-10-04
+
+Every entry was re-checked against the code and held. Fixed, uncommitted at the time of writing. The backend
+side needs two migrations applied by hand (`PlannerTaskAutoCompleteAtEnd`, `PlannerTaskCarryOver`) and an API restart:
+
+| # | Outcome |
+|---|---|
+| 1 | **Fixed (backend).** The heartbeat resolves the user's zone; `IActivityTimeAttributionSink.TotalSecondsOnDayAsync(DateOnly)` became `TotalSecondsBetweenAsync(fromUtc, toUtc)`; `ActivityTimeRecordedEvent` carries the user's `Day` plus the window's local start/end. Pinned by `ExtensionActivityTrackingTests.Heartbeat_AfterTheUsersMidnight_DrivesTheUsersTodayNotUtcs`. |
+| 2 | **Fixed (backend).** Deterministic pick (window-containing block, else earliest), `ApplyStatus`, actual times on the user's clock, `SyncForPlannerTasksAsync`. *Decided:* time tracked anywhere in the day counts toward a block, but **once** — a completed same-activity block claims everything tracked up to its end, so a second block only sees time after it (the sink now counts ledger rows by overlap, pro rata). *Also found, not fixed:* the to-do fan-out (`TodoListItemIsDoneChangedEventHandler`) completes planner tasks without actual times. |
+| 3 | **Fixed, option (b).** `POST /planner-task/{id}/carry-over` moves the task forward and keeps `OriginalDate` / `CarryOverCount`; the banner uses it and now offers the last **week's** open tasks (`GET /planner-task/carry-over-candidates`), not only yesterday's. Blocks show "N×" when carried over; the calendar's trend line reports carry-overs separately from "never happened". Correction to the entry: carry-over never *broke* the streak — yesterday's open task had already broken it at midnight; the copy failed to *repair* it, where a skip does. |
+| 4 | **Fixed.** Picker-booked rest is created with the user's Optional (666) importance, so it never counts toward the streak (*decided*). "Do it now" blocks are also created `autoCompleteAtEnd` and a five-minute Planning job closes them when their slot ends. Correction: the select-options endpoint returns only `{id, text}`; the id comes from `GET /task-importance`. |
+| 5 | **Fixed.** Reschedule sends `date` and clears `calendarId`; verified in the app by rescheduling into 2028. |
+| 6 | **Fixed.** `usecase.md` and the `usePlannerNowNext` comment describe the banner as it is. |
+| 7 | **Fixed** with #1. |
+| 8 | **Decided and fixed:** neither owns the other's date. `dueDate` is the user's deadline and the planner never writes it any more; "scheduled" is read from the planner as `nextPlannedSlot` (Core seam `ITodoListItemPlanSource`, implemented in Planning). The item shows a "planned" chip beside the deadline chip, and "not scheduled" means neither. Items already stamped by the old code keep their date. |
+
+Found along the way, and fixed:
+
+- **A `Date` sent as a `DateOnly` lands a day early on a UTC host.** `PlannerTaskRequest.date` and `CalendarFilter.from/until`
+  serialised as UTC instants (`2026-10-03T22:00:00Z` for 4 October in Bratislava); the framework's `DateOnlyJsonConverter`
+  resolves those in the *server's* zone. Both now send `YYYY-MM-DD` (`calendarDayOnTheWire.test.ts`). The converter itself
+  is unchanged: an instant has no single calendar day, so no server-side fix is correct; the client must send a date.
+- **The banner offered skipped tasks** (`isDone` is Completed only), and the copy carried their status and actual start.
+- **The banner's Overwrite deleted today's tasks without asking.** It now goes through `useDeleteConfirmation` as a cascade.
+
+Seen, not fixed: the day header's next-day lookup 404s (console error only) on any day whose neighbour has no calendar
+row — the same unseeded-day shape as #5.
+
 ## Bugs
 
 ### 1. Tracked time early in the morning completes yesterday's planner task (backend)

@@ -66,7 +66,10 @@ day is materially over.
   status, skip, or reschedule them
 - apply a day template to this day, previewing it first and choosing how conflicts with existing tasks resolve
 - navigate to the previous/next day, or back to the calendar
-- act on the overdue-tasks banner if this day has tasks whose window passed while still `NotStarted`
+- act on the "Still open from earlier days" banner (today only): carry open tasks from the last seven days
+  over to today through `POST planner-task/{id}/carry-over` — the task is *moved* (its old day stops counting it
+  as missed) and keeps the record that it slipped (`originalDate`, `carryOverCount`) — choosing how a clash with
+  today's plan resolves
 
 **What the user can see, and the question it answers**
 - the time-grid with each task's block (colour, name, time range, status icon) — answers "what's on today"
@@ -76,7 +79,11 @@ day is materially over.
   full is today, and how much of it is done"
 - the plan-vs-actual block — answers "did today run long, start late, or not happen as planned" (rendered only
   once the day is materially finished; background and cancelled tasks are excluded from the arithmetic)
-- the overdue-tasks banner — answers "what did I plan for earlier today that I never started"
+- the "Still open from earlier days" banner — answers "what did I leave open this past week" (one read,
+  `GET planner-task/carry-over-candidates`), only while today is the viewed day. Skipped and background tasks
+  are excluded. Nothing in this view prompts about *today's* blocks whose window passed while still
+  `NotStarted` — that gap is F1-01
+- a carried-over task's block says how many times it has been carried over
 
 **Depends on:** `useDayPlannerSettingsStore` (slot duration, defaults), `useCurrentTimeIndicator`/
 `usePlannerNowNext` (today-only, live clock), `useTaskReminders` (this view does not itself notify — reminders

@@ -59,6 +59,7 @@ const todoList = {
 		alreadyOnDestination: `Zoznam „{list}“ už má úlohu „{activity}“`,
 		notScheduled: `Nenaplánované`,
 		notScheduledHint: `Klikni a vyber, kedy to spravíš`,
+		plannedChipTitle: `Naplánované v dennom plánovači`,
 		quickStartTimer: `Rýchlo spustiť časovač`,
 		// `home.markDone` má rovnaký tvar, ale patrí inému modulu — túto dvojicu razíme tu, aby sme
 		// neimportovali cez hranicu modulu (F71).

@@ -5,6 +5,7 @@ import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
+import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
 import { MIN_SLOT_MINUTES, slotMinutesFor, type PickerConstraints } from '@/core/leisure/composable/leisureScoring.ts'
 import { recordCommitted } from '@/core/leisure/composable/suggestionHistory.ts'
 import type { LeisureSuggestion } from '@/core/leisure/composable/useLeisurePicker.ts'
@@ -17,7 +18,8 @@ import type { LeisureSuggestion } from '@/core/leisure/composable/useLeisurePick
  * Two shapes, and the difference is only the start time and the status:
  *
  * - **do it now** — a slot starting at this minute, already `InProgress` with `actualStartTime` set,
- *   which is what the planner and the home now-bar read to show something as under way.
+ *   which is what the planner and the home now-bar read to show something as under way. It closes
+ *   itself when the slot ends (`autoCompleteAtEnd`).
  * - **plan it for later today** — a slot at a time the user picks, left `NotStarted`.
  *
  * Cross-module by way of `dayPlanner/api` and `dayPlanner/dto` only, which is the boundary
@@ -60,6 +62,22 @@ function slotFrom(startMinutes: number, lengthMinutes: number): PlannedSlot {
 
 export function useLeisureCommitment() {
 	const { create } = useTaskPlannerCrud()
+	const { fetchAll: fetchImportances } = useTaskImportanceCrud()
+
+	/**
+	 * Rest is booked as **optional**, so it can never cost the user their planner streak. Booked with no
+	 * importance it counted as a commitment: an unticked rest block made the next day's streak read 0,
+	 * and "do it now" starts the task `InProgress` with nothing that ever completes it. Silent and
+	 * non-fatal — without the marker row the slot is still worth booking, just as it was before.
+	 */
+	async function optionalImportanceId(): Promise<number | null> {
+		try {
+			const importances = await fetchImportances({ _silent: true })
+			return importances.find(importance => importance.isOptionalMarker)?.id ?? null
+		} catch {
+			return null
+		}
+	}
 
 	/**
 	 * Books the slot and returns it, so the card can say what it just did. Throws on failure — the
@@ -81,11 +99,15 @@ export function useLeisureCommitment() {
 
 		const request = new PlannerTaskRequest(slot.startTime, slot.endTime)
 		request.activityId = suggestion.activityId
+		request.importanceId = await optionalImportanceId()
 		request.date = todayAsCalendarDate()
 		if (isStartingNow) {
 			request.status = PlannerTaskStatus.InProgress
 			// The real minute, not the rounded slot start — this is a record of when work began.
 			request.actualStartTime = nowTime
+			// Rest does not need a tick to have happened. Without this the block stayed in progress for good,
+			// holding the now-bar all day and counting as "never happened" in the plan-vs-actual trend.
+			request.autoCompleteAtEnd = true
 		}
 
 		await create(request)

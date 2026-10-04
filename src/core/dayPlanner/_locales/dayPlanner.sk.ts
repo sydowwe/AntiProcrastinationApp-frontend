@@ -145,8 +145,11 @@ const dayPlanner = {
 			notesTitle: `Poznámky`,
 			dayDetailsTitle: `Detaily dňa`,
 			editAction: `Upraviť`,
-			notCompletedYesterday: `Nedokončené včera:`,
-			copyAll: `Kopírovať všetko`,
+			openFromEarlierDays: `Stále otvorené z predošlých dní:`,
+			carriedOverBadge: `{count}×`,
+			carryOverAll: `Preniesť všetko`,
+			carryOverOverwriteTitle: `Nahradiť úlohy v dnešnom pláne?`,
+			carryOverOverwriteBody: `Prenesením „{name}“ sa vymaže {count} úloha naplánovaná na ten čas. | Prenesením „{name}“ sa vymažú {count} úlohy naplánované na ten čas. | Prenesením „{name}“ sa vymaže {count} úloh naplánovaných na ten čas.`,
 			tasksCount: `{count} úloha | {count} úlohy | {count} úloh`,
 			completedOfTotalTasks: `{completed}/{count} úloha | {completed}/{count} úlohy | {completed}/{count} úloh`,
 			avgCompletion: `{percent} % priemer`,
@@ -377,6 +380,7 @@ const dayPlanner = {
 				startedLate: `1 zaznamenaná úloha začala neskôr | {count} zaznamenané úlohy začali neskôr | {count} zaznamenaných úloh začalo neskôr`,
 				ranLonger: `1 zaznamenaná úloha trvala dlhšie | {count} zaznamenané úlohy trvali dlhšie | {count} zaznamenaných úloh trvalo dlhšie`,
 				neverHappened: `1 úloha sa neuskutočnila | {count} úlohy sa neuskutočnili | {count} úloh sa neuskutočnilo`,
+				carriedOver: `1 presun na neskorší deň | {count} presuny na neskorší deň | {count} presunov na neskorší deň`,
 				// C1 / B1, pod trendom. Každá veta len nad svojou hranicou (utils/skipRangeInsights.ts).
 				// Pomery ako „4/6“, nie „4 z 6“: pred číslom sa „z“ mení na „zo“ (zo 6, zo 7, zo 17…)
 				// a z čísla to spoľahlivo neurčíme. Lomka je v SK textoch už zaužívaná ({inPlan}/{count}).
@@ -431,6 +435,7 @@ const dayPlanner = {
 			taskLabel: `{name}, {start} až {end}`,
 			backgroundTaskLabel: `Aktivita na pozadí: {name}, {start} až {end}`,
 			statusPart: `stav: {status}`,
+			carriedOverPart: `raz presunutá na neskôr | {count}-krát presunutá na neskôr | {count}-krát presunutá na neskôr`,
 			rolePart: `rola: {role}`,
 			categoryPart: `kategória: {category}`,
 			importancePart: `dôležitosť: {importance}`,

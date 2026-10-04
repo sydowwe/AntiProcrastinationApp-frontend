@@ -109,7 +109,6 @@
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
 	import PlannerSelectionActions from '@/core/dayPlanner/component/normal/PlannerSelectionActions.vue'
 	import {
-		formatDateForApi,
 		formatToDateWithDay,
 		parseDateFromApi,
 		urlStringToUTCDate,
@@ -492,14 +491,17 @@
 	}
 
 	async function handleReschedule(targetDate: Date) {
-		const targetCalendar = await fetchCalendarByDate(usStringToUrlString(formatDateForApi(targetDate)))
 		await runBulk(
 			Array.from(store.selectedTaskIds),
 			async id => {
 				const task = store.tasks.find(t => t.id === id)
 				if (!task) return
+				// Named by date, not calendar id: the PUT creates the day if the user has no row for it yet.
+				// Looking the id up first 404'd for any date past the seeded years and failed the whole
+				// reschedule before a single task moved. The server takes exactly one of the two.
 				const request = PlannerTaskRequest.fromEntity(task as PlannerTask)
-				request.calendarId = targetCalendar.id
+				request.calendarId = undefined
+				request.date = targetDate
 				await update(id, request, { _silent: true })
 				return id
 			},

@@ -33,6 +33,10 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
 		public isDuringBackgroundTask: boolean = false,
+		/** The day (`YYYY-MM-DD`) the task was first planned for, once it has been carried over; else null. */
+		public originalDate: string | null = null,
+		/** How many times the task has been carried over to a later day. "Pushed 4×" is the cue to split or drop it. */
+		public carryOverCount: number = 0,
 	) {}
 
 	get isTaskOneRow(): boolean {
@@ -90,6 +94,8 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			0,
 			0,
 			false,
+			json.originalDate ?? null,
+			json.carryOverCount ?? 0,
 		)
 	}
 

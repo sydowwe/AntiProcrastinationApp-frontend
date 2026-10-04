@@ -1,23 +1,23 @@
 <!-- OverdueTasksBanner.vue -->
 <template>
 	<SubtleCard
-		v-if="overdueTasks.length && showBanner"
+		v-if="candidates.length && showBanner"
 		color="error"
-		:title="$t('planner.calendar.notCompletedYesterday')"
+		:title="$t('planner.calendar.openFromEarlierDays')"
 		closable
 		class="mb-4"
 		@close="showBanner = false"
 	>
 		<div class="d-flex flex-wrap ga-2 mb-2">
 			<VChip
-				v-for="t in overdueTasks"
-				:key="t.id"
+				v-for="c in candidates"
+				:key="c.task.id"
 				size="small"
 				rounded="sm"
 				role="button"
-				@click="copyOverdueTask(t)"
+				@click="carryOverCandidate(c)"
 			>
-				{{ t.activity.name }}
+				{{ chipLabel(c) }}
 			</VChip>
 		</div>
 		<div class="d-flex align-center ga-2">
@@ -30,9 +30,9 @@
 			/>
 			<VBtn
 				variant="tonal"
-				@click="copyOverdueTasks"
+				@click="carryOverAll"
 			>
-				{{ $t('planner.calendar.copyAll') }}
+				{{ $t('planner.calendar.carryOverAll') }}
 			</VBtn>
 		</div>
 	</SubtleCard>
@@ -42,15 +42,15 @@
 	import { ref, watch } from 'vue'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+	import type { CarryOverCandidate } from '@/core/dayPlanner/dto/response/CarryOverCandidate.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
-	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
-	import { PlannerTaskFilter } from '@/core/dayPlanner/dto/request/PlannerTaskFilter.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
-	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
-	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatDateForApi, formatToDateWithoutYear, parseDateFromApi } from '@/_common/utils/DateTimeHelper.ts'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useI18n } from 'vue-i18n'
@@ -60,41 +60,50 @@
 	}>()
 
 	const store = useDayPlannerStore()
-	const { createWithResponse, batchDelete, fetchFiltered } = useTaskPlannerCrud()
-	const { fetchByDate: fetchCalendarByDate } = useCalendarQuery()
+	const { carryOver, batchDelete, fetchCarryOverCandidates } = useTaskPlannerCrud()
 	const { showSuccessSnackbar } = useSnackbar()
+	const { confirm } = useDialog()
+	const { shouldConfirm } = useDeleteConfirmation()
 	const { t } = useI18n()
 
-	const overdueTasks = ref<PlannerTask[]>([])
+	const candidates = ref<CarryOverCandidate[]>([])
 	const showBanner = ref(true)
 	const conflictResolution = ref(ApplyTemplateConflictResolution.Ignore)
 	const conflictResolutionOptions = getEnumSelectOptions(ApplyTemplateConflictResolution, 'planner')
 
+	/**
+	 * Open tasks from the user's last seven days, in one read. This used to look at yesterday alone —
+	 * the client would have had to fan out a by-date + filter pair per day — so anything left open two
+	 * days ago never surfaced again. The server already excludes skipped and background tasks.
+	 */
 	watch(
 		() => calendar?.id,
 		async newId => {
 			showBanner.value = true
-			overdueTasks.value = []
+			candidates.value = []
 			if (!newId) return
 			// A calendar day on the left, "what day is it now" on the right — see `useUserClock`.
 			if (formatDateForApi(store.viewedDate) !== isoDateInUserZone()) return
 			try {
-				const yesterday = new Date(store.viewedDate)
-				yesterday.setDate(yesterday.getDate() - 1)
-				const prevCalendar = await fetchCalendarByDate(usStringToUrlString(formatDateForApi(yesterday)))
-				const prevTasks = await fetchFiltered(
-					new PlannerTaskFilter(prevCalendar.id, prevCalendar.wakeUpTime, prevCalendar.bedTime),
-				)
 				const planActivityIds = new Set(store.tasks.map(t => t.activity.id))
-				overdueTasks.value = prevTasks.filter(
-					t => !t.isDone && !t.isBackground && !planActivityIds.has(t.activity.id),
+				candidates.value = (await fetchCarryOverCandidates()).filter(
+					c => !planActivityIds.has(c.task.activity.id),
 				)
 			} catch {
-				overdueTasks.value = []
+				candidates.value = []
 			}
 		},
 		{ immediate: true },
 	)
+
+	/** Yesterday's tasks read as just their name; older ones say which day they are from. */
+	function chipLabel(candidate: CarryOverCandidate): string {
+		const yesterday = new Date(store.viewedDate)
+		yesterday.setDate(yesterday.getDate() - 1)
+		if (candidate.date === formatDateForApi(yesterday)) return candidate.task.activity.name
+		const day = parseDateFromApi(candidate.date)
+		return day ? `${candidate.task.activity.name} · ${formatToDateWithoutYear(day)}` : candidate.task.activity.name
+	}
 
 	function getOverlappingTasks(task: PlannerTask): PlannerTask[] {
 		return store.tasks.filter(
@@ -106,37 +115,62 @@
 		) as PlannerTask[]
 	}
 
-	async function copyOverdueTask(task: PlannerTask) {
+	/**
+	 * Overwriting deletes tasks on today's plan that the user never named — the "takes rows with it"
+	 * case `useDeleteConfirmation` treats as a cascade, so it always asks and always says how many.
+	 */
+	async function confirmOverwrite(task: PlannerTask, overlapping: PlannerTask[]): Promise<boolean> {
+		if (!shouldConfirm({ cascades: true, undoable: false })) return true
+		return confirm({
+			title: t('planner.calendar.carryOverOverwriteTitle'),
+			text: t(
+				'planner.calendar.carryOverOverwriteBody',
+				{ name: task.activity.name, count: overlapping.length },
+				overlapping.length,
+			),
+			confirmBtnLabel: t('general.delete'),
+			confirmBtnColor: 'errorDark',
+		})
+	}
+
+	/**
+	 * Carries the task over to today through the server's carry-over command, which moves it (so its
+	 * old day no longer counts it as missed — a copy used to cost that day the streak) and records the
+	 * slip: `originalDate` once, `carryOverCount` every time. It arrives NotStarted at the same time of day.
+	 */
+	async function carryOverCandidate(candidate: CarryOverCandidate): Promise<boolean> {
+		const task = candidate.task
 		const resolution = conflictResolution.value
 		const overlapping = getOverlappingTasks(task)
 		if (overlapping.length > 0) {
-			if (resolution === ApplyTemplateConflictResolution.MergeIgnore) return
+			if (resolution === ApplyTemplateConflictResolution.MergeIgnore) return false
 			if (
 				resolution === ApplyTemplateConflictResolution.Overwrite ||
 				resolution === ApplyTemplateConflictResolution.MergeOverwrite
 			) {
+				if (!(await confirmOverwrite(task, overlapping))) return false
 				await batchDelete(overlapping.map(t => t.id))
 				store.tasks = store.tasks.filter(t => !overlapping.some(o => o.id === t.id))
 			}
 		}
-		const request = PlannerTaskRequest.fromEntity(task)
-		request.calendarId = calendar?.id
-		const created = await createWithResponse(request)
-		if (created.isBackground) {
-			store.updateIsDuringBackgroundFlags(created)
+		const moved = await carryOver(task.id, store.viewedDate)
+		if (moved.isBackground) {
+			store.updateIsDuringBackgroundFlags(moved)
 		} else {
-			created.isDuringBackgroundTask = store.checkOverlapsBackground(created)
+			moved.isDuringBackgroundTask = store.checkOverlapsBackground(moved)
 		}
-		store.setGridPositionFromSpan(created)
-		store.tasks.push(created)
-		overdueTasks.value = overdueTasks.value.filter(t => t.id !== task.id)
-		if (overdueTasks.value.length === 0) showBanner.value = false
+		store.setGridPositionFromSpan(moved)
+		store.tasks.push(moved)
+		candidates.value = candidates.value.filter(c => c.task.id !== task.id)
+		if (candidates.value.length === 0) showBanner.value = false
+		return true
 	}
 
-	async function copyOverdueTasks() {
-		for (const task of [...overdueTasks.value]) {
-			await copyOverdueTask(task)
+	async function carryOverAll() {
+		let movedAny = false
+		for (const candidate of [...candidates.value]) {
+			movedAny = (await carryOverCandidate(candidate)) || movedAny
 		}
-		showSuccessSnackbar(t('planner.feedback.tasksCarriedOver'))
+		if (movedAny) showSuccessSnackbar(t('planner.feedback.tasksCarriedOver'))
 	}
 </script>

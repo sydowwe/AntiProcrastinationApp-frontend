@@ -37,7 +37,18 @@
 				{{ dueDateChip.label }}
 			</ChipWithIcon>
 			<ChipWithIcon
-				v-else-if="!toDoListItem.isDone"
+				v-if="plannedChip"
+				vColor="primaryOutline"
+				variant="tonal"
+				size="x-small"
+				icon="calendar-check"
+				:title="$t('toDoList.plannedChipTitle')"
+				:aria-label="`${$t('toDoList.plannedChipTitle')}: ${plannedChip}`"
+			>
+				{{ plannedChip }}
+			</ChipWithIcon>
+			<ChipWithIcon
+				v-if="!toDoListItem.isScheduled && !toDoListItem.isDone"
 				vColor="neutral-500"
 				variant="tonal"
 				size="x-small"
@@ -141,15 +152,38 @@
 		emits('toggleFocus', toDoListItem)
 	}
 
+	/**
+	 * Days from the user's today to a `YYYY-MM-DD` calendar day. Local midnight of the *user's* today:
+	 * "which day is it now" is an instant read, while the day is parsed at browser-local midnight —
+	 * both are browser-local-field Dates, so the subtraction stays exact.
+	 */
+	function dayOffsetOf(day: Date): number {
+		return Math.round((day.getTime() - startOfUserDayPlus(0).getTime()) / MS_PER_DAY)
+	}
+
+	/** Today / Tomorrow / DD.MM. — app-locale formatting, not the browser's, as every other date reads. */
+	function upcomingDayLabel(day: Date, dayOffset: number): string {
+		if (dayOffset === 0) return i18n.t('toDoList.due.today')
+		if (dayOffset === 1) return i18n.t('toDoList.due.tomorrow')
+		return formatToDateWithoutYear(day)
+	}
+
+	/**
+	 * When the item is next planned in the day planner — its schedule, beside (not instead of) the
+	 * deadline chip. The server only reports blocks from the user's today on, so this is never past.
+	 */
+	const plannedChip = computed(() => {
+		const slot = toDoListItem.nextPlannedSlot
+		if (!slot || toDoListItem.isDone) return null
+		const day = new Date(slot.date + 'T00:00:00')
+		return `${upcomingDayLabel(day, dayOffsetOf(day))} ${Time.getString(slot.startTime)}`
+	})
+
 	const dueDateChip = computed(() => {
 		const { dueDate, dueTime } = toDoListItem
 		if (!dueDate) return null
-		// Local midnight of the *user's* today: "which day is it now" is an instant read, while
-		// `dueDate` is a calendar day parsed at browser-local midnight — both are browser-local-field
-		// Dates, so the day-offset subtraction below stays exact.
-		const today = startOfUserDayPlus(0)
 		const due = new Date(dueDate + 'T00:00:00')
-		const dayOffset = Math.round((due.getTime() - today.getTime()) / MS_PER_DAY)
+		const dayOffset = dayOffsetOf(due)
 		const overdue = dayOffset < 0 && !toDoListItem.isDone
 
 		let label: string
@@ -158,13 +192,8 @@
 				dayOffset === -1
 					? i18n.t('toDoList.due.yesterday')
 					: i18n.t('toDoList.due.daysAgo', { days: -dayOffset })
-		} else if (dayOffset === 0) {
-			label = i18n.t('toDoList.due.today')
-		} else if (dayOffset === 1) {
-			label = i18n.t('toDoList.due.tomorrow')
 		} else {
-			// App-locale formatting (DD.MM.), not the browser's — every other date in the app reads this way.
-			label = formatToDateWithoutYear(due)
+			label = upcomingDayLabel(due, dayOffset)
 		}
 		if (dueTime) label += ' ' + Time.getString(dueTime)
 

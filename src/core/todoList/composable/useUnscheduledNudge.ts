@@ -16,7 +16,9 @@ export function useUnscheduledNudge(
 
 	const pendingItems = computed(() => displayedItems.value.filter(item => !item.isDone))
 
-	const unscheduledItems = computed(() => pendingItems.value.filter(item => !item.dueDate))
+	// A deadline or a planned block both answer "when" (`isScheduled`); the planner no longer writes
+	// `dueDate`, so reading that alone would leave every planned item counted as unscheduled.
+	const unscheduledItems = computed(() => pendingItems.value.filter(item => !item.isScheduled))
 
 	const showUnscheduledNudge = computed(
 		() =>

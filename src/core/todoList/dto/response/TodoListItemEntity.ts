@@ -4,6 +4,12 @@ import { Time } from '@/_common/dto/dto/Time.ts'
 import { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'
 import { TodoListItemStepEntity } from '@/core/todoList/dto/response/TodoListItemStepEntity.ts'
 
+/** A planner block's day (`YYYY-MM-DD`, the user's calendar day) and its start on that day. */
+export interface PlannedSlot {
+	date: string
+	startTime: Time
+}
+
 export class TodoListItemEntity implements IBaseToDoListItem {
 	constructor(
 		public id: number,
@@ -23,7 +29,18 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		 * pairing UI simply shows nothing (`prompts/todo-motivation/backend/N5-backend.md`).
 		 */
 		public pairedLeisureActivityId: number | null = null,
+		/**
+		 * The item's next open planner block from the user's today on — when it is *scheduled*.
+		 * Distinct from `dueDate`, which is the user's deadline and is never written by the planner.
+		 * Read-only: derived by the server from linked planner tasks.
+		 */
+		public nextPlannedSlot: PlannedSlot | null = null,
 	) {}
+
+	/** Scheduled means a deadline was set or a block is planned — either answers "when". */
+	get isScheduled(): boolean {
+		return !!this.dueDate || !!this.nextPlannedSlot
+	}
 
 	get isMultipleCount() {
 		return !!this.totalCount && this.totalCount !== 1
@@ -43,6 +60,9 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.suggestedTime ? Time.fromJson(json.suggestedTime) : null,
 			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
 			json.pairedLeisureActivityId ?? null,
+			json.nextPlannedSlot
+				? { date: json.nextPlannedSlot.date, startTime: Time.fromJson(json.nextPlannedSlot.startTime) }
+				: null,
 		)
 	}
 

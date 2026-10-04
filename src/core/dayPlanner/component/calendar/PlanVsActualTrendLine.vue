@@ -58,6 +58,10 @@
 						trend.neverHappenedCount,
 					)
 				: '',
+			// Its own clause, never added to "never happened": a carried task left its day.
+			trend.carriedOverCount > 0
+				? t('planner.planVsActual.trend.carriedOver', { count: trend.carriedOverCount }, trend.carriedOverCount)
+				: '',
 		]
 			.filter(Boolean)
 			.join(' · '),

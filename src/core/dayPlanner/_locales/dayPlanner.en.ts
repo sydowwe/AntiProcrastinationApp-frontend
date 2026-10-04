@@ -135,8 +135,11 @@ const dayPlanner = {
 			notesTitle: `Notes`,
 			dayDetailsTitle: `Day Details`,
 			editAction: `Edit`,
-			notCompletedYesterday: `Not completed yesterday:`,
-			copyAll: `Copy all`,
+			openFromEarlierDays: `Still open from earlier days:`,
+			carriedOverBadge: `{count}×`,
+			carryOverAll: `Carry all over`,
+			carryOverOverwriteTitle: `Replace tasks on today's plan?`,
+			carryOverOverwriteBody: `Carrying "{name}" over deletes {count} task already planned at that time. | Carrying "{name}" over deletes {count} tasks already planned at that time.`,
 			tasksCount: `{count} task | {count} tasks`,
 			completedOfTotalTasks: `{completed}/{count} task | {completed}/{count} tasks`,
 			avgCompletion: `{percent}% avg`,
@@ -366,6 +369,7 @@ const dayPlanner = {
 				startedLate: `{count} logged task started late | {count} logged tasks started late`,
 				ranLonger: `{count} logged task ran longer | {count} logged tasks ran longer`,
 				neverHappened: `{count} task never happened | {count} tasks never happened`,
+				carriedOver: `{count} carry-over to a later day | {count} carry-overs to a later day`,
 				// C1 / B1, under the trend. Each only above its floor (utils/skipRangeInsights.ts), so
 				// `count` and `skipped` are always at least 3 and need no singular form.
 				// {reason} is the user's own text, or a built-in label in the current locale.
@@ -418,6 +422,7 @@ const dayPlanner = {
 			taskLabel: `{name}, {start} to {end}`,
 			backgroundTaskLabel: `Background activity: {name}, {start} to {end}`,
 			statusPart: `status: {status}`,
+			carriedOverPart: `carried over once | carried over {count} times`,
 			rolePart: `role: {role}`,
 			categoryPart: `category: {category}`,
 			importancePart: `importance: {importance}`,
