@@ -200,6 +200,8 @@ const todoList = {
 		heatmapPartial: `{label} · {done} of {total} done`,
 		heatmapFrozen: `{label} · covered by a skip`,
 		progressCount: `{done} / {total}`,
+		// Beside the reset date on the period timeline: when the lead-time nudge goes out.
+		nudgeOn: `nudge {date}`,
 		// `/routine-settings` and its dialog. A namespace of its own, not `settings.*` — `settings` is
 		// already a string (the link in the list header), and vue-i18n cannot have it be both.
 		timePeriods: {
@@ -212,12 +214,18 @@ const todoList = {
 			color: `Color`,
 			historyDepth: `History depth (periods)`,
 			historyDepthHint: `How many past periods to show in the completion heatmap`,
+			reminderLeadDays: `Nudge me before the reset (days)`,
+			reminderLeadDaysHint: `A notification this many days before the period ends, if items are still open. Empty = no nudge`,
+			reminderLeadDaysColumn: `Nudge before reset`,
+			reminderLeadDaysUnavailable: `A one-day period is too short for a nudge`,
 			streakSettings: `Streak settings`,
 			streakThreshold: `Streak threshold (%)`,
 			streakThresholdColumn: `Streak threshold`,
 			streakThresholdHint: `Minimum % of items completed to count the period toward your streak`,
 			graceDays: `Grace days`,
 			graceDaysHint: `Days after the period ends before the streak resets`,
+			freezeBudget: `Skips per month`,
+			freezeBudgetHint: `Missed periods you can cover each month and keep your run going (0 = none)`,
 			resetAnchorDay: `Reset anchor day`,
 			resetAnchorColumn: `Reset anchor`,
 			resetAnchorDayHint: `Week day to anchor resets to`,
@@ -247,8 +255,8 @@ const todoList = {
 			// Plural forms — `one | other`.
 			remaining: `{count} skip left | {count} skips left`,
 			unit: `{count} skip | {count} skips`,
-			remainingTooltip: `A missed period can be covered by a skip so your run continues — {budget} per period.`,
-			remainingTooltipWithReset: `A missed period can be covered by a skip so your run continues — {budget} per period, refills {date}.`,
+			remainingTooltip: `A missed period can be covered by a skip so your run continues — {budget} per month.`,
+			remainingTooltipWithReset: `A missed period can be covered by a skip so your run continues — {budget} per month, refills {date}.`,
 			coverMiss: `Cover the miss`,
 			confirmTitle: `Use a skip?`,
 			confirmText: `Cover {date} with a skip and keep your run going. You'll have {remaining} left afterwards.`,

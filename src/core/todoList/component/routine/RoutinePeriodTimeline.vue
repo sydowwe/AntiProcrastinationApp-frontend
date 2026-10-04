@@ -5,7 +5,19 @@
 	>
 		<div class="d-flex justify-space-between align-center mb-1">
 			<span class="text-caption font-weight-bold">{{ timeLabel }}</span>
-			<span class="text-caption opacity-60">{{ resetDateLabel }}</span>
+			<span class="text-caption opacity-60 d-flex align-center ga-2">
+				<span
+					v-if="nudgeLabel"
+					class="d-flex align-center ga-1"
+				>
+					<VIcon
+						icon="bell"
+						size="10"
+					></VIcon>
+					{{ nudgeLabel }} ·
+				</span>
+				{{ resetDateLabel }}
+			</span>
 		</div>
 		<div class="timeline-bar-row">
 			<div
@@ -56,6 +68,15 @@
 	const resetDateLabel = computed(() => {
 		if (!timePeriod.nextResetAt) return ''
 		return shortDate(timePeriod.nextResetAt)
+	})
+
+	// Only while the nudge is still ahead: once it is due the server has either sent it or skipped it
+	// (nothing left open), and "nudge on Thu" for a Thursday already gone reads as a promise.
+	const nudgeLabel = computed(() => {
+		const at = timePeriod.nudgeAt
+		if (!at || at.getTime() <= Date.now()) return ''
+		const withinWeek = at.getTime() - Date.now() < 6 * 86_400_000
+		return t('routineTodoList.nudgeOn', { date: withinWeek ? shortWeekday(at) : shortDate(at) })
 	})
 
 	function roundHalf(value: number): number {

@@ -36,7 +36,15 @@ export class RoutineTimePeriodEntity {
 		public freezesRemaining: number | null = null,
 		public freezeBudget: number | null = null,
 		public freezeBudgetResetsAt: string | null = null,
+		/** Days before the reset the server nudges about unfinished items. `null` = this period sends no nudge. */
+		public reminderLeadDays: number | null = null,
 	) {}
+
+	/** When the lead-time nudge for the current cycle is due, or `null` when the period has none. */
+	get nudgeAt(): Date | null {
+		if (this.reminderLeadDays == null || !this.nextResetAt) return null
+		return new Date(new Date(this.nextResetAt).getTime() - this.reminderLeadDays * 86_400_000)
+	}
 
 	/** Whether the server reports a freeze budget at all. Gates the whole feature client-side. */
 	get supportsFreeze() {
@@ -62,6 +70,7 @@ export class RoutineTimePeriodEntity {
 			freezesRemaining = null,
 			freezeBudget = null,
 			freezeBudgetResetsAt = null,
+			reminderLeadDays = null,
 		} = object
 
 		const completionHistory: PeriodCompletion[] = object.completionHistory?.length
@@ -94,6 +103,7 @@ export class RoutineTimePeriodEntity {
 			freezesRemaining,
 			freezeBudget,
 			freezeBudgetResetsAt,
+			reminderLeadDays,
 		)
 	}
 

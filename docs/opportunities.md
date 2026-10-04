@@ -9,8 +9,7 @@
 
 ## Top picks
 
-1. **OP1. Routine periods: warn before the reset, and stop saving over the warning.** Every save from
-   `/routine-settings` silently wipes the server's nudge setting and resets the freeze budget. Small fix, real data loss.
+1. ~~**OP1. Routine periods: warn before the reset, and stop saving over the warning.**~~ Done. See *Closed*.
 2. **OP2. Make "Show details panel by default" do something.** It is a saved setting that nothing reads.
 3. **OP3. Keep what's typed into a list's description.** Today the form accepts it and the round trip loses it both ways.
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
@@ -19,19 +18,6 @@
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP1. Routine periods: warn before the reset, and stop saving over the warning
-- **Source:** from data-map (G1; backlog `RoutineTimePeriod.historyDepth`; reverse gap `freezeBudget`)
-- **Data it spends:** `RoutineTimePeriod.reminderLeadDays` and `.lastResetAt` (server sends, client drops),
-  `.freezeBudget` (server accepts, client never sends), `.historyDepth` (echo), and `.nextResetAt` (already spent)
-- **Where it would surface:** `/routine-settings` → `TimePeriodForm` gains a "Nudge me N days before the reset" field.
-  `RoutinePeriodTimeline` can say "nudge on Thu". The heatmap can read "last N periods".
-- **Needs backend:** no. The server's `RoutineTimePeriodRequest` already accepts both fields and its response already
-  sends `reminderLeadDays`. Whether any producer *delivers* the nudge is for `docs/notification-audit.md` to answer.
-- **Size:** S. Two fields added to `TimePeriodRequest` and `RoutineTimePeriodEntity.fromJson`, and one form control.
-- **Value:** Routine items fail quietly at the end of a period, which is when a user with ADHD has stopped looking. The
-  backend has a lead-time nudge for exactly that moment. And right now, editing a period's name also refills or drains
-  the user's streak freezes.
 
 ### OP2. Make "Show details panel by default" do something
 - **Source:** from data-map (backlog `UserPlannerSettings.detailsPanelExpandedByDefault`)
@@ -203,6 +189,29 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP1**, built 2026-10-04, app-side only. The API already accepted, validated and returned both fields
+  (`RoutineTimePeriodValidator`: lead 1 to length − 1 or null, budget 0–10), and `RoutinePeriodNudgeJob` already
+  delivers the nudge, so the backend did not change. `TimePeriodRequest` now carries `freezeBudget` and
+  `reminderLeadDays`, and `fromEntity` copies them. Before this, the server's full-replace update reset every edited
+  period's budget to 2, capped the banked freezes to it, and switched the nudge off. `TimePeriodForm` gained
+  *Nudge me before the reset (days)* (clearable, so empty = no nudge; disabled on a one-day period, which has no valid
+  lead; clamped when the length shrinks) and *Skips per month* in the streak section. The history-depth max went from
+  52 to the server's 100, so a deeper period no longer fails client validation on edit. `/routine-settings` shows both as
+  columns. `freezeBudget` needs an explicit slot, because the framework table's key heuristic reads "budget" as money
+  and printed `€2.00`. `RoutinePeriodTimeline` reads "🔔 nudge 29 Oct · 1 Nov" while the nudge is still ahead: a weekday
+  within six days, a date beyond that. The edit path in `RoutineSettingsView` now assigns onto the entity instead of
+  spreading it into a plain object, which dropped its getters. The freeze tooltip said "per period", but the server refills
+  the budget **per calendar month**, so it now says that (EN and SK).
+  **Not spent:** `lastResetAt` (the timeline derives the cycle start from `nextResetAt` − length, which is right for
+  anchored periods; the reset job can stamp `lastResetAt` late on a catch-up read) and the heatmap's "last N periods"
+  caption.
+  Checked live on the seed account: saving Weekly with a budget of 3 and then a nudge of 2 sent both fields on both
+  PUTs, and the budget survived the second save. A 3-day nudge on Monthly rendered "nudge 29 Oct · 1 Nov". A 1-day
+  period shows the field disabled. Clearing the field sent `null`. All rows were restored to the seed's values afterwards.
+  `e2e/tests/routine-period-nudge-skips.spec.ts` (4 tests) covers a rename keeping the budget, the banked skips and the nudge,
+  clearing the nudge to `null` with a budget of 0, clamping the nudge when the period shrinks, and the disabled field on a
+  one-day period. All 4 passed on 2026-10-04 (21 s).
 
 - **OP16**, built 2026-10-04. The API already had `domain-details`, with ranked per-page times and integration tests
   (`TrackingDetailsEndpointsTests`). **Follow-up, same day, in the API:** with that list in use, the pie rows' own

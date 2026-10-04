@@ -14,7 +14,16 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 		public streakGraceDays: number = 0,
 		public resetAnchorDay: number = 0,
 		public historyDepth: number = RoutineTimePeriodEntity.defaultHistoryDepth(7),
+		// Both are full-replace on the server's update: a request without them resets the budget to the
+		// server default (and caps the banked freezes to it) and switches the nudge off. So an edit must
+		// always carry the period's current values, even when the form never touched them.
+		public freezeBudget: number = TimePeriodRequest.DEFAULT_FREEZE_BUDGET,
+		public reminderLeadDays: number | null = null,
 	) {}
+
+	/** `RoutineStreakFreezeService.DefaultFreezeBudget` / `MaxFreezeBudget` on the server. */
+	static readonly DEFAULT_FREEZE_BUDGET = 2
+	static readonly MAX_FREEZE_BUDGET = 10
 
 	static fromEntity(entity: RoutineTimePeriodEntity) {
 		return new TimePeriodRequest(
@@ -26,6 +35,8 @@ export class TimePeriodRequest implements ICreateRequest, IUpdateRequest {
 			entity.streakGraceDays,
 			entity.resetAnchorDay,
 			entity.historyDepth,
+			entity.freezeBudget ?? TimePeriodRequest.DEFAULT_FREEZE_BUDGET,
+			entity.reminderLeadDays,
 		)
 	}
 }

@@ -26,9 +26,23 @@
 			v-model="request.historyDepth"
 			:label="$t('routineTodoList.timePeriods.historyDepth')"
 			:min="1"
-			:max="52"
+			:max="100"
 			:hint="$t('routineTodoList.timePeriods.historyDepthHint')"
 			persistentHint
+		></VNumberInput>
+		<VNumberInput
+			v-model="request.reminderLeadDays"
+			:label="$t('routineTodoList.timePeriods.reminderLeadDays')"
+			:min="1"
+			:max="maxLeadDays"
+			:disabled="maxLeadDays < 1"
+			:hint="
+				maxLeadDays < 1
+					? $t('routineTodoList.timePeriods.reminderLeadDaysUnavailable')
+					: $t('routineTodoList.timePeriods.reminderLeadDaysHint')
+			"
+			persistentHint
+			clearable
 		></VNumberInput>
 		<VDivider></VDivider>
 		<span class="text-caption text-medium-emphasis">
@@ -47,6 +61,14 @@
 			:label="$t('routineTodoList.timePeriods.graceDays')"
 			:min="0"
 			:hint="$t('routineTodoList.timePeriods.graceDaysHint')"
+			persistentHint
+		></VNumberInput>
+		<VNumberInput
+			v-model="request.freezeBudget"
+			:label="$t('routineTodoList.timePeriods.freezeBudget')"
+			:min="0"
+			:max="TimePeriodRequest.MAX_FREEZE_BUDGET"
+			:hint="$t('routineTodoList.timePeriods.freezeBudgetHint')"
 			persistentHint
 		></VNumberInput>
 		<VSelect
@@ -145,11 +167,19 @@
 		return d <= 7 || d % 7 === 0
 	})
 
+	// The server wants the lead strictly shorter than the period, or the nudge window would open at or
+	// before the period starts — so a one-day period has no valid lead at all.
+	const maxLeadDays = computed(() => Math.max(0, (request.value.lengthInDays ?? 0) - 1))
+
 	dialogApi.onConfirm(onConfirm)
 
 	function onLengthChanged() {
 		request.value.resetAnchorDay = 0
 		request.value.historyDepth = RoutineTimePeriodEntity.defaultHistoryDepth(request.value.lengthInDays)
+		const lead = request.value.reminderLeadDays
+		if (lead != null && lead > maxLeadDays.value) {
+			request.value.reminderLeadDays = maxLeadDays.value >= 1 ? maxLeadDays.value : null
+		}
 	}
 
 	async function onConfirm() {

@@ -214,6 +214,8 @@ const todoList = {
 		heatmapPartial: `{label} · {done} z {total} hotových`,
 		heatmapFrozen: `{label} · pokryté vynechaním`,
 		progressCount: `{done} / {total}`,
+		// Vedľa dátumu resetu na časovej osi obdobia: kedy príde pripomienka pred koncom.
+		nudgeOn: `pripomienka {date}`,
 		// `/routine-settings` a jeho dialóg. Samostatný priestor názvov, nie `settings.*` — `settings`
 		// je už reťazec (odkaz v hlavičke zoznamu) a vue-i18n ho nemôže byť aj objektom.
 		timePeriods: {
@@ -226,12 +228,18 @@ const todoList = {
 			color: `Farba`,
 			historyDepth: `Hĺbka histórie (počet období)`,
 			historyDepthHint: `Koľko minulých období sa zobrazí v mape dokončení`,
+			reminderLeadDays: `Pripomenúť pred resetom (dni)`,
+			reminderLeadDaysHint: `Notifikácia toľko dní pred koncom obdobia, ak sú ešte otvorené položky. Prázdne = bez pripomienky`,
+			reminderLeadDaysColumn: `Pripomienka pred resetom`,
+			reminderLeadDaysUnavailable: `Jednodňové obdobie je na pripomienku príliš krátke`,
 			streakSettings: `Nastavenia série`,
 			streakThreshold: `Prah série (%)`,
 			streakThresholdColumn: `Prah série`,
 			streakThresholdHint: `Minimálne % dokončených položiek, aby sa obdobie počítalo do série`,
 			graceDays: `Dni odkladu`,
 			graceDaysHint: `Počet dní po konci obdobia, kým sa séria vynuluje`,
+			freezeBudget: `Vynechania za mesiac`,
+			freezeBudgetHint: `Koľko zmeškaných období môžeš každý mesiac pokryť a udržať sériu (0 = žiadne)`,
 			resetAnchorDay: `Deň ukotvenia resetu`,
 			resetAnchorColumn: `Ukotvenie resetu`,
 			resetAnchorDayHint: `Deň v týždni, na ktorý sa viaže reset`,
@@ -262,8 +270,8 @@ const todoList = {
 			// Tvary množného čísla — `one | few | many` (1 / 2–4 / 5+), pozri slovakPluralRule v src/i18n.ts.
 			remaining: `zostáva {count} vynechanie | zostávajú {count} vynechania | zostáva {count} vynechaní`,
 			unit: `{count} vynechanie | {count} vynechania | {count} vynechaní`,
-			remainingTooltip: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie.`,
-			remainingTooltipWithReset: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} na obdobie, obnoví sa {date}`,
+			remainingTooltip: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} za mesiac.`,
+			remainingTooltipWithReset: `Zmeškané obdobie môžeš pokryť vynechaním a séria pokračuje — {budget} za mesiac, obnoví sa {date}`,
 			coverMiss: `Pokryť zmeškané`,
 			confirmTitle: `Použiť vynechanie?`,
 			confirmText: `Pokryť {date} vynechaním a udržať sériu. Potom ti zostane {remaining}.`,

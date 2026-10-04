@@ -46,6 +46,11 @@
 			<template #item.streakGraceDays="{ item }">
 				{{ item.streakGraceDays > 0 ? `${item.streakGraceDays}d` : '—' }}
 			</template>
+			<!-- An explicit slot: the table's key heuristic reads "budget" as money and prints €2.00. -->
+			<template #item.freezeBudget="{ item }">{{ item.freezeBudget ?? '—' }}</template>
+			<template #item.reminderLeadDays="{ item }">
+				{{ item.reminderLeadDays != null ? `${item.reminderLeadDays}d` : '—' }}
+			</template>
 			<template #item.resetAnchorDay="{ item }">
 				{{ item.resetAnchorDay > 0 ? formatAnchorDay(item.id, item.resetAnchorDay) : '—' }}
 			</template>
@@ -107,6 +112,8 @@
 		new TableColumn('resetAnchorDay', t('routineTodoList.timePeriods.resetAnchorColumn'), false),
 		new TableColumn('streakThreshold', t('routineTodoList.timePeriods.streakThresholdColumn')),
 		new TableColumn('streakGraceDays', t('routineTodoList.timePeriods.graceDays')),
+		new TableColumn('freezeBudget', t('routineTodoList.timePeriods.freezeBudget')),
+		new TableColumn('reminderLeadDays', t('routineTodoList.timePeriods.reminderLeadDaysColumn')),
 		new TableColumn('isHidden', t('routineTodoList.timePeriods.isHidden')),
 	])
 
@@ -160,9 +167,14 @@
 				existingPeriods: timePeriods.value,
 				submit: async (request: TimePeriodRequest) => {
 					await update(entityToEdit.id, request, { _silent: true })
-					const index = timePeriods.value.findIndex(p => p.id === entityToEdit.id)
-					if (index !== -1) {
-						timePeriods.value[index] = { ...timePeriods.value[index], ...request }
+					// Assigned onto the instance, not spread into a plain object, so the entity's getters survive.
+					// Lowering the budget caps the banked freezes server-side, so mirror that here.
+					const period = periodById(entityToEdit.id)
+					if (period) {
+						Object.assign(period, request)
+						if (period.freezesRemaining != null) {
+							period.freezesRemaining = Math.min(period.freezesRemaining, request.freezeBudget)
+						}
 					}
 				},
 			},
