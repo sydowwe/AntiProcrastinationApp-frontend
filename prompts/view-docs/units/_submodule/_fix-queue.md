@@ -28,11 +28,11 @@
 | S8 | ✅ **FIXED 2026-10-04** (`62451f7`) — Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
 | S9 | ✅ **FIXED 2026-10-04** (`62451f7`) — Overdue / failed attention lists in no meaningful order | **framework** | `scheduler/P7` | trivial |
 | S10 | ✅ **FIXED 2026-10-03** (`b038d3e`) — Inbox never loads unless the SignalR handshake succeeds | **framework** | `notifications/B1` | medium |
-| S11 | `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2`, `reminders-user/P6` | low |
+| S11 | ✅ **FIXED 2026-10-04** (`2cbc085`) — `DateTimeHelper` formatters speak only Slovak (framework-wide default) | **framework** | `notifications/B2`, `scheduler/P2`, `reminders-user/P6` | low |
 | S12 | ✅ **FIXED 2026-10-03** (`40255f1`) — Notifications controls with no name or a repeated one | **framework** | `notifications/A1`, `A3`, `A5`, `A7` | low |
-| S13 | Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component) | **framework** | `notifications/A2`, `reminders-user/A1` | low |
+| S13 | ✅ **FIXED 2026-10-04** (`60bef5b`) — Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component) | **framework** | `notifications/A2`, `reminders-user/A1` | low |
 | S14 | ✅ **FIXED 2026-10-03** (`5b2e76b`) — Preference cards' purple palette fails contrast | **framework** | `notifications/A4` | low |
-| S15 | Action toasts time out in 3 s, and so does the only Undo (framework-wide default) | **framework** | `notifications/A6` | trivial |
+| S15 | ✅ **FIXED 2026-10-04** (`825dfb4`) — Action toasts time out in 3 s, and so does the only Undo (framework-wide default) | **framework** | `notifications/A6` | trivial |
 | S16 | ✅ **FIXED 2026-10-03** (`8c5dd57` + app-side P4 labels) — Notifications copy that says the wrong thing | **framework** | `notifications/P2`, `P3`, `P4`, `P6` | low |
 | S17 | ✅ **FIXED 2026-10-04** (`7033ca2`) — Framework routes outside any nav tree claim to be "Home" in the breadcrumb | **framework** | `notifications/P1`, `reminders-user/P1` | trivial |
 | S18 | ✅ **FIXED 2026-10-04** (`7c048c2`) — Reminder pages clip their own content — detail cards and the history notice shrink | **framework** | `reminders-admin/X1`, `B6` | trivial |
@@ -72,84 +72,15 @@
 
 <!-- S10 (Inbox never loads unless the SignalR handshake succeeds — notifications/B1) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S11. `DateTimeHelper` formatters speak only Slovak (framework-wide default)
-- **Scope:** **[framework]** `src/_common/utils/DateTimeHelper.ts` + `src/_common/docs/utils.md` — its own batch
-  (batching rule 4: it changes what every app on the framework renders)
-- **Closes:** `notifications/B2`, `scheduler/P2`, `reminders-user/P6` (filed so this batch's verification walks
-  `/pripomienky/moje`. No separate cause.)
-- **Root cause:** every formatter in the file pins dayjs to `'sk'`: `DateTimeHelper.ts:73, 77, 81, 85, 89, 93, 103, 107,
-  142`. `formatLocalized` is the sharpest case, because a helper named *localized* that always speaks Slovak is how an
-  EN account gets "28. september 2026" day headers on `/notifikacie`. The app queue's log recorded this as
-  *Contradictions* §22 (`docs/views/_fix-queue-log.md`, the numbered list under *Contradictions*) and deliberately
-  left it unfiled. This is the first browser observation.
-- **Files:** `DateTimeHelper.ts` (above). Consumers: `modules/notifications/utils/groupNotificationsByDay.ts:46`,
-  `modules/notifications/view/NotificationsView.vue`, `component/calendar/CalendarGrid.vue`, the scheduler's EN date
-  cells (`scheduler/P2`), and app-side `core/dayPlanner/component/normal/DayPlannerHeader.vue`,
-  `core/dayPlanner/view/DayPlannerView.vue`, `core/historyDashboard/component/HistoryTimeline.vue`,
-  `core/todoList/composable/useRoutineDateFormat.ts`, `src/i18n.ts`.
-- **What to change:** resolve the locale per call from the framework's registered i18n/translator (the same source
-  `useI18n().locale` reads), falling back to `'sk'` when none is registered, so an app that never set a locale renders
-  exactly as today (CLAUDE.md framework rule 2). The EN dayjs locale must be imported where `sk` is. Update
-  `docs/utils.md`.
-- **Do not change:** the format *strings* (`'DD.MM.'`, `'HH:mm'`, …). Some app call sites chose a Slovak shape on
-  purpose, and they are app-side follow-ups if they read wrong in EN, not part of this batch. Also do not patch
-  `groupNotificationsByDay` on its own. That is the per-consumer fix §22 warns against.
-- **Verification:** `notifications/B2` `Verify:` (EN "September 28, 2026", SK "28. september 2026"); `scheduler/P2`
-  `Verify:`; `reminders-user/P6` `Verify:` (the next-occurrence cells and the snooze presets on `/pripomienky/moje`
-  in EN). Then walk the four app-side consumers above once in EN and SK, because their output changes with this
-  commit.
-- **Risk:** the widest-reaching batch in this queue. It changes visible dates in the planner header, history timeline
-  and routine list for every EN account, which is the fix, but those screens' e2e specs may assert the Slovak shape.
-  Run the full suite after the pointer bump. Say in the app-side commit that §22 is resolved.
+<!-- S11 (DateTimeHelper formatters speak only Slovak — notifications/B2, scheduler/P2, reminders-user/P6) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S12 (Notifications controls with no name or a repeated one — notifications/A1, A3, A5, A7) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S13. Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component)
-- **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue` — its own batch: every `confirm()` /
-  `openDialog()` in the framework **and** the app goes through it, and so does every `v-if`'d template dialog
-- **Closes:** `notifications/A2`, `reminders-user/A1`
-- **Root cause:** `MyDialog` records the opener in `watch(dialog, isOpen => …)` (`MyDialog.vue:144-151`), which fires
-  only on a *change*. A dialog that is **mounted already open** never sees the open transition, records no opener,
-  and has nothing to restore on close. Two shapes hit it. A `DialogHost` entry (`notifications/A2`). And a template
-  dialog behind a `v-if` whose condition and model flip in the same tick: `SnoozeDialog v-if="activeOccurrence"`
-  (`MyRemindersView.vue:152-158`, `openSnooze` at `:277-280`), which also re-mounts after every confirmed or failed
-  snooze, because both paths null `activeReminderId` (`reminders-user/A1` round 2). A template `MyDialog` that stays
-  mounted and toggles its model works, which is why `_shell` recorded focus return as fine.
-- **Files:** `MyDialog.vue:127, 144-155`.
-- **What to change:** record the opener **inside `MyDialog`** when it mounts open: `{ immediate: true }` on the watch,
-  or the same assignment in `onMounted` when `dialog.value` is already true. At mount time `document.activeElement`
-  is still the button that was clicked. Restore on close, after the leave transition, if the element is still
-  connected. The first pass's other option, capturing the element in `useDialog().openDialog()`, is **not enough**
-  any more: it fixes the `DialogHost` path and leaves `SnoozeDialog` broken.
-- **Do not change:** `MyRemindersView`'s `restoreFocusAfterRowDrop` (`:296-308`). It covers a different case (the
-  opener's row was deleted), and its comment's premise ("MyDialog already restores focus to whatever opened it")
-  becomes true with this batch.
-- **Verification:** `notifications/A2` `Verify:`; `reminders-user/A1` `Verify:`, plus its round-2 case: on
-  `/pripomienky/moje`, snooze with `snooze` routed to 204, then open *Snooze* again and *Cancel*, and focus is on that
-  row's *Snooze* button. Then check one app-side `confirm()` (a to-do item delete) returns focus the same way, and that
-  a template-declared `MyDialog` still does.
-- **Risk:** nested dialogs: the inner dialog's opener is inside the outer one. Restore must target the element that
-  opened *that* dialog, not the first one.
+<!-- S13 (Closing a dialog that mounted already open drops focus to <body> — notifications/A2, reminders-user/A1) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S14 (Preference cards' purple palette fails contrast — notifications/A4) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S15. Action toasts time out in 3 s, and so does the only Undo (framework-wide default)
-- **Scope:** **[framework]** `src/_common/composable/general/SnackbarComposable.ts` + `docs/composables.md`, or
-  locally `QuietHoursCard.vue`. Its own batch because the real fix is a default.
-- **Closes:** `notifications/A6`
-- **Root cause:** `showSnackbar` gives every toast `config?.timeout ?? 3000` (`SnackbarComposable.ts:98`), including
-  those with an `actionLabel`. `QuietHoursCard.clear()` made the snackbar's *Undo* the only recovery for switching
-  quiet hours off, deliberately replacing a confirm, and passes no timeout. Measured: visible for ~3.1 s, not
-  reachable by keyboard or screen reader in that time (WCAG 2.2.1).
-- **What to change:** decide the default: action toasts default to ≥ 8 s (or to no auto-dismiss while they carry an
-  action), and plain toasts stay at 3 s. Four call sites pass an `actionLabel` today: `QuietHoursCard.vue:349`,
-  `useNotifications.ts:293`, and app-side `TodoListView.vue:495` and `PlannerCalendarView.vue:258`. None sets a
-  timeout, so all four get the new default. If the default is not wanted, the minimum is `timeout: 10000` on the
-  quiet-hours toast alone.
-- **Verification:** `notifications/A6` `Verify:`; the existing `SnackbarComposable.test.ts` timeout expectations
-  (`:128-129` passes an explicit 8000, and the defaults test must learn the new rule).
-- **Risk:** a longer action toast holds the queue longer. `MAX_PENDING_SNACKBARS` never drops action toasts, so a burst
-  of them now takes longer to drain. That is acceptable, but say it in `composables.md`.
+<!-- S15 (Action toasts time out in 3 s, and so does the only Undo — notifications/A6) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S16 (Notifications copy that says the wrong thing — notifications/P2, P3, P4, P6) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

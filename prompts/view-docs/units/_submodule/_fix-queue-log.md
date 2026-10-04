@@ -793,6 +793,93 @@
 - **What to change:** keep the visual label empty, and give the time input an `aria-label` of
   `` `${label} — ${t('dateTime.time')}` ``, forwarded to the `<input>` by `TimePicker`.
 
+## S15. Action toasts time out in 3 s, and so does the only Undo (framework-wide default)
+> ✅ **FIXED 2026-10-04** (framework `825dfb4`). The default was chosen, not the local fallback: a toast with an
+> `actionLabel` now defaults to `ACTION_SNACKBAR_TIMEOUT` (10000 ms) and a plain toast keeps `SNACKBAR_TIMEOUT`
+> (3000 ms). Both are exported, and an explicit `timeout` still wins. All four action call sites (`QuietHoursCard`,
+> `useNotifications`, `TodoListView`, `PlannerCalendarView`) get it with no change. `SnackbarComposable.test.ts` gained
+> a defaults case (the plain-default and explicit-8000 cases were unchanged and still pass). `docs/composables.md`
+> states the queue cost from *Risk*. **Verified** in the running app (`playwright-cli`, `primaryUser`): the real
+> `Snackbar.vue` showed an action toast for 10.2 s and a plain one for 3.2 s. **Not verified:** the quiet-hours
+> *Clear* → *Undo* flow itself. It was not driven, to avoid writing the seed account's quiet hours.
+- **Scope:** **[framework]** `src/_common/composable/general/SnackbarComposable.ts` + `docs/composables.md`, or
+  locally `QuietHoursCard.vue`. Its own batch because the real fix is a default.
+- **Closes:** `notifications/A6`
+- **Root cause:** `showSnackbar` gives every toast `config?.timeout ?? 3000` (`SnackbarComposable.ts:98`), including
+  those with an `actionLabel`. `QuietHoursCard.clear()` made the snackbar's *Undo* the only recovery for switching
+  quiet hours off, deliberately replacing a confirm, and passes no timeout. Measured: visible for ~3.1 s, not
+  reachable by keyboard or screen reader in that time (WCAG 2.2.1).
+- **What to change:** decide the default: action toasts default to ≥ 8 s (or to no auto-dismiss while they carry an
+  action), and plain toasts stay at 3 s. Four call sites pass an `actionLabel` today: `QuietHoursCard.vue:349`,
+  `useNotifications.ts:293`, and app-side `TodoListView.vue:495` and `PlannerCalendarView.vue:258`. None sets a
+  timeout, so all four get the new default. If the default is not wanted, the minimum is `timeout: 10000` on the
+  quiet-hours toast alone.
+- **Risk:** a longer action toast holds the queue longer. `MAX_PENDING_SNACKBARS` never drops action toasts, so a burst
+  of them now takes longer to drain. That is acceptable, but say it in `composables.md`.
+
+## S13. Closing a dialog that mounted already open drops focus to `<body>` (framework-wide component)
+> ✅ **FIXED 2026-10-04** (framework `60bef5b`). `MyDialog` records the opener in `onMounted` when the model is already
+> true, as well as on the open transition. It also restores in `onBeforeUnmount`, which covers a `v-if`'d dialog
+> unmounted in the same tick its model goes false (`MyRemindersView.handleActionError`'s 400 path does that).
+> The restore skips an opener that is no longer `isConnected`, so the row-drop case stays with `restoreFocusAfterRowDrop`
+> as the batch required. Each instance holds its own opener, so nested dialogs restore one level at a time.
+> `docs/components.md` gained a *Focus return* bullet. **Verified** (`playwright-cli`, `primaryUser`):
+> `/pripomienky/moje` row 1 *Snooze* → Enter → *Cancel* focuses that *Snooze* button. In the round-2 case, a snooze
+> with `snooze` routed to 204 drops the row and focus goes to the heading. Opening *Snooze* on another row and pressing
+> *Cancel* then focuses that row's button. `/notifikacie` trash → *Dismiss notification?* returns focus to
+> `Dismiss notification Suggested for today` after Escape and after Cancel (the seed's first row is no longer *Test
+> notification*). The template-declared, always-mounted Dismiss `MyDialog` still returns focus after Escape.
+> **Not verified:** an app-side `confirm()` (to-do item delete). It goes through the same `DialogHost` path as the
+> notifications confirm, so it was not driven separately. A real nested dialog was not exercised.
+- **Scope:** **[framework]** `src/_common/component/dialog/MyDialog.vue`. Its own batch: every `confirm()` /
+  `openDialog()` in the framework **and** the app goes through it, and so does every `v-if`'d template dialog.
+- **Closes:** `notifications/A2`, `reminders-user/A1`
+- **Root cause:** `MyDialog` recorded the opener in `watch(dialog, isOpen => …)` (`MyDialog.vue:144-151`), which fires
+  only on a *change*. A dialog that is **mounted already open** never sees the open transition, records no opener,
+  and has nothing to restore on close. Two shapes hit it: a `DialogHost` entry (`notifications/A2`), and a template
+  dialog behind a `v-if` whose condition and model flip in the same tick, `SnoozeDialog v-if="activeOccurrence"`
+  (`reminders-user/A1` round 2).
+- **What to change:** record the opener inside `MyDialog` when it mounts open, and restore it on close if the element
+  is still connected. Capturing the element in `useDialog().openDialog()` alone is not enough, because it leaves
+  `SnoozeDialog` broken.
+- **Do not change:** `MyRemindersView`'s `restoreFocusAfterRowDrop`. It covers the case where the opener's row was
+  deleted.
+- **Risk:** nested dialogs. Restore must target the element that opened *that* dialog.
+
+## S11. `DateTimeHelper` formatters speak only Slovak (framework-wide default)
+> ✅ **FIXED 2026-10-04** (framework `2cbc085`). New `i18n/locale.ts` (`setLocaleSource` / `currentLocale`), registered
+> by `installFramework` next to `setTranslator` from `i18n.global.locale`. It handles legacy mode (a string) and
+> composition mode (a ref), and `AppI18n` gained `locale`. `DateTimeHelper` exports `dayjsLocale()`, resolved per call
+> and lowercased: `SK` → `sk`, `EN` → `en`, `CZ` → `cs`. It falls back to `sk` when no source is registered or dayjs
+> has no such locale loaded (CLAUDE.md framework rule 2). All nine `.locale('sk')` calls use it, and
+> `getTranslatedMonths`'s default does too. **Choice made:** EN is dayjs's built-in US `en`, not `en-gb`, because
+> `reminders-user/P6` and `scheduler/P2` ask for consistency with the date inputs, and Vuetify's `en` inputs ask for
+> `mm/dd/yyyy`. Note that the app's own `localeTag` maps EN to `en-GB`. The format strings are unchanged except one:
+> `groupNotificationsByDay` now passes `LL` instead of `D. MMMM YYYY`. That is not the per-consumer patch the batch
+> warns against, because the root fix is in the helper. A fixed `D. MMMM` would render "28. September 2026" in EN,
+> and `LL` gives "September 28, 2026" in EN and the same "28. september 2026" in SK. Unit test
+> `DateTimeHelper.locale.test.ts` (fallback, switch, alias, unknown). `docs/utils.md` gained a *Locale* bullet.
+> App-side, the stale comments in `src/i18n.ts` and `useRoutineDateFormat.ts` were corrected (no behaviour change;
+> `useRoutineDateFormat` never used the helper). **Contradictions §22 in `docs/views/_fix-queue-log.md` is resolved.**
+> **Verified** (`playwright-cli`, `primaryUser`, EN): in the running app `dayjsLocale()` is `en`, and
+> `notificationDayLabel` for 2026-09-28 gives "September 28, 2026". `/pripomienky/moje` cells read
+> `10/06/2026 4:30:00 PM`, matching the inputs' order. The day-planner header reads "Tu 01.09." (English weekday,
+> fixed `dd DD.MM.` shape, which is an app-side follow-up if wanted). **Not verified:** a dated day header rendered
+> on `/notifikacie` (the seed only has *Today* / *Yesterday* groups), the SK shape in the browser (covered by the unit
+> test, since switching the seed account's locale would mutate it), `/activity-history` (the probe matched no date),
+> and the e2e suite, which was not run. Run it at the next pointer bump that touches dates, as *Risk* asks.
+- **Scope:** **[framework]** `src/_common/utils/DateTimeHelper.ts` + `src/_common/docs/utils.md`. Its own batch
+  (batching rule 4: it changes what every app on the framework renders).
+- **Closes:** `notifications/B2`, `scheduler/P2`, `reminders-user/P6`
+- **Root cause:** every formatter in the file pinned dayjs to `'sk'`. `formatLocalized` was the sharpest case: a helper
+  named *localized* that always spoke Slovak gave an EN account "28. september 2026" day headers on `/notifikacie`.
+  Recorded app-side as *Contradictions* §22 (`docs/views/_fix-queue-log.md`).
+- **What to change:** resolve the locale per call from the framework's registered i18n, falling back to `'sk'` when
+  none is registered. Update `docs/utils.md`.
+- **Do not change:** the format *strings*. Do not patch `groupNotificationsByDay` on its own.
+- **Risk:** the widest-reaching batch in this queue. It changes visible dates in the planner header, history timeline
+  and routine list for every EN account, and those screens' e2e specs may assert the Slovak shape.
+
 ## Closed verification items
 
 _None yet._

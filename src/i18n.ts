@@ -22,8 +22,8 @@ function slovakPluralRule(choice: number, choicesLength: number): number {
  * `locale === 'EN' ? 'en-GB' : 'sk-SK'` ternary inlined in a component, which rendered Slovak dates
  * to `AvailableLocales.CZ` users.
  *
- * `_common`'s `formatLocalized` is not the alternative it looks like — it hardcodes dayjs's `'sk'`
- * and so formats in Slovak whatever the user picked. See `migration-revision.md` §13.
+ * `_common`'s `DateTimeHelper` formatters follow the active locale too (S11), but through dayjs's
+ * locales, not these tags: its EN is US English, this map's is `en-GB`.
  */
 const LOCALE_TAGS: Record<string, string> = {
 	SK: 'sk-SK',

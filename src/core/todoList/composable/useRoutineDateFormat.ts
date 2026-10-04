@@ -11,8 +11,9 @@ type DateInput = Date | string
  * (`todo-routine/B10`). Every function here reads `locale.value` on each call, so a `computed` that
  * calls one re-evaluates on a locale switch without reloading.
  *
- * Not `formatLocalized` from `_common/utils/DateTimeHelper.ts`: despite its name it hardcodes dayjs's
- * `'sk'` (see `migration-revision.md` §13).
+ * Written when `formatLocalized` (`_common/utils/DateTimeHelper.ts`) still hardcoded dayjs's `'sk'`
+ * (`migration-revision.md` §13). It follows the locale since S11, but `Intl` with `localeTag` keeps
+ * these labels in `en-GB` order, which dayjs's US `en` would not.
  */
 export function useRoutineDateFormat() {
 	const { locale } = useI18n()
