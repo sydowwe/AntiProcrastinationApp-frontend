@@ -2,11 +2,11 @@
 
 > Pass: inventory · captured 2026-09-30 · commit `4d890646` (framework `b1b82a1`)
 
-**Tally:** blocker 1 · bug 6 · a11y 2 · polish 7 · opportunity 2 · unverified 3 (U1 and U2 since settled, see Status)
+**Tally:** blocker 1 · bug 6 · a11y 2 · polish 7 · opportunity 2 · unverified 3 (all three since settled, see Status)
 
 **Status (2026-10-04):** 16 of 21 closed or escalated: 15 fixed (X1, B1–B5, A1, A2, P1–P7), 1 escalated to the backend
-(B6 → §S1). That leaves O2 (opportunity, partly built) and U3 (unverified, open). U1 and U2 were settled on 2026-10-05, and
-O1 was built the same day. Fix batches are in
+(B6 → §S1). That leaves O2 (opportunity, partly built). U1, U2 and U3 were settled on 2026-10-05 (U3 through a new
+orphaned-job fixture row), and O1 was built the same day. Fix batches are in
 `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 Every finding is **[framework]** — the views, components and DTOs all live in `src/_common/modules/scheduler/`
@@ -334,7 +334,12 @@ the data a real registry produces (B6, P4).
 - **What would settle it:** a headed browser, a second tab in front for 3 minutes, request count before/after.
 
 ### U3. Every orphan surface is untested — no job is orphaned
-- **Status:** open
+- **Status:** settled 2026-10-05, not a defect. The API's e2e seed (`e2e-v5`) now upserts one orphaned job,
+  `E2e.OrphanedFixtureJob` (`Active`, handler `E2e.RemovedHandler`, `nextRunAt` null), and one past run of it. The ids
+  are resolved per database and returned as `seed.scheduler`. `e2e/tests/scheduler-orphan.spec.ts` passes 8/8:
+  the grid chip and the disabled row Trigger (described as *cannot be triggered*), the detail alert, chip and Trigger
+  caption, the Replay gate in run history and on run detail (*cannot be replayed*), and the *Orphaned* attention list,
+  which names the handler key and links to the job. Server half pinned in `TestSeedEndpointTests`.
 - **Severity:** unverified
 - **Where:** jobs grid *Orphaned* chip, job detail orphan alert + chip, disabled *Trigger now* with
   `cannotTriggerOrphaned`, replay gate `cannotReplayOrphaned`, the *Orphaned* attention list

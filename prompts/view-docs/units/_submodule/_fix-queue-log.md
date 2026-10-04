@@ -905,6 +905,17 @@
   /scheduler-dashboard/health` (two polls would have fired); back to visible → +1 at once; 65 s later → +1. **Not
   covered:** the jobs list's 120 s poller (same composable, not run separately) and a real hidden tab, which needs a
   headed browser. `reminders-admin/U1` stays open for that reason. No batch results.
+- **`U3`** ✅ (closed 2026-10-05) — the orphan surfaces, untestable because no job was orphaned. Settled by a fixture
+  row, not a test-only handler: the API's e2e seed (`e2e-v5`) now upserts `E2e.OrphanedFixtureJob` (`Active`, handler
+  `E2e.RemovedHandler`, `nextRunAt` null) and one succeeded run of it, by key, in the scheduler schema the reset
+  otherwise leaves alone. The ids are resolved per database and returned as `seed.scheduler` (75 / 75373 here).
+  Server: pinned by `Seed_LeavesAnOrphanedJob_ThatTheScheduledReadsReportAsOrphaned` (health lists, job by id, run
+  detail) and `Seed_Twice_KeepsOneOrphanedJobAndOneRun_UnderTheSameIds`. 31/31 in `TestSeedEndpointTests`.
+  **Verified** in `e2e/tests/scheduler-orphan.spec.ts`, 8/8 against the restarted API: the grid chip, the
+  row's disabled Trigger described as `cannotTriggerOrphaned`, the detail alert and chip, the header Trigger's
+  visible reason, the run-history and run-detail Replay gates described as `cannotReplayOrphaned`, and the
+  *Orphaned* attention list naming the handler key and linking to the job. All of them render as built, and no defect
+  was found. No batch results.
 
 ### `reminders-admin` — closed 2026-10-05
 - **`U2`** ✅ — the failure card's cap and "showing N of M". As `adminUser` (form sign-in), with

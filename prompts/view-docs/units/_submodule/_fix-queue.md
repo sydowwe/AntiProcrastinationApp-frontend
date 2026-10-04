@@ -211,10 +211,7 @@ can go.
 ## Needs verification (unverified findings, and what would settle each)
 
 ### `scheduler`
-<!-- `scheduler` U1, U2 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
-- **`U3`** — none of the orphan surfaces (grid chip, detail alert, disabled Trigger, replay gate, *Orphaned* list) can
-  be exercised, because no job is orphaned. It needs a job row whose `handlerKey` has no registered handler. The e2e
-  fixture has no scheduler data, and a test-only handler that registers and then disappears is the cleanest source.
+<!-- `scheduler` U1, U2, U3 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 
 <!-- `notifications` U1, U2 verified 2026-10-04 — moved to _fix-queue-log.md → Closed verification items. -->
 

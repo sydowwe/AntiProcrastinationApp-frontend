@@ -21,7 +21,8 @@ test.describe(`Scheduled jobs list (${JOBS})`, () => {
 
 	test('renders the jobs grid with its column headers', async ({ authenticatedPage }) => {
 		// "Job key" and "Next run" carry a sort-priority badge in their accessible name ("Job key 2") — P1.
-		for (const name of [/^Job key/, 'Owner module', 'Handler key', 'Schedule', 'Status', 'Last run', /^Next run/]) {
+		// No "Handler key" column since B1 — it is a caption under the job key now.
+		for (const name of [/^Job key/, 'Owner module', 'Schedule', 'Status', 'Last run', /^Next run/]) {
 			await expect(authenticatedPage.getByRole('columnheader', { name })).toBeVisible()
 		}
 	})
@@ -152,7 +153,8 @@ test.describe('Run detail (/planovac/behy/:id)', () => {
 	})
 
 	test('renders the detail, payload and lineage cards', async ({ authenticatedPage }) => {
-		for (const name of ['Run detail', 'Payload snapshot', 'Replay lineage']) {
+		// "Related runs", not "Replay lineage", since P4: the card also lists automatic retries.
+		for (const name of ['Run detail', 'Payload snapshot', 'Related runs']) {
 			await expect(authenticatedPage.getByRole('heading', { name, level: 2 })).toBeVisible()
 		}
 	})

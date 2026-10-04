@@ -60,6 +60,13 @@ export interface SeedResponse {
 	 * instead of quietly returning a different row. Same keys as {@link SeedResponse.reminders}.
 	 */
 	reminderDefinitions: Record<SeedReminderKey, number>
+	/**
+	 * Added in `e2e-v5`. The one orphaned scheduler job (`E2e.OrphanedFixtureJob`, handler
+	 * `E2e.RemovedHandler`, `Active`) and its one past run. **Resolved, not pinned**: the scheduler schema
+	 * survives the reset, so the ids are whatever that database's sequence handed out — stable across
+	 * resets, different between machines. Never hardcode them.
+	 */
+	scheduler: Record<SeedSchedulerKey, number>
 	/** Keys are verbatim English display text, not camelCase. */
 	taskPriorities: Record<string, number>
 	/** Keys are verbatim English display text, not camelCase. */
@@ -153,6 +160,12 @@ export type SeedReminderKey =
 	| 'cancelled'
 	| 'secondaryPostParcel'
 
+/**
+ * `orphanedJob` is on the *Orphaned* attention list and on no other (its `nextRunAt` is null and its last
+ * run succeeded). `orphanedJobRun` is that run — the way into the run-detail Replay gate.
+ */
+export type SeedSchedulerKey = 'orphanedJob' | 'orphanedJobRun'
+
 export type SeedCountKey =
 	| 'activities'
 	| 'todoListItems'
@@ -205,7 +218,7 @@ export type SeedCountKey =
  * it is one failure in global setup that says what actually happened. Bump this only together with
  * reading the API's `docs/e2eTestSeed.md` for what moved.
  */
-export const EXPECTED_FIXTURE_VERSION = 'e2e-v4'
+export const EXPECTED_FIXTURE_VERSION = 'e2e-v5'
 
 /** Every route in the API is under `/api` (FastEndpoints sets `RoutePrefix = "api"` globally). */
 export const SEED_PATH = '/api/test/seed'
