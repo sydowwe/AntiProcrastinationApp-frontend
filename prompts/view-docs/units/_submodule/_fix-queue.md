@@ -22,7 +22,7 @@
 | S2 | ✅ **FIXED 2026-10-04** (`d21119c`) — Needs-attention children shrink — rollup card crushed | **framework** | `scheduler/B5` | trivial |
 | S3 | Jobs grid too wide — Next run and actions off-screen; default sort pushes a tie-breaker | **framework** | `scheduler/B1`, `P1` | low |
 | S4 | Disabled Trigger / Replay explain themselves only via an unreachable `title` | **framework** | `scheduler/B2` | low |
-| S5 | Detail-page breadcrumbs: duplicate crumb on job **and reminder**, stale crumb on run not-found | **framework** | `scheduler/B3`, `B4`, `reminders-admin/B3` | low |
+| S5 | ✅ **FIXED 2026-10-04** (`6154af1`, `524312a`) — Detail-page breadcrumbs: duplicate crumb on job **and reminder**, stale crumb on run not-found | **framework** | `scheduler/B3`, `B4`, `reminders-admin/B3` | low |
 | S6 | Ambiguous accessible names — run links and copy buttons | **framework** | `scheduler/A1`, `A2` | trivial |
 | S7 | Detail pages report a 404/500 twice (alert + interceptor snackbar) — scheduler **and reminders** | **framework** | `scheduler/P3`, `reminders-admin/P2` | trivial |
 | S8 | Run detail presentation — retries called replays, idle *Show all*, CRLF blank lines | **framework** | `scheduler/P4`, `P5`, `P6` | low |
@@ -34,7 +34,7 @@
 | S14 | ✅ **FIXED 2026-10-03** (`5b2e76b`) — Preference cards' purple palette fails contrast | **framework** | `notifications/A4` | low |
 | S15 | Action toasts time out in 3 s, and so does the only Undo (framework-wide default) | **framework** | `notifications/A6` | trivial |
 | S16 | ✅ **FIXED 2026-10-03** (`8c5dd57` + app-side P4 labels) — Notifications copy that says the wrong thing | **framework** | `notifications/P2`, `P3`, `P4`, `P6` | low |
-| S17 | Framework routes outside any nav tree claim to be "Home" in the breadcrumb | **framework** | `notifications/P1`, `reminders-user/P1` | trivial |
+| S17 | ✅ **FIXED 2026-10-04** (`7033ca2`) — Framework routes outside any nav tree claim to be "Home" in the breadcrumb | **framework** | `notifications/P1`, `reminders-user/P1` | trivial |
 | S18 | ✅ **FIXED 2026-10-04** (`7c048c2`) — Reminder pages clip their own content — detail cards and the history notice shrink | **framework** | `reminders-admin/X1`, `B6` | trivial |
 | S19 | ✅ **FIXED 2026-10-04** (`f103416`) — Reminder grid DTOs drop schedule fields the server sends | **framework** | `reminders-admin/B1`, `B2`, `P4` | low |
 | S20 | ✅ **FIXED 2026-10-04** (`4920a5b`) — Date-only filter bounds are sent as instants, so "to" excludes its own day | **framework** | `reminders-admin/B4`, `P8`, `reminders-user/B3` | low |
@@ -89,28 +89,7 @@
 - **Risk:** `aria-disabled` buttons still receive clicks. The handlers already guard (`if (!canTrigger.value …) return`)
   but check the replay path's `@click` too.
 
-## S5. Detail-page breadcrumbs: duplicate crumb on job and reminder, stale crumb on run not-found
-- **Scope:** **[framework]** `view/SchedulerJobDetailView.vue`, `view/SchedulerRunDetailView.vue`,
-  `modules/reminders/view/ReminderDefinitionDetailView.vue:382-387`
-- **Closes:** `scheduler/B3`, `scheduler/B4`, `reminders-admin/B3`
-- **Added in the third pass:** the reminder detail makes the same assumption with the same comment ("the register
-  list is not a nav path") and renders "Home › Reminder register › Reminder register › PersonalReminder", including
-  on its not-found state. Whichever option below is taken must cover it too: with the shell-level de-dup it needs no
-  edit, and with the per-view option it drops `registerCrumb` from both `setBreadcrumbExtra` calls. With two modules
-  now affected, the shell-level option is the better bet.
-- **Root cause:** both views own their `setBreadcrumbExtra` and both get it wrong in opposite directions. Job detail
-  always prepends a *Scheduled jobs* crumb, on the premise that the jobs list is not a nav path, but this host's nav
-  contains it and the shell's longest-prefix match (`F14`) already renders it, so it appears twice. Run detail sets
-  its chain only on success, so a failed load keeps the previous run's chain.
-- **Files:** `SchedulerJobDetailView.vue:208-214`, `SchedulerRunDetailView.vue:348-370`.
-- **What to change:** decide once, for a *framework* module, whether the host's nav can be assumed to list the jobs
-  page. If yes, job detail sets `[{ title: jobKey }]` only. If no (the safer default for other apps), have
-  `useSetBreadcrumbExtra` / the shell drop an extra crumb whose `to` equals the last nav-derived crumb's, which fixes
-  job detail with no per-host assumption. Run detail: reset the extra (to `[jobsCrumb]` or `[]`) in the `catch`.
-- **Verification:** `scheduler/B3` and `B4` `Verify:`; `reminders-admin/B3` `Verify:`; confirm `/planovac/behy/61991`
-  still shows the full three-crumb chain.
-- **Risk:** the de-dup option touches the shell's breadcrumb composable — every app. If you take it, it is its own
-  framework commit with a docs line in `composables.md`.
+<!-- S5 (Detail-page breadcrumbs — scheduler/B3, B4, reminders-admin/B3) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## S6. Ambiguous accessible names — run links and copy buttons
 - **Scope:** **[framework]** `component/JobRunHistory.vue`, `component/CopyIconButton.vue` + its three call sites, locales
@@ -250,19 +229,7 @@
 
 <!-- S16 (Notifications copy that says the wrong thing — notifications/P2, P3, P4, P6) fixed 2026-10-03 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S17. Framework routes outside any nav tree claim to be "Home" in the breadcrumb
-- **Scope:** **[framework]** `src/_common/modules/notifications/view/NotificationsView.vue`,
-  `reminderPreference/view/ReminderPreferencesView.vue`, `src/_common/modules/reminders/view/MyRemindersView.vue`
-- **Closes:** `notifications/P1`, `reminders-user/P1`
-- **Root cause:** none of the three routes is in a nav tree (`/pripomienky/moje` is reached from the user menu), and
-  `useBreadcrumbs.ts:49-59` gives such a route the home crumb alone, rendered as the current page.
-- **What to change:** `useSetBreadcrumbExtra([{ title: t('<heading key>') }])` in each view, from its own heading key
-  (`reminderDashboard.my.title` for My reminders). That is the `F28` pattern.
-- **Do not change:** `useBreadcrumbs`' fallback. Whether a nav-less framework route should get a generic crumb is the
-  shell question S5 raised for the scheduler. If S5 takes the shell-level option, re-check this batch is still needed
-  before doing it.
-- **Verification:** `notifications/P1` and `reminders-user/P1` `Verify:`.
-- **Risk:** none.
+<!-- S17 (Framework routes outside any nav tree claim to be "Home" — notifications/P1, reminders-user/P1) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S18 (Reminder pages clip their own content — reminders-admin/X1, B6) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

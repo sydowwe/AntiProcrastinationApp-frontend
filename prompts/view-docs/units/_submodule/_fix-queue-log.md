@@ -447,6 +447,62 @@
 - **Risk:** overriding the select slots re-implements indeterminate / select-all behaviour. Use Vuetify's slot props
   (`allSelected`, `someSelected`, `selectAll`, `isSelected`, `toggleSelect`) rather than local state.
 
+## S5. Detail-page breadcrumbs: duplicate crumb on job and reminder, stale crumb on run not-found
+> ✅ **FIXED 2026-10-04** (framework `6154af1`, `524312a`). Took the shell-level option. `useBreadcrumbs` skips an
+> extra whose `to` is already anywhere in the chain (not just the last nav crumb, so a view listing several ancestors
+> is covered too), and `composables.md` documents it. Neither detail view needed a code change; their "is not a nav
+> path" comments were reworded. Run detail resets the extra to `[jobsCrumb]` in its `catch`. **Verified** (in-app
+> `$router.push`, `.v-breadcrumbs-item` texts): `/planovac/ulohy/10` → `Home › Scheduled jobs ›
+> Portal.SuggestionPatternRefresh`; `/planovac/behy/61991` → `Home › Scheduled jobs › Portal.SuggestionPatternRefresh ›
+> Run #61991` (all three links intact); then `/planovac/behy/999999` → `Home › Scheduled jobs`. As `adminUser`,
+> `/pripomienky/register/23201` → `Home › Reminder register › Reminder #23001`, and a cold load of `/999999` →
+> `Home › Reminder register`. **Found, not fixed:** `ReminderDefinitionDetailView` loads in `onMounted` only, so an
+> in-app push from one reminder id to another keeps showing the first reminder, both page and crumb. That is
+> consistent, so it is not B3, but it is the shape run detail had before it watched `id`. No in-app link between
+> two reminder details is known to exist, so it is reachable only by `$router.push` today.
+- **Scope:** **[framework]** `view/SchedulerJobDetailView.vue`, `view/SchedulerRunDetailView.vue`,
+  `modules/reminders/view/ReminderDefinitionDetailView.vue:382-387`
+- **Closes:** `scheduler/B3`, `scheduler/B4`, `reminders-admin/B3`
+- **Added in the third pass:** the reminder detail makes the same assumption with the same comment ("the register
+  list is not a nav path") and renders "Home › Reminder register › Reminder register › PersonalReminder", including
+  on its not-found state. Whichever option below is taken must cover it too: with the shell-level de-dup it needs no
+  edit, and with the per-view option it drops `registerCrumb` from both `setBreadcrumbExtra` calls. With two modules
+  now affected, the shell-level option is the better bet.
+- **Root cause:** both views own their `setBreadcrumbExtra` and both get it wrong in opposite directions. Job detail
+  always prepends a *Scheduled jobs* crumb, on the premise that the jobs list is not a nav path, but this host's nav
+  contains it and the shell's longest-prefix match (`F14`) already renders it, so it appears twice. Run detail sets
+  its chain only on success, so a failed load keeps the previous run's chain.
+- **Files:** `SchedulerJobDetailView.vue:208-214`, `SchedulerRunDetailView.vue:348-370`.
+- **What to change:** decide once, for a *framework* module, whether the host's nav can be assumed to list the jobs
+  page. If yes, job detail sets `[{ title: jobKey }]` only. If no (the safer default for other apps), have
+  `useSetBreadcrumbExtra` / the shell drop an extra crumb whose `to` equals the last nav-derived crumb's, which fixes
+  job detail with no per-host assumption. Run detail: reset the extra (to `[jobsCrumb]` or `[]`) in the `catch`.
+- **Verification:** `scheduler/B3` and `B4` `Verify:`; `reminders-admin/B3` `Verify:`; confirm `/planovac/behy/61991`
+  still shows the full three-crumb chain.
+- **Risk:** the de-dup option touches the shell's breadcrumb composable — every app. If you take it, it is its own
+  framework commit with a docs line in `composables.md`.
+
+## S17. Framework routes outside any nav tree claim to be "Home" in the breadcrumb
+> ✅ **FIXED 2026-10-04** (framework `7033ca2`). Re-checked after S5 as asked: the de-dup does not cover this (these
+> views set no extra, and routes carry no title meta for a shell fallback), so the batch was still needed. Each view
+> sets `[{ title: t('<heading key>'), to: route.path }]` in a `watchEffect`. The `to` is a deviation from the batch
+> text: with it, S5's de-dup drops the crumb if a host ever lists the page in its nav, instead of rendering
+> "Notifications › Notifications". `watchEffect` so the crumb follows a locale switch. **Verified:** `/notifikacie` →
+> `Home › Notifications`, `/nastavenia/pripomienky` → `Home › Notifications & reminders`, `/pripomienky/moje` →
+> `Home › My reminders`. Typecheck 0.
+- **Scope:** **[framework]** `src/_common/modules/notifications/view/NotificationsView.vue`,
+  `reminderPreference/view/ReminderPreferencesView.vue`, `src/_common/modules/reminders/view/MyRemindersView.vue`
+- **Closes:** `notifications/P1`, `reminders-user/P1`
+- **Root cause:** none of the three routes is in a nav tree (`/pripomienky/moje` is reached from the user menu), and
+  `useBreadcrumbs.ts:49-59` gives such a route the home crumb alone, rendered as the current page.
+- **What to change:** `useSetBreadcrumbExtra([{ title: t('<heading key>') }])` in each view, from its own heading key
+  (`reminderDashboard.my.title` for My reminders). That is the `F28` pattern.
+- **Do not change:** `useBreadcrumbs`' fallback. Whether a nav-less framework route should get a generic crumb is the
+  shell question S5 raised for the scheduler. If S5 takes the shell-level option, re-check this batch is still needed
+  before doing it.
+- **Verification:** `notifications/P1` and `reminders-user/P1` `Verify:`.
+- **Risk:** none.
+
 ## Closed verification items
 
 _None yet._
