@@ -505,6 +505,126 @@
 - **Verification:** `notifications/P1` and `reminders-user/P1` `Verify:`.
 - **Risk:** none.
 
+## S28. Snooze and Dismiss never reach the server, and once they do, the default snooze delivers early
+> ✅ **FIXED 2026-10-04** (framework `4e385e5`, session 1). One commit for both halves, as required. (X1) The fields
+> are renamed to `reminderDefinitionId` / `occurrenceAt` with the constructor order unchanged, and the new
+> `SnoozeOccurrenceRequest.test.ts` pins the serialized keys of both requests. (B2) The presets now count from the
+> occurrence: *1 hour after it*, *The morning after (9:00)* and *A week after it* (same time of day). The keys were
+> renamed `hourLater` / `nextMorning` / `weekLater`. The custom picker's `minDate` is the occurrence, `isValid`
+> requires a time after the occurrence **and** after now, and the warning became `mustBeAfterOccurrence` (it names
+> the occurrence). **Verified** (`playwright-cli`, `primaryUser`, `/pripomienky/moje`): Snooze on the 06.10 16:30 row
+> offered 17:30 the same day, 07.10 9:00 and 13.10 16:30. Confirming it sent
+> `{"reminderDefinitionId":23201,"occurrenceAt":"2026-10-06T14:30:00.000Z","snoozeUntil":"2026-10-06T15:30:00.000Z"}`
+> → **204**. Dismiss on the 09.10 row sent `{"reminderDefinitionId":23202,"occurrenceAt":"2026-10-09T09:00:00.000Z"}`
+> → **204**. As predicted, the snoozed row came back on the reload (§S7 / `B6`). The e2e run's global setup reseeded
+> afterwards. **Not verified:** the custom picker's floor in the browser (validation reviewed in code only). The
+> exact-match risk below was not observed either, because the e2e seed's occurrences fall on whole minutes. **Found while
+> investigating, not filed:** the server's `OccurrenceAt != NextOccurrenceAt` check is exact, and JS `Date` keeps
+> milliseconds only. An occurrence stored with sub-millisecond precision (`DevReminderSeeder`'s `now.AddDays(…)`,
+> or anything computed from `UtcNow`) would still get a 400 from the fixed client. If that shows up, it is a backend
+> truncation ask, not a client bug.
+- **Scope:** **[framework]** `modules/reminders/dto/request/{SnoozeOccurrenceRequest,DismissOccurrenceRequest}.ts`,
+  `component/SnoozeDialog.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/X1`, `reminders-user/B2`
+- **Root cause:** two causes, in one batch because they cannot ship apart. (X1) The two request DTOs serialize
+  `reminderId` / `occurrenceInstant`. The server binds `ReminderDefinitionId` / `OccurrenceAt`
+  (`Sydowwe.Reminders/application/dto/dashboard/{Snooze,Dismiss}ReminderOccurrenceRequest.cs`, confirmed in source
+  this pass), so it reads id 0, the guard answers 404, and the client's 404 branch tells the user their own reminder
+  is "no longer available" while the reload puts it straight back. Neither action has ever worked from
+  `/pripomienky/moje`: the client DTOs date from 2026-08-05, the server's from 2026-08-07, and neither has changed
+  since. (B2) `SnoozeDialog`'s presets are anchored to `now` (`:98-124`) and `in1Hour` is pre-selected (`:96`,
+  `:149`), but every row on the page is a *future* occurrence. The server accepts any future `snoozeUntil`, and the
+  scanner then skips the original send for that recipient (`SkipReason.Snoozed`). So the default "snooze" moves a
+  reminder **earlier, for good**. Observed in round 2: a 05.10 occurrence was delivered on 01.10. Today X1 is the only
+  thing that keeps B2 unreachable. Fixing X1 alone would arm it.
+- **Files:** as Scope; the call sites `MyRemindersView.vue:310-347` (read only, unless the constructor changes).
+- **What to change:** (X1) rename the fields to `reminderDefinitionId` / `occurrenceAt`. Keep the constructors'
+  positional order so the two call sites do not move. Add a unit test asserting the serialized keys of both requests,
+  because no test covers the wire shape today. (B2) anchor the presets to the occurrence: 1 h after it, 09:00 on the
+  day after it, 1 week after it. Floor the custom time at the occurrence as well (`minDate` and validation). Reword the
+  preset labels so "In 1 hour" does not still read as "from now" (sk + en).
+- **Do not change:** the `_silent` on the two action requests, or the 404/400/500 branches. Unit 16's round 2
+  settled that they work as coded (U2), and their copy is S30. Whether the *server* should refuse a `snoozeUntil`
+  earlier than the occurrence is §S7's question, not this batch's.
+- **Verification:** `reminders-user/X1` `Verify:` (real 204s, request body keys) and `B2` `Verify:`. X1's Verify
+  writes to the database, so reseed afterwards (`POST /api/test/seed`) and sign in again.
+- **Risk:** once X1 lands, §S7 (`B6`) is what the user sees next: the row drops, then comes back within ~300 ms with the
+  reload, and can be acted on again. Say that in the framework commit. Order: one framework commit, or B2 first.
+  Never X1 alone.
+
+## S30. My reminders: the Dismiss confirm ignores Escape and names nothing; every 400 is "no longer in the future"
+> ✅ **FIXED 2026-10-04** (framework `0d04853`, session 1). (A2) `:persistent="false"` on the Dismiss `MyDialog`.
+> `SnoozeDialog` is untouched and still persistent. (P5) The body is now the default slot: the existing text plus an
+> `InfoRow` with `formatInstant(activeOccurrence)`, the same layout as `SnoozeDialog`. There is no title yet (§S6).
+> (P7) `actions.pastOccurrence` → `actions.occurrenceChanged`, "This occurrence has changed or passed — the list was
+> refreshed." (sk + en). There is no branching on `errors.occurrenceAt`. **Verified** (`playwright-cli`): the Dismiss
+> dialog shows "Occurrence 06.10.2026 16:30:00", Escape closes it, and focus returns to the row's *Dismiss* (S13 had not
+> landed, and was not needed for this dialog). Snooze stays open on Escape. With `/dismiss` routed to a 400 carrying
+> `errors.occurrenceAt`, the snackbar read the new copy. The new e2e tests cover all three. **Note:** the server has
+> a third 400, `SnoozeUntil` not in the future, which the neutral copy does not describe. The dialog's `isValid`
+> rules it out except under clock skew, so no copy was added for it.
+- **Scope:** **[framework]** `modules/reminders/view/MyRemindersView.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/A2` (**Dismiss half only**. The Snooze half is dropped, see the log), `reminders-user/P5`,
+  `reminders-user/P7`
+- **Root cause:** the Dismiss confirmation is a template-declared `MyDialog` (`:160-168`), and FW1 step 1 missed it,
+  so it is still `persistent` with no input to protect. It also names nothing: "This occurrence will no longer be
+  delivered…", with no date, on rows that are otherwise identical. After an action, `handleActionError`'s 400 branch
+  (`:361-367`) reports every 400 as "no longer in the future". The server sends 400 for two reasons: the occurrence
+  has passed, **or** `OccurrenceAt` is no longer the pending occurrence because the page is stale. The second is the
+  common one for a recurring reminder, and the list it reloads then shows the occurrence still ahead.
+- **What to change:** (A2) `:persistent="false"` on the Dismiss `MyDialog`, per FW1's rule that an input-less
+  confirmation closes on Escape. (P5) show the occurrence in the dialog body, reusing `SnoozeDialog`'s `InfoRow` with
+  `formatInstant(activeOccurrence)` (and the row's title once §S6 lands). (P7) one neutral key for both 400 reasons,
+  e.g. "This occurrence has changed or passed — the list was refreshed." (sk + en). Do not branch on the response's
+  `errors.occurrenceAt` text, which is server prose.
+- **Do not change:** `SnoozeDialog`'s `persistent`. FW1 (owner decision, 2026-09-23) kept it persistent on purpose,
+  because it carries a custom-time form.
+- **Verification:** `reminders-user/A2` `Verify:` for *Dismiss* only (Escape closes it, and focus returns to the row's
+  *Dismiss*); `P5` and `P7` `Verify:`. The phase-5 spec should assert that *Snooze* **resists** Escape, the way
+  `two-factor.spec.ts` does for its form.
+- **Risk:** none.
+
+## S29. Reminder tables render a failed load as an empty list, in Vuetify's words
+> ✅ **FIXED 2026-10-04** (framework `639814a`, session 1). `useReminderTableErrors(fetchFilteredTable)` now returns
+> `{ fetch, onError, loadFailed }`. `fetch` wraps the query with `_silent: true` (passed per call, so
+> `useServerTable` is untouched) and clears `loadFailed` on success. `onError` sets it on a non-cancel failure and
+> ignores cancellations. The new `ReminderTableNoData.vue` is the `#noData` body in all four views: *The list could not
+> be loaded.* + *Try again* (`reload`), *Nothing matches the current filters.* + *Clear filters* (filtered = the
+> filter's URL params differ from a default filter's), or the page's own empty copy under `table.empty.*`. The admin
+> three got their own copy in the same commit, as the batch allowed. `TableResultAnnouncer` takes `failed` and
+> announces the failure instead of a count. **Beyond the batch text:** a failed load also passes `[]` / `0` to the
+> table, because `useServerTable` keeps the previous page's rows on error, and the failure state would otherwise never
+> render after a page or sort change. **Verified** (`playwright-cli`): with `my-upcoming` routed to 500, the body read
+> "The list could not be loaded. / Try again", the live region said the same, and no snackbar appeared. After
+> `unroute`, *Try again* brought back 3 rows ("3 results found"). `?kind=NoSuchKind` showed the filtered-empty state,
+> and *Clear filters* dropped the param and restored the rows. On `/pripomienky/register`, a routed 500 showed the same
+> failure state. **Not verified:** the unfiltered empty copy, because the seed always gives the primary user rows.
+- **Scope:** **[framework]** `modules/reminders/composable/useReminderTableErrors.ts`, the four list views
+  (`MyRemindersView`, `ReminderDefinitionsView`, `ReminderUpcomingView`, `ReminderDispatchHistoryView`),
+  `component/TableResultAnnouncer.vue`, `_locales/remindersDashboard.{sk,en}.ts`
+- **Closes:** `reminders-user/B5`, `reminders-user/P4`
+- **Root cause:** no table in the module owns its no-data state. `reportTableLoadError` is "deliberately terminal",
+  and its own comment hands the error state to R2, which never took it. So a 500 leaves `items` empty, the live region
+  announces "0 results found", and the body shows Vuetify's "No data available". The same three words appear for an
+  empty list and for a filtered-empty one. The only recovery is a page reload.
+- **Files:** `useReminderTableErrors.ts:21-26`; `onError: reportTableLoadError` at `MyRemindersView.vue:222`,
+  `ReminderDefinitionsView.vue:186`, `ReminderUpcomingView.vue:229`, `ReminderDispatchHistoryView.vue:221`;
+  `_common/composable/table/useServerTable.ts:79-80` (read only).
+- **What to change:** turn the helper into a small composable that returns an `error` ref, set on a non-cancel
+  failure and cleared on the next successful load, and pass its handler as `onError` in all four views. Each table's
+  `#no-data` slot then renders one of three states: load failed (a message plus *Try again* → `reload()`),
+  filtered-empty (module copy plus *Clear filters*), or empty (module copy). The announcer stays quiet, or announces
+  the failure, while `error` is set. Once the page states the failure itself, make the load `_silent` if
+  `useServerTable`'s fetch path can carry the flag, so there is one report per failure (the S7 rule). P4's
+  page-specific copy is for `/pripomienky/moje` ("No upcoming reminders"). Give the admin three the failure state, and
+  their own empty copy only if it is decided in the same commit.
+- **Do not change:** `useServerTable`'s contract. An `error` ref on the framework-wide composable is a rule-4 change.
+  Keep it in the module until a second module needs it.
+- **Verification:** `reminders-user/B5` and `P4` `Verify:`. The admin tables share the path by source (the same
+  helper at four sites) but were not observed failing. Repeat B5's route-to-500 once on `/pripomienky/register`.
+- **Risk:** the cancellation branch must stay silent and must not set `error`, because typing in a filter aborts
+  in-flight loads.
+
 ## Closed verification items
 
 _None yet._

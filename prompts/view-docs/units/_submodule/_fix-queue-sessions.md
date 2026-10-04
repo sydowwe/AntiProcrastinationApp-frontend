@@ -39,7 +39,7 @@ sessions above is blocked by them.
 
 | # | Session | Status |
 | --- | --- | --- |
-| 1 | My reminders: broken actions | open |
+| 1 | My reminders: broken actions | ✅ done 2026-10-04 — S28 `4e385e5`, S30 `0d04853`, S29 `639814a`, one pointer bump |
 | 2 | Flex and height layout | ✅ done 2026-10-04 — S1 `ff91bec`, S2 `d21119c`, S18 `7c048c2`; shared pointer bump with session 6 in `11fe182b` |
 | 3 | Sort tie-breakers | open |
 | 4 | Scheduler detail polish | open |

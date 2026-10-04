@@ -14,6 +14,15 @@ import { expect, test } from '../fixtures/auth'
 
 const MY_REMINDERS = '/pripomienky/moje'
 
+// `formatInstant`'s on-screen form, "06.10.2026 16:30:00", read back as a local instant. Both sides
+// of every comparison go through it, so the browser's timezone cancels out.
+function parseShown(text: string): Date {
+	const match = /(\d{2})\.(\d{2})\.(\d{4}) (\d{1,2}):(\d{2}):(\d{2})/.exec(text.trim())
+	if (match === null) throw new Error(`Not a shown instant: "${text}"`)
+	const [, day, month, year, hour, minute, second] = match.map(Number)
+	return new Date(year, month - 1, day, hour, minute, second)
+}
+
 test.describe(`My reminders (${MY_REMINDERS})`, () => {
 	test.beforeEach(async ({ authenticatedPage }) => {
 		await authenticatedPage.goto(MY_REMINDERS)
@@ -70,20 +79,80 @@ test.describe(`My reminders (${MY_REMINDERS})`, () => {
 		await expect(authenticatedPage.getByText('Kind: PersonalReminder')).toBeVisible()
 	})
 
-	test('a filter matching nothing renders the empty row', async ({ authenticatedPage }) => {
+	// P4 / _fix-queue S29: the filtered-empty state is its own, and offers a way back.
+	test('a filter matching nothing says so and clears back to the full list', async ({ authenticatedPage }) => {
 		await authenticatedPage.goto(`${MY_REMINDERS}?kind=NoSuchKind`)
-		await expect(authenticatedPage.getByRole('cell', { name: 'No data available' })).toBeVisible()
+		await expect(authenticatedPage.getByText('Nothing matches the current filters.')).toBeVisible()
+		await authenticatedPage.getByRole('button', { name: 'Clear filters' }).click()
+		await expect(authenticatedPage.getByRole('button', { name: /^Snooze reminder/ }).first()).toBeVisible()
+		expect(new URL(authenticatedPage.url()).searchParams.get('kind')).toBeNull()
 	})
 
 	test('the Snooze dialog opens with four choices and Cancel closes it', async ({ authenticatedPage }) => {
 		await authenticatedPage.getByRole('button', { name: /^Snooze reminder/ }).first().click()
 		const dialog = authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' })
-		for (const name of [/^In 1 hour — /, /^Tomorrow morning \(9:00\) — /, /^In a week — /, 'Custom time']) {
+		for (const name of [/^1 hour after it — /, /^The morning after \(9:00\) — /, /^A week after it — /, 'Custom time']) {
 			await expect(dialog.getByRole('radio', { name })).toBeVisible()
 		}
-		await expect(dialog.getByRole('radio', { name: /^In 1 hour/ })).toBeChecked()
+		await expect(dialog.getByRole('radio', { name: /^1 hour after it/ })).toBeChecked()
 		await dialog.getByRole('button', { name: 'Cancel' }).click()
 		await expect(dialog).toBeHidden()
+	})
+
+	// B2 / _fix-queue S28: every preset is counted from the occurrence, so none can bring it forward.
+	test('no snooze preset resolves to an instant before the occurrence', async ({ authenticatedPage }) => {
+		await authenticatedPage.getByRole('button', { name: /^Snooze reminder/ }).first().click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' })
+		const occurrenceText = await dialog.getByText(/^\d{2}\.\d{2}\.\d{4} \d{1,2}:\d{2}:\d{2}$/).first().innerText()
+		const occurrence = parseShown(occurrenceText)
+		for (const name of [/^1 hour after it — /, /^The morning after \(9:00\) — /, /^A week after it — /]) {
+			const label = await dialog.locator('label').filter({ hasText: name }).innerText()
+			const shown = parseShown(label.split(' — ')[1])
+			expect(shown.getTime()).toBeGreaterThan(occurrence.getTime())
+		}
+	})
+
+	// A2 (Dismiss half) / _fix-queue S30: an input-less confirmation closes on Escape.
+	test('Escape closes the Dismiss dialog and returns focus to its row button', async ({ authenticatedPage }) => {
+		const opener = authenticatedPage.getByRole('button', { name: /^Dismiss delivery of reminder/ }).first()
+		await opener.focus()
+		await authenticatedPage.keyboard.press('Enter')
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' })
+		await expect(dialog).toBeVisible()
+		await authenticatedPage.keyboard.press('Escape')
+		await expect(dialog).toBeHidden()
+		await expect(opener).toBeFocused()
+	})
+
+	// FW1 (owner decision 2026-09-23): Snooze carries a custom-time form, so it stays persistent.
+	test('the Snooze dialog resists Escape', async ({ authenticatedPage }) => {
+		await authenticatedPage.getByRole('button', { name: /^Snooze reminder/ }).first().click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' })
+		await expect(dialog).toBeVisible()
+		await authenticatedPage.keyboard.press('Escape')
+		await expect(dialog).toBeVisible()
+	})
+
+	// P5 / _fix-queue S30: the rows are otherwise alike, so the confirmation names the occurrence.
+	test('the Dismiss dialog names the occurrence it dismisses', async ({ authenticatedPage }) => {
+		await authenticatedPage.getByRole('button', { name: /^Dismiss delivery of reminder/ }).first().click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' })
+		await expect(dialog.getByText('Occurrence', { exact: true })).toBeVisible()
+		await expect(dialog.getByText(/^\d{2}\.\d{2}\.\d{4} \d{1,2}:\d{2}:\d{2}$/)).toBeVisible()
+	})
+
+	// B5 / _fix-queue S29: a failed load is a failure, with a way back, not an empty list.
+	test('a failed load shows an error with a retry, not an empty table', async ({ authenticatedPage }) => {
+		await authenticatedPage.route('**/reminder-dashboard/my-upcoming', route =>
+			route.fulfill({ status: 500, contentType: 'application/json', body: '{"statusCode":500}' }),
+		)
+		await authenticatedPage.reload()
+		await expect(authenticatedPage.getByText('The list could not be loaded.').first()).toBeVisible()
+		await expect(authenticatedPage.getByRole('status').filter({ hasText: 'The list could not be loaded.' })).toBeAttached()
+
+		await authenticatedPage.unroute('**/reminder-dashboard/my-upcoming')
+		await authenticatedPage.getByRole('button', { name: 'Try again' }).click()
+		await expect(authenticatedPage.getByRole('button', { name: /^Snooze reminder/ }).first()).toBeVisible()
 	})
 
 	test('choosing "Custom time" disables Snooze until an instant is set', async ({ authenticatedPage }) => {
@@ -122,23 +191,14 @@ test.describe(`My reminders (${MY_REMINDERS})`, () => {
 	// B1 — every row reads "PersonalReminder | Portal"; the personal projection carries no title.
 	test.fixme('each row carries text that distinguishes it from the others', async () => {})
 
-	// B2 — presets are relative to now, so the default "In 1 hour" lands before a future occurrence.
-	test.fixme('no snooze preset resolves to an instant before the occurrence', async () => {})
-
 	// B3 — a date-only "to" bound is sent as that day's local midnight, excluding the day itself.
 	test.fixme('"Next occurrence to" includes reminders due on the chosen day', async () => {})
 
 	// B4 — `my-upcoming` omits intervalPreset, so the interval row's schedule cell reads "—".
 	test.fixme('the recurring-interval row states its interval', async () => {})
 
-	// B5 — a failed load looks like an empty list and is announced as "0 results found".
-	test.fixme('a failed load shows an error with a retry, not an empty table', async () => {})
-
 	// A1 — the first Snooze dialog of a page load drops focus to <body> on close (_fix-queue S13).
 	test.fixme('closing the first Snooze dialog returns focus to its row button', async () => {})
-
-	// A2 — MyDialog defaults to persistent, so Escape leaves Snooze/Dismiss open.
-	test.fixme('Escape closes the Snooze and Dismiss dialogs', async () => {})
 
 	// U1 — `my-upcoming` does not exclude the caller's dismissed/snoozed occurrences, so the post-action
 	// reload likely brings the row back. Needs a mutation-tier strategy (freshSeed) to test.
