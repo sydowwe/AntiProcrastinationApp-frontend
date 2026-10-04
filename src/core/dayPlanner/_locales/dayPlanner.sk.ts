@@ -58,7 +58,22 @@ const dayPlanner = {
 			dayTypeUpdated: `Typ dňa aktualizovaný pre {count} deň | Typ dňa aktualizovaný pre {count} dni | Typ dňa aktualizovaný pre {count} dní`,
 			dayTypeUpdatePartial: `Typ dňa aktualizovaný — úspešných dní: {succeeded}/{total}, zlyhalo: {failed}`,
 			tasksCopied: `Úlohy skopírované pre {count} deň | Úlohy skopírované pre {count} dni | Úlohy skopírované pre {count} dní`,
-			tasksCopyPartial: `Skopírovaných úloh: {succeeded}/{total}, zlyhalo: {failed}`,
+			// Počíta dni, nie úlohy: copy-to-days vracia jeden výsledok na cieľový deň.
+			tasksCopyPartial: `Úlohy skopírované — úspešných dní: {succeeded}/{total}, zlyhalo: {failed}`,
+			// Pripája sa k trom hláseniam `…Partial` pre dávky dní vyššie (OP9): ktoré dni a prečo.
+			batchFailure: {
+				group: `{days}: {reason}`,
+				moreDays: `+{count} ďalších`,
+				// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
+				stillSelected: `Neúspešný deň zostal označený. | Neúspešné dni zostali označené. | Neúspešné dni zostali označené.`,
+				reason: {
+					notFound: `už neexistuje`,
+					dayTypeNotAllowed: `tento typ dňa nezodpovedá dňu v týždni`,
+					workdayOnWeekend: `deň víkendu nemôže byť pracovný`,
+					weekendOnWeekday: `víkendový môže byť len sobota a nedeľa`,
+					error: `nepodarilo sa uložiť`,
+				},
+			},
 			tasksCopyFailed: `Kopírovanie úloh zlyhalo`,
 			calendarLoadFailed: `Načítanie kalendára zlyhalo`,
 			taskStatusUpdateFailed: `Zmenu stavu sa nepodarilo uložiť`,

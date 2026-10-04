@@ -49,7 +49,21 @@ const dayPlanner = {
 			dayTypeUpdated: `Day type updated for {count} day | Day type updated for {count} days`,
 			dayTypeUpdatePartial: `Day type updated — {succeeded}/{total} days succeeded, {failed} failed`,
 			tasksCopied: `Tasks copied to {count} day | Tasks copied to {count} days`,
-			tasksCopyPartial: `Tasks copied — {succeeded}/{total} tasks succeeded, {failed} failed`,
+			// Counts days, not tasks: copy-to-days answers one result per target day.
+			tasksCopyPartial: `Tasks copied — {succeeded}/{total} days succeeded, {failed} failed`,
+			// Appended to the three `…Partial` day-batch messages above (OP9): which days, and why.
+			batchFailure: {
+				group: `{days}: {reason}`,
+				moreDays: `+{count} more`,
+				stillSelected: `The failed day is still selected. | The failed days are still selected.`,
+				reason: {
+					notFound: `no longer exists`,
+					dayTypeNotAllowed: `that day type does not fit the weekday`,
+					workdayOnWeekend: `a weekend day cannot be a workday`,
+					weekendOnWeekday: `only Saturday and Sunday can be weekend days`,
+					error: `could not be saved`,
+				},
+			},
 			tasksCopyFailed: `Failed to copy tasks`,
 			calendarLoadFailed: `Failed to load the calendar`,
 			taskStatusUpdateFailed: `Failed to save the status change`,

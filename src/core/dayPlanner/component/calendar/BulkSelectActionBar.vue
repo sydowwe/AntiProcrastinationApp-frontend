@@ -13,13 +13,16 @@
 		>
 			{{ $t('planner.calendar.selectAll') }}
 		</VBtn>
+		<!-- A command, not a value: pinned to null so it never shows the last pick, and picking the same
+			type again (a retry on the failed days the bar keeps selected) still emits. -->
 		<VSelect
+			:modelValue="null"
 			:label="$t('planner.calendar.changeDayType')"
 			:items="dayTypeOptions"
 			density="compact"
 			minWidth="185"
 			hideDetails
-			@update:modelValue="emit('changeDayType', $event)"
+			@update:modelValue="onDayTypePicked"
 		/>
 		<VBtn
 			color="primary"
@@ -61,6 +64,10 @@
 
 	const { t } = useI18n()
 	const dayTypeOptions = Object.values(DayType).map(v => ({ title: t(`planner.dayType.${v}`), value: v }))
+
+	function onDayTypePicked(dayType: DayType | null) {
+		if (dayType != null) emit('changeDayType', dayType)
+	}
 
 	// Returns focus to the toolbar toggle that opened the bar — it is the element that had focus when
 	// the bar appeared, and unlike a calendar day it is still there after a bulk action.

@@ -91,7 +91,8 @@
 	import { CalendarFilter } from '@/core/dayPlanner/dto/request/CalendarFilter.ts'
 	import { PlanVsActualTrendFilter } from '@/core/dayPlanner/dto/request/PlanVsActualTrendFilter.ts'
 	import { PlanVsActualTrend } from '@/core/dayPlanner/dto/response/PlanVsActualTrend.ts'
-	import type { DayType } from '@/_common/dto/enum/DayType.ts'
+	import { DayType } from '@/_common/dto/enum/DayType.ts'
+	import { CalendarBatchFailureReason } from '@/core/dayPlanner/dto/enum/CalendarBatchFailureReason.ts'
 	import CalendarGrid from '@/_common/component/calendar/CalendarGrid.vue'
 	import CalendarDayCellContent from '@/core/dayPlanner/component/calendar/CalendarDayCellContent.vue'
 	import CalendarStatsBar from '@/core/dayPlanner/component/calendar/CalendarStatsBar.vue'
@@ -410,15 +411,15 @@
 				),
 			)
 
-			selectedDayIds.value = []
-			calendarMode.value = 'none'
+			keepOnlyFailedSelected(
+				reportBatchOutcome(response, {
+					partialKey: 'planner.feedback.bulkTemplateApplyPartial',
+					successKey: 'planner.feedback.bulkTemplateApplied',
+					successCount: days.length,
+					days,
+				}),
+			)
 			refresh()
-
-			reportBatchOutcome(response, {
-				partialKey: 'planner.feedback.bulkTemplateApplyPartial',
-				successKey: 'planner.feedback.bulkTemplateApplied',
-				successCount: days.length,
-			})
 		} finally {
 			bulkApplying.value = false
 		}
@@ -435,15 +436,15 @@
 				targetDays.map(d => d.id),
 			)
 
-			selectedDayIds.value = []
-			calendarMode.value = 'none'
+			keepOnlyFailedSelected(
+				reportBatchOutcome(response, {
+					partialKey: 'planner.feedback.tasksCopyPartial',
+					successKey: 'planner.feedback.tasksCopied',
+					successCount: targetDays.length,
+					days: targetDays,
+				}),
+			)
 			refresh()
-
-			reportBatchOutcome(response, {
-				partialKey: 'planner.feedback.tasksCopyPartial',
-				successKey: 'planner.feedback.tasksCopied',
-				successCount: targetDays.length,
-			})
 		} catch {
 			showErrorSnackbar(t('planner.feedback.tasksCopyFailed'))
 		}
@@ -455,15 +456,32 @@
 			days.map(d => d.id),
 			dayType,
 		)
-		selectedDayIds.value = []
-		calendarMode.value = 'none'
+		keepOnlyFailedSelected(
+			reportBatchOutcome(response, {
+				partialKey: 'planner.feedback.dayTypeUpdatePartial',
+				successKey: 'planner.feedback.dayTypeUpdated',
+				successCount: days.length,
+				days,
+				describeReason: reason => describeDayTypeFailure(reason, dayType),
+			}),
+		)
 		refresh()
+	}
 
-		reportBatchOutcome(response, {
-			partialKey: 'planner.feedback.dayTypeUpdatePartial',
-			successKey: 'planner.feedback.dayTypeUpdated',
-			successCount: days.length,
-		})
+	// The server only says the type does not fit the weekday; which way round it is follows from the
+	// type that was sent, since `CalendarDayTypeRule` constrains exactly these two.
+	function describeDayTypeFailure(reason: CalendarBatchFailureReason, dayType: DayType) {
+		if (reason !== CalendarBatchFailureReason.DayTypeNotAllowed) return undefined
+		if (dayType === DayType.Workday) return t('planner.feedback.batchFailure.reason.workdayOnWeekend')
+		if (dayType === DayType.Weekend) return t('planner.feedback.batchFailure.reason.weekendOnWeekday')
+		return undefined
+	}
+
+	// After a day batch, the days that failed stay selected in bulk-select mode, so they are marked on the
+	// grid and one click away from a retry (OP9). A clean batch leaves the mode as before.
+	function keepOnlyFailedSelected(failedIds: number[]) {
+		selectedDayIds.value = failedIds
+		if (failedIds.length === 0) calendarMode.value = 'none'
 	}
 </script>
 
