@@ -456,10 +456,12 @@
 > Portal.SuggestionPatternRefresh`; `/planovac/behy/61991` → `Home › Scheduled jobs › Portal.SuggestionPatternRefresh ›
 > Run #61991` (all three links intact); then `/planovac/behy/999999` → `Home › Scheduled jobs`. As `adminUser`,
 > `/pripomienky/register/23201` → `Home › Reminder register › Reminder #23001`, and a cold load of `/999999` →
-> `Home › Reminder register`. **Found, not fixed:** `ReminderDefinitionDetailView` loads in `onMounted` only, so an
-> in-app push from one reminder id to another keeps showing the first reminder, both page and crumb. That is
-> consistent, so it is not B3, but it is the shape run detail had before it watched `id`. No in-app link between
-> two reminder details is known to exist, so it is reachable only by `$router.push` today.
+> `Home › Reminder register`. **Found and fixed alongside** (framework `f63d62d`): `ReminderDefinitionDetailView`
+> loaded in `onMounted` only, so an in-app push from one reminder id to another kept showing the first reminder,
+> both page and crumb. It now watches `id`, clears the old reminder on a change, and ignores a superseded load
+> (`fetchById` aborts its previous call, whose catch would otherwise set `'failed'`). Verified as `adminUser`:
+> in-app 23201 → 23202 → 999999 → 23203 shows each reminder and its crumb in turn, the not-found card with no
+> leftover reminder, and a 30 ms back-to-back push 23201 → 23202 settles on 23202 with no error card.
 - **Scope:** **[framework]** `view/SchedulerJobDetailView.vue`, `view/SchedulerRunDetailView.vue`,
   `modules/reminders/view/ReminderDefinitionDetailView.vue:382-387`
 - **Closes:** `scheduler/B3`, `scheduler/B4`, `reminders-admin/B3`
