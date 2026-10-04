@@ -43,12 +43,12 @@
 | S23 | ✅ **FIXED 2026-10-04** (`5d03e01`) — Reminder list default sorts omit `BasicTable`'s tie-breaker | **framework** | `reminders-admin/P1`, `reminders-user/P2` | trivial |
 | S24 | ✅ **FIXED 2026-10-04** (`113fcaf`) — Dispatch history: an empty actions column, and a correction that names an id nobody can see | **framework** | `reminders-admin/P6`, `P7` | low |
 | S25 | ✅ **FIXED 2026-10-04** (`e46b50f`) — `BasicTable`'s select column checkboxes have no name (framework-wide component) | **framework** | `reminders-admin/A2` | low |
-| S26 | `FilterPanel` chip remove buttons are all named "Close" (framework-wide component) | **framework** | `reminders-admin/A3`, `reminders-user/A4` | trivial |
-| S27 | `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component) | **framework** | `reminders-admin/A4` | low |
+| S26 | ✅ **FIXED 2026-10-04** (`67d4a72`) — `FilterPanel` chip remove buttons are all named "Close" (framework-wide component) | **framework** | `reminders-admin/A3`, `reminders-user/A4` | trivial |
+| S27 | ✅ **FIXED 2026-10-04** (`67d4a72`) — `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component) | **framework** | `reminders-admin/A4` | low |
 | S28 | ✅ **FIXED 2026-10-04** (`4e385e5`) — Snooze and Dismiss never reach the server, and once they do, the default snooze delivers early | **framework** | `reminders-user/X1`, `B2` | low |
 | S29 | ✅ **FIXED 2026-10-04** (`639814a`) — Reminder tables render a failed load as an empty list, in Vuetify's words | **framework** | `reminders-user/B5`, `P4` | low |
 | S30 | ✅ **FIXED 2026-10-04** (`0d04853`) — My reminders: the Dismiss confirm ignores Escape and names nothing; every 400 is "no longer in the future" | **framework** | `reminders-user/A2` (Dismiss half), `P5`, `P7` | trivial |
-| S31 | `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component) | **framework** | `reminders-user/A3` | trivial |
+| S31 | ✅ **FIXED 2026-10-04** (`67d4a72`) — `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component) | **framework** | `reminders-user/A3` | trivial |
 
 ---
 
@@ -171,27 +171,9 @@
 
 <!-- S25 (BasicTable's select column checkboxes have no name — reminders-admin/A2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S26. `FilterPanel` chip remove buttons are all named "Close" (framework-wide component)
-- **Scope:** **[framework]** `src/_common/component/FilterPanel.vue` + a framework locale key. Its own batch under
-  rule 4.
-- **Closes:** `reminders-admin/A3`, `reminders-user/A4`. The scheduler pass noted it unfiled (log, first pass).
-- **Root cause:** the chips use `VChip closable` with Vuetify's default `closeLabel` ("Close"), so every chip's remove
-  button has the same name, one that also reads as closing a dialog.
-- **What to change:** `:closeLabel="t('<framework key>', { label: chip.label })"` → "Remove filter: Paused" (sk + en).
-- **Verification:** `reminders-admin/A3` and `reminders-user/A4` `Verify:`; spot-check one app-side `FilterPanel`
-  (any list with chips).
-- **Risk:** e2e specs that clicked `getByRole('button', { name: 'Close' })` on a chip break. Grep `e2e/` first.
+<!-- S26 (FilterPanel chip remove buttons are all named "Close" — reminders-admin/A3, reminders-user/A4) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S27. `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component)
-- **Scope:** **[framework]** `src/_common/component/ExportMenu.vue`. Its own batch under rule 4.
-- **Closes:** `reminders-admin/A4`. The scheduler pass noted it unfiled, and it is now filed.
-- **Root cause:** the open menu's content renders inside the activator, so the button's accessible name becomes
-  "Export Excel (.xlsx) CSV (.csv)". The two formats are `listitem`s with no role, and only `getByText` reaches them.
-- **What to change:** let `VMenu` render its content outside the activator (default attach/teleport), and make the
-  formats a `VList` of items Vuetify gives `menuitem` roles (or explicit `role="menuitem"`). Check keyboard: arrow
-  keys and Enter must reach and trigger each format.
-- **Verification:** `reminders-admin/A4` `Verify:`; one app-side `ExportMenu` still downloads.
-- **Risk:** the draft spec's `getByText('CSV (.csv)')` still resolves. Upgrade it to the role locator afterwards.
+<!-- S27 (ExportMenu joins its open list into the button's name; items have no role — reminders-admin/A4) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- S28 (Snooze and Dismiss never reach the server; the default snooze delivers early — reminders-user/X1, B2) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -199,19 +181,7 @@
 
 <!-- S30 (My reminders: Dismiss confirm ignores Escape and names nothing; every 400 is "no longer in the future" — reminders-user/A2 Dismiss half, P5, P7) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## S31. `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component)
-- **Scope:** **[framework]** `src/_common/component/dateTime/DateTimePicker.vue` (maybe `TimePicker.vue`),
-  `src/_common/docs/components.md`. Its own batch under rule 4: every labelled `DateTimePicker` in every app renders it.
-- **Closes:** `reminders-user/A3`
-- **Root cause:** `:label="label ? '' : $t('dateTime.time')"` (`DateTimePicker.vue:20`) blanks the time half's label so
-  the pair reads as one labelled field on screen. Nothing gives assistive tech that name back. In the Snooze dialog's
-  custom time, the time input is a bare `textbox` showing `00:00`.
-- **What to change:** keep the visual label empty, and give the time input an `aria-label` of
-  `` `${label} — ${t('dateTime.time')}` ``. Check that `TimePicker` forwards the attribute to its `<input>`, not to its
-  wrapper. If it does not, add a prop. Document it in `components.md`.
-- **Verification:** `reminders-user/A3` `Verify:`. Then grep `src/core` for a `<DateTimePicker` that passes `label` and
-  check that its time field gets the same kind of name.
-- **Risk:** none functional.
+<!-- S31 (DateTimePicker's time field loses its name whenever a label is passed — reminders-user/A3) fixed 2026-10-04 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## Escalations (backend / outside this repo)
 

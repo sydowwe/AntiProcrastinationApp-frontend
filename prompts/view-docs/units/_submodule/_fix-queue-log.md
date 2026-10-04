@@ -742,6 +742,57 @@
 - **Closes:** `reminders-admin/P1`, `reminders-user/P2`
 - **Root cause:** identical to S3 part (2).
 
+## S26. `FilterPanel` chip remove buttons are all named "Close" (framework-wide component)
+> ✅ **FIXED 2026-10-04** (framework `67d4a72`, session 8; S26, S27 and S31 share one framework commit because the
+> three share `docs/components.md`). `ChipWithIcon` falls attrs through to `VChip`, so `FilterPanel` passes
+> `:closeLabel="i18n.t('general.removeFilter', { label })"` (new `general.removeFilter`, sk + en, in the framework's
+> `common` locales; `general` is deep-merged, so the app needs no key). **e2e grep done first** (`'Close'` across
+> `e2e/`): every hit is a dialog's own Close (`weather-location`, `tracking-settings.draft`, `history-capture.draft`,
+> `account-isolation`, the *Filter* dialog's Close in `reminders-admin.draft`) or a comment, and none targets a chip.
+> `templateDayPlanner.spec.ts:70` describes a tag chip in a details form, which does not go through `FilterPanel`.
+> Nothing broke. The `reminders-admin.draft` A3 `test.fixme` is now a real test. **Verified** (`playwright-cli`,
+> `primaryUser`, `/pripomienky/moje?kind=Personal`): the chip's remove button reads "Remove filter: Kind: Personal" and
+> nothing is named "Close". The un-run draft test uses `?status=Paused` as `adminUser`, which was not driven.
+- **Scope:** **[framework]** `src/_common/component/FilterPanel.vue` + a framework locale key. Its own batch under
+  rule 4.
+- **Closes:** `reminders-admin/A3`, `reminders-user/A4`. The scheduler pass noted it unfiled (log, first pass).
+- **Root cause:** the chips use `VChip closable` with Vuetify's default `closeLabel` ("Close"), so every chip's remove
+  button has the same name, one that also reads as closing a dialog.
+- **What to change:** `:closeLabel="t('<framework key>', { label: chip.label })"` → "Remove filter: Paused" (sk + en).
+
+## S27. `ExportMenu` joins its open list into the button's name; items have no role (framework-wide component)
+> ✅ **FIXED 2026-10-04** (framework `67d4a72`, session 8). **Deviation from the batch text:** the content was already
+> teleported (`VMenu` has no `attach`, and nothing in `bootstrap/` sets one). The join comes from Vuetify's `aria-owns`
+> on the activator, which pulls the open menu into the button's name-from-content. So the fix is an explicit
+> `aria-label` (`export.button`) on the button, plus `role="menu"` on the `VList` and `role="menuitem"` on the two items
+> (Vuetify gives them no role). **Verified** (`playwright-cli`, `primaryUser`, `/activity-history`): the open button is
+> named "Export", with `menu > menuitem "Excel (.xlsx)"` and `menuitem "CSV (.csv)"`, and ArrowDown moves focus to the
+> Excel item. **Not verified:** that Enter on an item downloads (not triggered, to avoid writing a file), and the
+> admin-only grids (scheduler, reminder history). The draft spec's `getByText` still resolves; upgrading it to the role
+> locator is left for whoever next edits it.
+- **Scope:** **[framework]** `src/_common/component/ExportMenu.vue`. Its own batch under rule 4.
+- **Closes:** `reminders-admin/A4`. The scheduler pass noted it unfiled, and it is now filed.
+- **Root cause:** the open menu's content renders inside the activator, so the button's accessible name becomes
+  "Export Excel (.xlsx) CSV (.csv)". The two formats are `listitem`s with no role, and only `getByText` reaches them.
+- **What to change:** let `VMenu` render its content outside the activator (default attach/teleport), and make the
+  formats a `VList` of items Vuetify gives `menuitem` roles (or explicit `role="menuitem"`). Check keyboard.
+
+## S31. `DateTimePicker`'s time field loses its name whenever a label is passed (framework-wide component)
+> ✅ **FIXED 2026-10-04** (framework `67d4a72`, session 8). `TimePicker` has a new `inputLabel` prop, forwarded as
+> `aria-label` to the `VMaskInput` (Vuetify routes it to the `<input>`, not the wrapper). `DateTimePicker` passes
+> `"{label} — {dateTime.time}"` when it has a label and nothing otherwise, so the unlabelled case keeps its visible
+> "Time" label. **Verified** (`playwright-cli`, `primaryUser`, Snooze dialog → Custom time): the time input is
+> `textbox "Remind me on — Time"` showing `00:00`. **Not checked:** other labelled `DateTimePicker` call sites. The
+> batch's grep of `src/core` found none passing `label` on the same line as the tag, and none were looked for
+> multi-line.
+- **Scope:** **[framework]** `src/_common/component/dateTime/DateTimePicker.vue` (maybe `TimePicker.vue`),
+  `src/_common/docs/components.md`. Its own batch under rule 4.
+- **Closes:** `reminders-user/A3`
+- **Root cause:** `:label="label ? '' : $t('dateTime.time')"` blanks the time half's label so the pair reads as one
+  labelled field on screen. Nothing gave assistive tech that name back.
+- **What to change:** keep the visual label empty, and give the time input an `aria-label` of
+  `` `${label} — ${t('dateTime.time')}` ``, forwarded to the `<input>` by `TimePicker`.
+
 ## Closed verification items
 
 _None yet._

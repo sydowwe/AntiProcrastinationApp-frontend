@@ -46,5 +46,5 @@ sessions above is blocked by them.
 | 5 | Breadcrumbs | ✅ done 2026-10-04 — S5 `6154af1` (shell de-dup) + `524312a` (run detail), S17 `7033ca2`, one pointer bump |
 | 6 | Reminders admin data and identity | ✅ done 2026-10-04 — S19 `f103416`, S20 `4920a5b`, S21 `60c85f0`, S22 `dcd6b11`, S24 `113fcaf`, S25 `e46b50f` (so session 8 no longer carries S25). Ran before session 1, which is still open. |
 | 7 | Notifications module | ✅ done 2026-10-03 — S10 `b038d3e`, S12 `40255f1`, S14 `5b2e76b`, S16 `8c5dd57`, one pointer bump |
-| 8 | Framework component a11y | open |
+| 8 | Framework component a11y | ✅ done 2026-10-04 — S26, S27, S31 in one framework commit `67d4a72` (they share `docs/components.md`), one pointer bump. The `e2e/` grep for `'Close'` found no chip locator. S27's cause was `aria-owns`, not attach (log) |
 | 9 | Wide-impact defaults | open |
