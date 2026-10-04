@@ -128,6 +128,9 @@ const messages = {
 		switchesHint: `How many times the thing in the foreground changed during the day.`,
 		longestBlock: `Longest unbroken block`,
 		longestBlockHint: `The longest stretch spent on one item. Interruptions shorter than {minutes} min do not break it.`,
+		blockTimes: `{start}–{end}`,
+		// Over a multi-day span the clock times alone do not say which day the block was on.
+		blockDayTimes: `{day}, {start}–{end}`,
 		medianSession: `Typical session`,
 		medianSessionHint: `The median session length. Median rather than mean — a few long sessions skew the mean.`,
 		// Mirrors the SK phrasing, which avoids a plural form the locale cannot inflect. See there.

@@ -19,6 +19,14 @@ export class FocusBlock {
 
 	static fromJson(json: any): FocusBlock {
 		const { label = '', startedAt, endedAt, seconds = 0 } = json ?? {}
-		return new FocusBlock(label, new Date(startedAt), new Date(endedAt), seconds)
+		return new FocusBlock(label, toInstant(startedAt), toInstant(endedAt), seconds)
 	}
+}
+
+/**
+ * A missing time becomes an Invalid Date, which the strip leaves out. Not `new Date(raw)` alone:
+ * `new Date(null)` is the epoch, a valid date that would print as a real 1970 time.
+ */
+function toInstant(raw: unknown): Date {
+	return raw == null ? new Date(Number.NaN) : new Date(raw as string)
 }

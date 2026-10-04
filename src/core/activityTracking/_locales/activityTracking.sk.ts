@@ -129,6 +129,9 @@ const messages = {
 		switchesHint: `Koľkokrát sa počas dňa zmenilo to, čo bolo v popredí.`,
 		longestBlock: `Najdlhší súvislý blok`,
 		longestBlockHint: `Najdlhší čas strávený na jednej položke. Krátke prerušenia do {minutes} min blok neukončia.`,
+		blockTimes: `{start} – {end}`,
+		// Pri viacdňovom rozsahu samotné časy nepovedia, v ktorý deň blok bol.
+		blockDayTimes: `{day}, {start} – {end}`,
 		medianSession: `Typická relácia`,
 		medianSessionHint: `Medián dĺžky relácií. Medián namiesto priemeru — niekoľko dlhých relácií priemer skreslí.`,
 		// Tvar `Relácie: {count}` namiesto `z {count} relácií` — slovenčina má tri tvary množného

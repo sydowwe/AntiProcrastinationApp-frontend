@@ -61,6 +61,12 @@
 					>
 						{{ stat.detail }}
 					</div>
+					<div
+						v-if="stat.when"
+						class="text-caption text-disabled text-truncate"
+					>
+						{{ stat.when }}
+					</div>
 					<!--
 						The comparison against the user's own recent figure. Deliberately the same muted
 						treatment as any other secondary line: no percentage, no arrow, no up/down colour.
@@ -88,7 +94,9 @@
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { fromSeconds, fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
+	import { timeInUserZone, userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 	import { FOCUS_BLOCK_TOLERANCE_SECONDS } from '@/core/activityTracking/composable/focusMetrics.ts'
+	import type { FocusBlock } from '@/core/activityTracking/dto/response/focusMetrics/FocusBlock.ts'
 	import type { FocusMetricsResponse } from '@/core/activityTracking/dto/response/focusMetrics/FocusMetricsResponse.ts'
 
 	const {
@@ -105,13 +113,15 @@
 		retry: []
 	}>()
 
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 
 	interface FocusStat {
 		key: string
 		label: string
 		value: string
 		detail?: string
+		/** When it happened, for a figure that is one moment rather than an aggregate. */
+		when?: string
 		comparison?: string
 		hint: string
 	}
@@ -120,6 +130,31 @@
 	 *  median session or a short break — those are exactly the small numbers worth reading. */
 	function formatSpan(seconds: number): string {
 		return seconds < 60 ? fromSecondsDetailed(seconds) : fromSeconds(seconds)
+	}
+
+	const dayFormatter = computed(
+		() =>
+			new Intl.DateTimeFormat(locale.value, {
+				timeZone: userTimeZone.value,
+				weekday: 'short',
+				day: 'numeric',
+				month: 'numeric',
+			}),
+	)
+
+	/**
+	 * "09:10–10:50", read in the user's zone: unlike the timeline axis, these are server instants. Over
+	 * more than one active day the weekday and date go in front, or the times name no day at all.
+	 */
+	function blockTimes(block: FocusBlock): string | undefined {
+		if (Number.isNaN(block.startedAt.getTime()) || Number.isNaN(block.endedAt.getTime())) {
+			return undefined
+		}
+		const start = timeInUserZone(block.startedAt).getString()
+		const end = timeInUserZone(block.endedAt).getString()
+		return spansMultipleDays.value
+			? t('activityTracking.focus.blockDayTimes', { day: dayFormatter.value.format(block.startedAt), start, end })
+			: t('activityTracking.focus.blockTimes', { start, end })
 	}
 
 	function comparisonLine(value: string): string {
@@ -178,6 +213,7 @@
 				label: t('activityTracking.focus.longestBlock'),
 				value: formatSpan(metrics.longestBlock.seconds),
 				detail: metrics.longestBlock.label,
+				when: blockTimes(metrics.longestBlock),
 				comparison:
 					!spansMultipleDays.value && baseline?.longestBlockSeconds != null
 						? comparisonLine(formatSpan(baseline.longestBlockSeconds))
