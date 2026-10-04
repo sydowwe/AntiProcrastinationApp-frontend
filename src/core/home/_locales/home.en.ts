@@ -1,6 +1,7 @@
 const home = {
 	home: {
 		dayPlanner: `Day planner`,
+		dayContext: `About today`,
 		routineTodoList: `Routine tasks`,
 		todoList: `Upcoming tasks`,
 		activityHistory: `Today's activity`,

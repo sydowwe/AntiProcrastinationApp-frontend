@@ -1,6 +1,7 @@
 const home = {
 	home: {
 		dayPlanner: `Plánovač dňa`,
+		dayContext: `O dnešku`,
 		routineTodoList: `Rutinné úlohy`,
 		todoList: `Nadchádzajúce úlohy`,
 		activityHistory: `Dnešná aktivita`,

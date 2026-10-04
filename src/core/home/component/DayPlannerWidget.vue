@@ -83,6 +83,12 @@
 			height="2"
 		/>
 		<VDivider v-else />
+		<!-- outside the body's `hasPlan` branches: a holiday or a note matters most on a day with no plan -->
+		<DayContextBar
+			v-if="!loading && !error"
+			:calendar
+			class="flex-shrink-0"
+		/>
 		<VCardText class="planner-card__body pa-0">
 			<div
 				v-if="loading"
@@ -285,11 +291,13 @@
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
 	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import DayStrip from '@/core/home/component/DayStrip.vue'
+	import DayContextBar from '@/core/home/component/DayContextBar.vue'
 	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
 
 	const router = useRouter()
 	const { t } = useI18n()
 	const {
+		calendar,
 		hasPlan,
 		loading,
 		refreshing,

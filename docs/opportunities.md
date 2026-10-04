@@ -13,21 +13,10 @@
 2. ~~**OP2. Make "Show details panel by default" do something.**~~ Done. See *Closed*.
 3. ~~**OP3. Keep what's typed into a list's description.**~~ Done. See *Closed*.
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
-5. **OP5. Show today's day context on home.** Home already fetches the day's label, holiday, notes and weather, and shows
-   none of it.
+5. ~~**OP5. Show today's day context on home.**~~ Done. See *Closed*.
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
 7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP5. Show today's day context on home
-- **Source:** from data-map (todo extract contradiction #4; backlog note under dayPlanner)
-- **Data it spends:** `DayPlan.calendar` (`label`, `dayType`, `holidayName`, `notes`, `weather`, `location`, `wakeUpTime`,
-  `bedTime`), already fetched by `useTodayPlan.ts:437`
-- **Where it would surface:** home, next to the NowBar or the planner widget's header
-- **Needs backend:** no. No extra request either.
-- **Size:** S
-- **Value:** Home is where the day starts. "Holiday", a "Travel day" label or a note written the night before changes
-  what's realistic today. The user typed all of it into the planner, and it never comes back on the dashboard.
 
 ### OP7. "Streak kept today" on the flame
 - **Source:** from data-map (backlog `PlannerStreak.isTodayComplete`)
@@ -170,6 +159,21 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP5**, built 2026-10-04, app-side only. `GET /calendar/day-plan/{date}` already projected every field through
+  `CalendarResponse`, so the backend did not change and there is no extra request. `DayContextBar` sits under the
+  planner widget's header on home. It renders outside the widget's `hasPlan` branches, so a holiday or a note still
+  shows on a day with no plan. It shows the label, the holiday (through `useHolidayLabel`), the location, the weather,
+  and the notes, which are clamped to two lines with the full text as a tooltip so they cannot push the task list off
+  the no-scroll dashboard. The day type shows only when it differs from what the weekday implies, and a Holiday day
+  type gives way to the holiday's own name. An ordinary day renders nothing. **Not spent:** `wakeUpTime` and `bedTime`.
+  Every row carries them from the defaults, so they would show every day and say nothing.
+  Checked live with the day-plan response route-patched: a label, a Vacation type, Travel, the weather and a
+  three-line note rendered as one chip row plus a clamped note at 1440 px. A Holiday on an unplanned day showed its
+  name above *Plan today*, with no "Holiday" chip. The real seed day showed no bar. No console errors.
+  `e2e/tests/home-day-context.spec.ts` (4 tests, route-patched so the fixture stays read-only) covers the full context
+  with the clamped note and its tooltip, a translated holiday on an unplanned day with no duplicate type chip, an
+  ordinary workday rendering no bar, and a workday on a weekend showing its type. All 4 passed on 2026-10-04 (22 s).
 
 - **OP3**, built 2026-10-04, in both repos. The server already stored a list's description as `text` (the shared
   `NameTextIconRequest`) and a step's `note` on every step path, so the contract did not change. `TodoListRequest`
