@@ -145,13 +145,14 @@
 					{{ timerClock }}
 				</VChip>
 
-				<!-- rendered as-is: a broken streak already arrives as 0 -->
+				<!-- rendered as-is: a broken streak already arrives as 0. Filled with a check once today is kept. -->
 				<VChip
 					v-if="streak.currentStreak > 0"
-					color="warning"
-					variant="tonal"
+					:color="streakKeptToday ? 'warningDark' : 'warning'"
+					:variant="streakKeptToday ? 'flat' : 'tonal'"
 					size="small"
 					prependIcon="fas fa-fire"
+					:appendIcon="streakKeptToday ? 'fa-check' : undefined"
 					:title="streakLabel"
 					:aria-label="streakLabel"
 				>
@@ -267,6 +268,8 @@
 		activeProgress,
 		todayUrlDate,
 		streak,
+		streakKeptToday,
+		streakLabel,
 		error,
 		taskColor,
 		minutesLabel,
@@ -297,7 +300,6 @@
 	// One condition, read twice — the state block and the action block are separate elements now, and
 	// both branch on it.
 	const showError = computed(() => error.value && !focusTask.value)
-	const streakLabel = computed(() => `${t('home.streaks')}: ${streak.value.currentStreak}`)
 
 	const accentColor = computed(() =>
 		focusMode.value === 'missed' ? 'error' : focusMode.value === 'allDone' ? 'success' : 'primary',

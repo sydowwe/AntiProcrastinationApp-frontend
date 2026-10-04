@@ -7,6 +7,7 @@ import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
+import { PlannerDayOutcome } from '@/core/dayPlanner/dto/enum/PlannerDayOutcome.ts'
 import type { BuiltInSkipReason } from '@/core/dayPlanner/dto/enum/BuiltInSkipReason.ts'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
@@ -62,6 +63,21 @@ const hasPlan = ref(false)
  * left on this side — see `PlannerStreak`, which replaced the localStorage store that had to guess.
  */
 const streak = ref<PlannerStreak>(PlannerStreak.empty())
+/** Today already added to the run — the flame chip fills in and gains a check. */
+const streakKeptToday = computed(() => streak.value.todayOutcome === PlannerDayOutcome.Complete)
+/**
+ * The flame chip's accessible name and tooltip, shared by the now bar and the planner widget. It
+ * says whether today is kept, still to earn, or cannot break the run, which the count alone hides.
+ */
+const streakLabel = computed(() => {
+	const t = i18n.global.t
+	const today = {
+		[PlannerDayOutcome.Complete]: t('home.streakKeptToday'),
+		[PlannerDayOutcome.Incomplete]: t('home.streakAtStakeToday'),
+		[PlannerDayOutcome.Empty]: t('home.streakSafeToday'),
+	}[streak.value.todayOutcome]
+	return `${t('home.streaks')}: ${streak.value.currentStreak} · ${today} · ${t('home.bestStreak')}: ${streak.value.bestStreak}`
+})
 /** True only while nothing is on screen yet — widgets render this as a spinner. */
 const loading = ref(true)
 /** True during a background refetch, with the previous plan still rendered underneath. */
@@ -618,6 +634,8 @@ export function useTodayPlan() {
 		activeProgress,
 		todayUrlDate,
 		streak,
+		streakKeptToday,
+		streakLabel,
 		isActive,
 		isMissed,
 		isFinished,

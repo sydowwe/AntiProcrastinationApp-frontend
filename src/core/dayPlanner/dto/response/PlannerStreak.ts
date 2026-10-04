@@ -1,3 +1,6 @@
+import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
+import { PlannerDayOutcome } from '@/core/dayPlanner/dto/enum/PlannerDayOutcome.ts'
+
 /**
  * The day-plan completion streak, server-computed — see `prompts/home/backend/B1-planner-streak.md`.
  *
@@ -23,6 +26,12 @@ export class PlannerStreak {
 		 */
 		public readonly isTodayComplete: boolean,
 		/**
+		 * Splits `isTodayComplete`'s `false` in two: `Incomplete` (today still has to be earned) and
+		 * `Empty` (nothing that counts is planned, so the run can't break today). Same rule, same "real
+		 * today, not the day requested" scope.
+		 */
+		public readonly todayOutcome: PlannerDayOutcome,
+		/**
 		 * The date the server treated as "today", in `timezone` — the user's own `User.Timezone`,
 		 * not UTC and not the browser clock. The client does not compute this any more; it is kept
 		 * so a disagreement with the browser's idea of today can be detected rather than silently
@@ -34,11 +43,28 @@ export class PlannerStreak {
 	) {}
 
 	static empty(): PlannerStreak {
-		return new PlannerStreak(0, 0, false, '', '')
+		return new PlannerStreak(0, 0, false, PlannerDayOutcome.Empty, '', '')
 	}
 
 	static fromJson(json: any): PlannerStreak {
-		const { currentStreak = 0, bestStreak = 0, isTodayComplete = false, today = '', timezone = '' } = json ?? {}
-		return new PlannerStreak(currentStreak, bestStreak, isTodayComplete, today, timezone)
+		const {
+			currentStreak = 0,
+			bestStreak = 0,
+			isTodayComplete = false,
+			todayOutcome,
+			today = '',
+			timezone = '',
+		} = json ?? {}
+		return new PlannerStreak(
+			currentStreak,
+			bestStreak,
+			isTodayComplete,
+			// An API without the field still sends `isTodayComplete`; Empty is the safe guess for its `false`,
+			// because it claims nothing is at stake rather than nagging about a day that may be clear.
+			convertToEnum(PlannerDayOutcome, todayOutcome) ??
+				(isTodayComplete ? PlannerDayOutcome.Complete : PlannerDayOutcome.Empty),
+			today,
+			timezone,
+		)
 	}
 }

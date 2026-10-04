@@ -15,17 +15,8 @@
 4. ~~**OP4. Tell the app where you are, so "good weather today" works.**~~ Done. See *Closed*.
 5. ~~**OP5. Show today's day context on home.**~~ Done. See *Closed*.
 6. ~~**OP6. Remember the plan when a timer stops early.**~~ Done. See *Closed*.
-7. **OP7. "Streak kept today" on the flame.** The server already sends `isTodayComplete`, and nobody reads it.
+7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. **OP8. Say when the longest focus block happened.** The strip has the times and shows only the length.
-
-### OP7. "Streak kept today" on the flame
-- **Source:** from data-map (backlog `PlannerStreak.isTodayComplete`)
-- **Data it spends:** `PlannerStreak.isTodayComplete`
-- **Where it would surface:** the NowBar flame chip and the planner widget's streak tooltip on home
-- **Needs backend:** no
-- **Size:** S
-- **Value:** The flame shows a count. It doesn't say whether today still has to be earned, which is the one thing that
-  would make the user act today. The class doc already asks consumers to read this field.
 
 ### OP8. Say when the longest focus block happened
 - **Source:** from data-map (backlog `FocusBlock.startedAt/endedAt`)
@@ -159,6 +150,23 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP7**, built 2026-10-04, in both repos. **The sizing note was wrong:** `isTodayComplete` alone could not say "today
+  still has to be earned". Its `false` covers both an unfinished today, which breaks the run at midnight, and a today with
+  nothing that counts (no tasks, or only optional, background or skipped ones), which cannot break it. Reading `false`
+  as "at stake" would nag on every unplanned weekend. The API now also sends `PlannerStreakResponse.TodayOutcome`
+  (`Empty` / `Complete` / `Incomplete`, the existing `PlannerStreakService.PlannerDayOutcome`), which the walk already
+  computed and threw away. `isTodayComplete` stays. It is not a migration, just a response field.
+  `PlannerStreakTests` pins all three outcomes, including a new background-only-today case (26/26 pass). On home, both
+  flame chips (NowBar and the planner widget header) fill in (`warningDark`, flat) with a check once today is kept,
+  and stay tonal otherwise. Both share one accessible name and tooltip from `useTodayPlan`: "Streaks: 4 · kept today /
+  finish today's plan to keep it / nothing today can break it · Best: 9". Before this, the widget's tooltip showed
+  only the best streak, and the NowBar chip only the count. An API without the field falls back to `Complete` or
+  `Empty`, never to "at stake".
+  Checked live with the day-plan response route-patched to each outcome: both chips carried the right label, variant
+  and check mark. No console errors. No e2e spec yet. After the API restart, the real day-plan response carried
+  `"todayOutcome": "Incomplete"` for the seed account's unfinished today. That account's streak is 0, so no chip
+  showed there; the chip states were only seen with the patched response.
 
 - **OP5**, built 2026-10-04, app-side only. `GET /calendar/day-plan/{date}` already projected every field through
   `CalendarResponse`, so the backend did not change and there is no extra request. `DayContextBar` sits under the

@@ -35,14 +35,16 @@
 				<span class="text-h6">{{ $t('home.dayPlanner') }}</span>
 			</div>
 			<VSpacer />
-			<!-- rendered as-is: a broken streak already arrives as 0 -->
+			<!-- rendered as-is: a broken streak already arrives as 0. Filled with a check once today is kept. -->
 			<VChip
 				v-if="streak.currentStreak > 0"
-				color="warning"
-				variant="tonal"
+				:color="streakKeptToday ? 'warningDark' : 'warning'"
+				:variant="streakKeptToday ? 'flat' : 'tonal'"
 				size="small"
 				prependIcon="fas fa-fire"
-				:title="$t('home.bestStreak') + ': ' + streak.bestStreak"
+				:appendIcon="streakKeptToday ? 'fa-check' : undefined"
+				:title="streakLabel"
+				:aria-label="streakLabel"
 			>
 				{{ streak.currentStreak }}
 			</VChip>
@@ -309,6 +311,8 @@
 		missedTasks,
 		todayUrlDate,
 		streak,
+		streakKeptToday,
+		streakLabel,
 		isActive,
 		isMissed,
 		taskColor,
