@@ -160,7 +160,16 @@ the data a real registry produces (B6, P4).
   with `ga-4` replaced by margins).
 
 ### B6. Twelve one-shot jobs have been overdue for 14 days and never fired — the server's missed-fire path does not recover them
-- **Status:** escalated — backend ask §S1 in `prompts/view-docs/units/_submodule/_fix-queue.md` (not yet written; nothing changes client-side)
+- **Status:** fixed server-side 2026-10-05 and verified live after a restart: all 62 `History.TimerBoundaryAlarm`
+  jobs read `Removed`, *Overdue / stuck* is 0, and the default jobs list has 13 rows with no alarms. The root
+  cause was not the missed-fire path. Two separate gaps: (1) a fired one-shot was never retired, so it kept `Active`
+  with `nextRunAt: null` (the 8). The dispatcher now sets it `Removed` once its occurrence is spent
+  (`SchedulerSpentOneShotTests`, 6). (2) An alarm row deleted without a cancel (it cascades with its user) stranded
+  its job: no row meant no boot re-registration, and the RAM store had no trigger, so it stayed `Active` and overdue
+  (the 12 cleared on the first boot with the fix). History's boot registrar now removes any alarm job with no row
+  behind it, through a new `IScheduler.RemoveJobsNotInAsync` (`TimerBoundaryAlarmRegistrarTests`, 2). The e2e
+  seed now deletes alarm jobs too, because its truncate restarts alarm ids and a kept job key was being re-used
+  (`Seed_DeletesTimerAlarmJobs_AndKeepsEveryOtherSchedulerJob`). e2e: `scheduler-removed-jobs.spec.ts` (3).
 - **Severity:** bug
 - **Where:** `/planovac/ulohy?overdue=true` and `/planovac/pozornost` → *Overdue / stuck*; jobs 59–70
   (`history.timer-boundary.49`–`.60`, `History.TimerBoundaryAlarm`, `Once`, `misfirePolicy: FireAndProceed`)
@@ -303,8 +312,10 @@ the data a real registry produces (B6, P4).
 - **Status:** partly built 2026-10-05, not yet verified in the browser. The list now hides `Removed` by default; an
   *Include removed* switch (URL `removed=true`, chip) lifts it. Server: opt-in `ExcludeRemoved` on
   `ScheduledJobsOverviewFilterRequest`, which yields to an explicit `status` (`SchedulerJobsOverviewExcludeRemovedTests`,
-  3/3). The needs-attention *failed* "View all" lifts the exclusion, because that list counts Removed jobs. Still open:
-  grouping one-shots by handler (needs a grouped server read), and the 8 spent-but-`Active` rows, which are B6.
+  3/3). The needs-attention *failed* "View all" lifts the exclusion, because that list counts Removed jobs. The 8
+  spent-but-`Active` rows were B6 and are fixed with it. Grouping one-shots by handler: not needed. With B6 fixed every
+  alarm ends `Removed`, so only alarms for timers running right now remain listed. Revisit only if that stops being
+  true.
 - **Severity:** opportunity
 - **Where:** `/planovac/ulohy`
 - **What exists:** 42 `Removed` and 8 spent `Active` `History.TimerBoundaryAlarm` rows out of 73; the `status` filter;
