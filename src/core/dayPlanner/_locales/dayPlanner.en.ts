@@ -34,6 +34,8 @@ const dayPlanner = {
 			scheduledFor: `Scheduled for {label}s`,
 			suggestedFor: `Suggested for {label}s`,
 			timesCount: `{count}×`,
+			// The template's Suggested location is the day's own (OP18). `{location}` is a `planner.location` label.
+			matchesLocation: `Today: {location}`,
 		},
 		templateDelete: {
 			title: `Delete template?`,

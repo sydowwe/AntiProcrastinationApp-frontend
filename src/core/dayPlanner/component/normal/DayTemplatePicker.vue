@@ -44,20 +44,25 @@
 						/>
 						<span class="text-body-2 font-weight-medium">{{ s.template.name }}</span>
 						<VChip
+							v-if="s.pattern"
 							size="x-small"
 							variant="tonal"
 							color="primaryOutline"
 							class="flex-shrink-0"
 						>
-							{{ patternSentence(s) }}
+							{{ patternSentence(s.pattern) }}
 						</VChip>
+						<LocationMatchChip
+							v-if="matchesDayLocation(s.template)"
+							:location="calendar!.location!"
+						/>
 					</div>
 					<!-- Only history entries have a count; a settings match (types 2/3) is always 0. -->
 					<span
-						v-if="isHistoryPattern(s)"
+						v-if="s.pattern && isHistoryPattern(s.pattern)"
 						class="text-caption text-medium-emphasis flex-shrink-0 ml-2"
 					>
-						{{ t('planner.templateSuggestions.timesCount', { count: s.occurrenceCount }) }}
+						{{ t('planner.templateSuggestions.timesCount', { count: s.pattern.occurrenceCount }) }}
 					</span>
 				</div>
 			</div>
@@ -81,6 +86,16 @@
 					size="18"
 					class="text-medium-emphasis"
 				/>
+			</template>
+			<template #item="{ props: itemProps, item }">
+				<VListItem v-bind="itemProps">
+					<template
+						v-if="matchesDayLocation(item.raw)"
+						#append
+					>
+						<LocationMatchChip :location="calendar!.location!" />
+					</template>
+				</VListItem>
 			</template>
 		</VAutocomplete>
 
@@ -117,6 +132,14 @@
 						{{ Time.getString(selectedTemplate.defaultWakeUpTime) }} -
 						{{ Time.getString(selectedTemplate.defaultBedTime) }}
 					</span>
+					<template v-if="selectedTemplate.suggestedLocation">
+						<VIcon
+							:icon="LOCATION_ICONS[selectedTemplate.suggestedLocation]"
+							size="14"
+							class="ml-2"
+						/>
+						<span>{{ t(`planner.location.${selectedTemplate.suggestedLocation}`) }}</span>
+					</template>
 				</div>
 				<p
 					v-if="selectedTemplate.description"
@@ -209,6 +232,8 @@
 	import DayTypeChip from '@/core/dayPlanner/component/misc/DayTypeChip.vue'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
+	import { LOCATION_ICONS } from '@/core/dayPlanner/dto/enum/Location.ts'
+	import LocationMatchChip from '@/core/dayPlanner/component/normal/LocationMatchChip.vue'
 
 	const { calendar } = defineProps<{
 		calendar?: Calendar
@@ -254,16 +279,30 @@
 		},
 	)
 
+	// The template's own Suggested location against the day's (OP18). Matched here rather than ranked by the
+	// server, which B27 §5 put out of scope. A day or a template with no location matches nothing.
+	function matchesDayLocation(template: TaskPlannerDayTemplate): boolean {
+		return calendar?.location != null && template.suggestedLocation === calendar.location
+	}
+
 	// Rendered in the server's order, which is the ranking (history first, then template settings).
 	// Since B27 the server sends one entry per template and active templates only; both guards stay as
 	// a safeguard against an older API build, where a template could arrive twice under one v-for key.
-	const suggestions = computed(() => {
+	// Templates the server did not suggest but whose location matches the day follow, with no pattern:
+	// the location is weaker evidence than history or the template's own day settings.
+	const suggestions = computed<{ template: TaskPlannerDayTemplate; pattern?: TemplateSuggestionResponse }[]>(() => {
 		const seen = new Set<number>()
-		return backendSuggestions.value.filter(s => {
-			if (!s.template.isActive || seen.has(s.template.id)) return false
-			seen.add(s.template.id)
-			return true
-		})
+		const fromServer = backendSuggestions.value
+			.filter(s => {
+				if (!s.template.isActive || seen.has(s.template.id)) return false
+				seen.add(s.template.id)
+				return true
+			})
+			.map(s => ({ template: s.template, pattern: s }))
+		const byLocation = templates.value
+			.filter(tpl => tpl.isActive && !seen.has(tpl.id) && matchesDayLocation(tpl))
+			.map(tpl => ({ template: tpl }))
+		return [...fromServer, ...byLocation]
 	})
 
 	// `patternLabel` is the server's English enum name ("Thursday", "Workday"), so it is translated

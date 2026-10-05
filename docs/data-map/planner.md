@@ -29,8 +29,8 @@
 - **The richest unspent data is recurrence.** The six recurrence fields of `RepeatingPlannerTask` (`scheduledDays`, `scheduledDates`,
   `activeFromDate`, `activeToDate`, `scheduledForDayTypes`, `isActive`) are `echo` on the client. Only the server's suggestion matcher
   spends them. They come back on every `SuggestionResponse` too, and there all six are `unread`. They are the strongest time-bearing candidates
-  for reminders in this group. `TaskPlannerDayTemplate.suggestedLocation` is the other `echo`: no client or server path reads it
-  (B27 §5 put location out of scope).
+  for reminders in this group. `TaskPlannerDayTemplate.suggestedLocation` was the other `echo` until OP18, which spends it
+  client-side in `DayTemplatePicker` (the server still ignores it, B27 §5).
 - **Origin tracking is dead.** `PlannerTask.isFromTemplate` is parsed but never sent: the server's `PlannerTaskResponse` has no such member, so it
   is always `undefined`. `sourceTemplateTaskId` is sent but never read, and `Calendar.appliedTemplateId` is sent but never read. Only
   `appliedTemplateName` reaches the screen. No view can say "this task came from template X".
@@ -185,7 +185,7 @@ Fetched through `activityHistory/api/calendarApi.ts` (`calendar/filter`, `calend
 | `defaultWakeUpTime` | `Time` | details form (`:17`) | `TemplateCard.vue:79-91`; `DayTemplatePicker.vue:117`; bounds the template grid (`TemplatePlannerPanel.vue:75`) and the apply preview (`dayPlannerStore.ts:71`) | spent | yes |
 | `defaultBedTime` | `Time` | details form (`:24`) | same as `defaultWakeUpTime` | spent | yes |
 | `scheduledDays` | `DayOfWeek[]` | details form (`:85`) | `TemplateCard.vue:102-107` (read-only strip); the server's suggestion pattern type 2 | spent | yes |
-| `suggestedLocation` | `Location \| undefined` | details form (`:49`) | — (only the form; the server's suggestions ignore it, B27 §5) | echo | — |
+| `suggestedLocation` | `Location \| undefined` | details form (`:49`) | `DayTemplatePicker.vue` (matched against the day's `location`: chip, extra suggestion, preview line, OP18); the server's suggestions ignore it, B27 §5 | spent | — |
 
 ### TemplateSuggestionResponse — `src/core/dayPlanner/dto/response/template/TemplateSuggestionResponse.ts` · request: none (`GET task-planner-day-template/suggestions/{calendarId}`)
 

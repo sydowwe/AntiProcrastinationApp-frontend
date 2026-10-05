@@ -38,6 +38,8 @@ const dayPlanner = {
 			scheduledFor: `Naplánované: {label}`,
 			suggestedFor: `Určené pre: {label}`,
 			timesCount: `{count}×`,
+			// Odporúčané miesto šablóny je miesto dňa (OP18). `{location}` je štítok z `planner.location`.
+			matchesLocation: `Dnes: {location}`,
 		},
 		// Zvyšok `TemplateListView.vue` je zatiaľ natvrdo po anglicky; localizované sú len tieto
 		// kľúče, lebo mazanie šablóny je nevratné a text musí byť presný.
