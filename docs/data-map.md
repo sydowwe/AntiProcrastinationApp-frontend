@@ -38,12 +38,9 @@ and every save from `/routine-settings` wipes it. See *Server sends, client drop
   `DailyRecapCard` shows only the total, and could say "Write report: 42m" per row.
 - `RoutineTimePeriod.historyDepth` · echo. How many past periods are kept, set in `TimePeriodForm`. The server trims
   `completionHistory` to it, so it is visible only as the heatmap's length. A "last N weeks" label would explain that length.
-- `TodoList.category` · echo. Set in `TodoListForm`, read only by the same form's prefill. A category chip on
-  `TodoListCard` would help when the category filter is "All".
-- `TodoListCategory.listCount` · unread, **phantom**. The count badge (`TodoListCategoryPanel.vue:102`) and the
-  delete-confirm detail are built, but the server never sends the count. Needs a server member.
-- `RoutineTodoListItem.color` · unread, **phantom**. `fromJson` hard-codes `null`, so routine rows never get the accent bar
-  the component supports. It could take `timePeriod.color` client-side.
+- ~~`TodoList.category` · echo; `TodoListCategory.listCount` · unread, **phantom**; `RoutineTodoListItem.color` · unread,
+  **phantom**.~~ Spent by OP17 (`docs/opportunities.md` § *Closed*). The server sends `listCount` now, and a routine
+  row's colour is its period's.
 
 ### user (account) and googleCalendar
 
@@ -54,11 +51,11 @@ and every save from `/routine-settings` wipes it. See *Server sends, client drop
 - `LoginResponse.email` · unread, **phantom**. The password login response has no `email`, so `LoginView.vue:156` calls
   `userStore.login(undefined)` and a password sign-in never writes `auth.lastUsedEmail`. The next `/login` is not
   prefilled. A client-only fix: store the e-mail the user just typed.
-- `UserSession.createdAt` · unread (derived). When each session started. The Active sessions row could say "signed in
-  3 Sep", which is the minimum for noticing a sign-in from a new device.
-- `User.lastLoginAt` · unread, **phantom**. The Appearance card's "Last login" row is `v-if`-gated on a value no backend
-  user response carries. Needs a server member.
-- `LoginRequest.stayLoggedIn` · write-only. Nothing shows which sessions are "remembered". Low value.
+- ~~`UserSession.createdAt` · unread (derived).~~ Spent by OP19 (`docs/opportunities.md` § *Closed*). The server sent
+  the last refresh, not the sign-in, until OP19 added `RefreshToken.SessionStartedAt`.
+- ~~`User.lastLoginAt` · unread, **phantom**.~~ Sent since OP19 (`GET /user/data`, derived from the session starts).
+- ~~`LoginRequest.stayLoggedIn` · write-only.~~ Echoed per session since OP19 (`UserSession.stayLoggedIn`, the
+  *Remembered* chip).
 
 ### dayPlanner
 
@@ -80,9 +77,9 @@ and every save from `/routine-settings` wipes it. See *Server sends, client drop
 - ~~`PlannerTask.sourceTemplateTaskId` · unread (derived); `PlannerTask.isFromTemplate` · unread, **phantom**;
   `Calendar.appliedTemplateId` · unread (derived).~~ Spent by OP15 (`docs/opportunities.md` § *Closed*).
   `isFromTemplate` is now a getter over `sourceTemplateTaskId`. The server wrote no origin at all until then.
-- `TaskPlannerDayTemplate.suggestedLocation` · echo. Where a template is meant to be used, set in the details form. The
-  server's suggestion matcher ignores it (B27 §5). `DayTemplatePicker` could mark templates whose location matches the
-  day's `Calendar.location`.
+- ~~`TaskPlannerDayTemplate.suggestedLocation` · echo.~~ Spent by OP18 (`docs/opportunities.md` § *Closed*).
+  `DayTemplatePicker` marks templates whose location matches the day's `Calendar.location`, and suggests the ones the
+  server did not. The server's matcher still ignores it (B27 §5).
 
 `home` also fetches `DayPlan.calendar` (`useTodayPlan.ts:437`) and reads none of it. That object is a wrapper, and each
 of its fields is `spent` on the planner's own screens, so it is not in the 121. But it means home already holds today's
@@ -225,8 +222,8 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
 
 ### The reverse: the client reads what the server never sends
 
-Phantoms: `TodoListCategory.listCount`, `RoutineTodoListItem.color`, `TodoList.description`, ~~`PlannerTask.isFromTemplate`~~ (derived since OP15),
-~~`DayTotals.totalVisits`~~ (removed by OP16), `SummaryCardsData.totalSeconds` (web ledger only), `User.lastLoginAt`, `LoginResponse.email`, and
+Phantoms: ~~`TodoListCategory.listCount`~~ (sent since OP17), ~~`RoutineTodoListItem.color`~~ (derived since OP17), `TodoList.description`, ~~`PlannerTask.isFromTemplate`~~ (derived since OP15),
+~~`DayTotals.totalVisits`~~ (removed by OP16), `SummaryCardsData.totalSeconds` (web ledger only), ~~`User.lastLoginAt`~~ (sent since OP19), `LoginResponse.email`, and
 the nested `sortOrder` on leisure lookup copies. `TemplatePlannerTask.gridRowStart`/`gridRowEnd`/`isDuringBackgroundTask`
 are phantoms too, but deliberately: they are client layout state.
 
@@ -400,12 +397,12 @@ What the flow shows:
 | picker `suggestionHistory.suggestedAt` | leisure | audit: when a candidate was last offered (per device, pruned after 90 days) | client-only |
 | `User.firstDayOfWeek` | user | recurrence: week start for calendars, presets and the weekly review | spent |
 | `User.timezone`, `LoginRequest.timezone`, `RegistrationRequest.timezone` (3) | user | zone: resolves every other time | spent |
-| `LoginRequest.stayLoggedIn` | user | duration: chooses the refresh-token lifetime | write-only |
+| `LoginRequest.stayLoggedIn`, `UserSession.stayLoggedIn` (2) | user | duration: chooses the refresh-token lifetime | spent (OP19) |
 | `AccountDeletionSummary.trackedTimeSpanDays` | user | duration: days of tracked history | derived · spent |
 | `User.createdAt` | user | audit: account creation | derived · spent |
-| `User.lastLoginAt` | user | audit: last sign-in | unread (phantom, C7) |
+| `User.lastLoginAt` | user | audit: last sign-in | derived · spent (OP19) |
 | `UserSession.lastUsedAt` | user | audit: session last used | derived · spent |
-| `UserSession.createdAt` | user | audit: session start | derived · unread |
+| `UserSession.createdAt` | user | audit: session start | derived · spent (OP19) |
 | `AccountDeletionSummary.trackedFrom`, `.trackedTo` (2) | user | audit: span of tracked history | derived · spent |
 
 Per module: todoList 21 · dayPlanner 45 · activityHistory + historyDashboard 59 · activityTracking 60 · leisure 5 · user 12.

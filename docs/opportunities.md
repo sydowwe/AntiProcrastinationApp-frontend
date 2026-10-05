@@ -18,37 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP17. To-do lists and routine rows: category, counts and colour
-- **Source:** from data-map (backlog `TodoList.category`, `TodoListCategory.listCount`, `RoutineTodoListItem.color`)
-- **Data it spends:** `TodoList.category` (echo), `TodoListCategory.listCount` (phantom), `RoutineTodoListItem.color`
-  (phantom; could take `timePeriod.color`)
-- **Where it would surface:** a category chip on `TodoListCard`, the count badge in `TodoListCategoryPanel` (already
-  built), and the accent bar on routine rows (already supported)
-- **Needs backend:** yes, for `listCount`: the server must send it on `TodoListCategoryResponse`. The other two are
-  client-only.
-- **Size:** S
-- **Value:** Small orientation cues. The count badge also restores the delete-confirm detail ("this category holds 4
-  lists"), which is the safety half.
-
-### OP18. Suggest templates by where you'll be
-- **Source:** from data-map (backlog `TaskPlannerDayTemplate.suggestedLocation`)
-- **Data it spends:** `TaskPlannerDayTemplate.suggestedLocation`, matched against `Calendar.location` (spent)
-- **Where it would surface:** `DayTemplatePicker`, which could mark or float templates whose location matches the day's
-- **Needs backend:** no for a client-side mark. Server-side ranking was put out of scope (B27 §5).
-- **Size:** S
-- **Value:** "Office day" vs "home day" templates are the obvious use of this field. Today the user sets it and nothing
-  ever uses it.
-
-### OP19. Sign-in history: when each session started, and the last login
-- **Source:** from data-map (backlog `UserSession.createdAt`, `User.lastLoginAt`, `LoginRequest.stayLoggedIn`)
-- **Data it spends:** `UserSession.createdAt`, `User.lastLoginAt` (phantom), `LoginRequest.stayLoggedIn` (write-only)
-- **Where it would surface:** `/user/settings` → Active sessions ("signed in 3 Sep", "remembered"), and the Appearance
-  card's "Last login" row (already built)
-- **Needs backend:** yes, for `lastLoginAt` (no user response carries it) and for showing `stayLoggedIn` per session.
-  `createdAt` is client-only.
-- **Size:** S
-- **Value:** A session list without start dates can't show the one thing it's for: a sign-in the user doesn't recognise.
-
 ### OP20. Tracking detail panels: show the splits already sent
 - **Source:** from data-map (backlog `DesktopWindowTitleStats.*Seconds`, `Unified*.sources`)
 - **Data it spends:** `DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`,
@@ -90,6 +59,62 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP19**, built 2026-10-05, in both repos (the framework halves of each). **"`createdAt` is client-only" was
+  wrong:** the server did send it, but `BaseGetUserSessionsEndpoint` filled it from the live refresh-token row's
+  creation, which is the session's *last refresh*, so it always equalled `lastUsedAt`. The first row of the chain
+  could not stand in for it either: the cleanup deletes a rotated row 30 days later, and a remembered session
+  outlives that. `RefreshToken` gains `SessionStartedAt`, set at sign-in and copied on every rotation like
+  `SessionId`. Migration `RefreshTokenSessionStartedAt` adds it and backfills existing sessions from their earliest
+  surviving row. The session response now carries the sign-in in `createdAt`, plus `stayLoggedIn`. `GET /user/data`
+  gains `lastLoginAt`: the most recent `SessionStartedAt` across the user's rows, i.e. the latest sign-in on any
+  device, this one included. It is derived, so there is no users-table write per login, and it is never null for a
+  signed-in reader because their own session's rows exist. The base endpoint resolves the token service rather than
+  injecting it, so host subclasses keep their constructors.
+  `SessionList_KeepsEachSessionsSignInTimeAcrossARefresh_AndSaysWhichOneIsRemembered` backdates one session's start,
+  refreshes it, and checks the start survives, the other session reads remembered, and `lastLoginAt` is the newer
+  sign-in. 36/36 pass across the session-revocation, refresh-token, auth and data-export classes.
+  On `/user/settings`, each session row reads "::1 · Signed in: 09/03/2026 9:15 AM · Last used: a minute ago", as a
+  date and time rather than "3 weeks ago", because an unfamiliar sign-in is recognised by when it happened. A
+  *Remembered* chip, with a tooltip, sits next to *This device*. The Appearance card's *Last login* row was already
+  built and now renders.
+  Checked live with both responses route-patched, because the running API predates the change: the row, the chip,
+  its tooltip and "Last login: 2 hours ago" rendered as above. No console errors. No e2e spec yet. The running API
+  needs the migration applied and a restart.
+
+- **OP18**, built 2026-10-05, app-side only. Both the template list and the suggestions endpoint already project
+  `suggestedLocation` (`TaskPlannerDayTemplateResponse`), and the wire spelling (`"Home"`) equals the client enum
+  value, so the backend did not change. In `DayTemplatePicker`, a template whose suggested location equals the day's
+  `location` gets a *Today: Home* chip (`LocationMatchChip`, with the location's icon), both on its *Suggested for
+  you* row and on its option in the *Choose template* list. An active template that the server did not suggest but
+  whose location matches is added to the end of *Suggested for you* with no pattern chip, after the server's
+  history and settings matches, because a location is weaker evidence than either. The server's order is kept, and
+  so is the list's pinned-first order. Nothing is floated, so a pin is never outranked. The preview card shows the
+  template's location next to its wake and bed times. A day or a template with no location matches nothing.
+  Checked live on 5 Oct with the day's `by-date` response route-patched to `location: "Home"`, because no seed day
+  has a location. *Home Office* (server: *Scheduled for Mondays*) carried the chip, *Office Day* (*Suggested for
+  Workdays*) did not, *Relaxed Weekend* was added as a location-only row, and the list showed the chip on the two
+  Home templates. Selecting *Office Day* showed "Office" in the preview. Unpatched, the day showed the two server
+  rows and no chips. No console errors. No e2e spec yet.
+
+- **OP17**, built 2026-10-05, in both repos. `TodoListCategoryResponse` gains a nullable `ListCount`. The category
+  projection fills it with a correlated count that carries its own `UserId` clause, the same one `HideEmpty`'s EXISTS
+  carries, so it uses `ix_todo_list_user_id_category_id`. The clause also keeps another user's list out of the count
+  (the seed lets one point at our category). The "Other" row's probe is now a `COUNT` instead of an `ANY`, so that row
+  carries its count too. The copy embedded in `TodoListResponse.Category` leaves it null. This is a response field
+  only, with no migration, but the running API needs a restart to pick it up.
+  `ListCount_CountsTheCallersListsPerCategory` pins 2 / 0 / 3 for a used category, an empty one and "Other", with the
+  other user's list excluded. 16/16 pass across the category filter-sort, sentinel and read-surface classes.
+  On the client, the panel badge and the delete confirm's "Lists in this category: N" were already built and now
+  render. `TodoListCard` shows a tonal chip under the description, with the category's icon and colour and a
+  *Category: …* title. It hides while the page is filtered to one category (or "Other"), where every card would carry
+  the same chip. A routine row's accent bar takes its period's colour in `RoutineTodoListItemEntity.fromJson`. The
+  server sends no per-item colour, and a period with none gets no bar.
+  Checked live with the category and list responses route-patched, because the running API predates the field and
+  the seed account has no categories. The badge read "2", the delete confirm read "Lists in this category: 2. They are
+  kept…", the chip showed on the two patched cards under *All* and on none under *Other*. `/routine-todo-list` (real
+  data) showed each row's bar in its period's colour: lime for Daily, lavender for Weekly, blue for Monthly. No console
+  errors. No e2e spec yet.
 
 - **OP15**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** no write path had ever set
   `PlannerTask.SourceTemplateTaskId`. The apply endpoints build their tasks from the client's lines, and
