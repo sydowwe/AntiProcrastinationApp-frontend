@@ -895,9 +895,8 @@
 > path because the API under Rider locks `bin/`); client — `type-check` and e2e `typecheck` exit 0; live
 > (`playwright-cli`, primary user) the Dismiss dialog on "Pay the rent" reads "Reminder: Pay the rent / Occurrence
 > 10/17/2026 10:00:00 AM", Escape still closes it and focus returns to its button; e2e `the Dismiss dialog names the
-> reminder it dismisses` passes. **Not verified:** (b) in the browser. The running API is the old build, so the
-> interval row still reads "—" and the new e2e `the recurring-interval row states its interval` (it replaced B4's
-> `fixme`) fails until the API is restarted.
+> reminder it dismisses` passes. (b) **verified** after an API restart: the new e2e `the recurring-interval row
+> states its interval` (it replaced B4's `fixme`) passes, so the "Pay the rent" row reads "Monthly".
 
 Server: `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs` returns `ownerModule, kind,
 templateKey, scheduleType, nextOccurrenceAt, id` and leaves out `PayloadJson` on purpose, as a non-admin

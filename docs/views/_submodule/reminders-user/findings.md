@@ -182,7 +182,7 @@ into that batch rather than open a new one.
   day's midnight with `<`. Show the chip as a date, not an instant.
 
 ### B4. A recurring-interval reminder's schedule reads "—"
-- **Status:** fixed 2026-10-05 (§S6 (b): `MyUpcomingReminderDto` projects `IntervalPreset` and `Cron`, pinned by `MyUpcomingScheduleTests`. The client already passed both to `ReminderScheduleDisplay`, so no client change was needed beyond correcting `UpcomingReminderGridResponse.ts`'s header. **Not yet seen in the browser:** the API under Rider still runs the old build, so the row reads "—" until it is restarted; no migration is needed. The e2e test `the recurring-interval row states its interval` fails until then)
+- **Status:** fixed 2026-10-05 (§S6 (b): `MyUpcomingReminderDto` projects `IntervalPreset` and `Cron`, pinned by `MyUpcomingScheduleTests`. The client already passed both to `ReminderScheduleDisplay`, so no client change was needed beyond correcting `UpcomingReminderGridResponse.ts`'s header. **Verified** after an API restart (no migration): the e2e test `the recurring-interval row states its interval` passes, so the payRentRecurring row reads "Monthly")
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → row 3 (`seed.reminderDefinitions.payRentRecurring`) → *Schedule type* cell;
   `MyRemindersView.vue:97-104`, `ReminderScheduleDisplay.vue` (`intervalLabel`)
