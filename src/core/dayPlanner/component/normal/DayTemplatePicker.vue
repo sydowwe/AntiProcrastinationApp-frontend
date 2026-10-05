@@ -184,7 +184,15 @@
 			/>
 			<span>
 				{{ t('planner.misc.usingTemplate') }}
-				<strong>{{ calendar.appliedTemplateName }}</strong>
+				<!-- The stamp has no FK: a deleted template keeps its id here, and the template view says it is gone. -->
+				<RouterLink
+					v-if="calendar.appliedTemplateId != null"
+					:to="{ name: 'dayPlannerTemplate', params: { templateId: calendar.appliedTemplateId } }"
+					class="font-weight-bold text-primary"
+				>
+					{{ calendar.appliedTemplateName }}
+				</RouterLink>
+				<strong v-else>{{ calendar.appliedTemplateName }}</strong>
 			</span>
 		</div>
 	</div>

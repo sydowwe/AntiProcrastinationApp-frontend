@@ -18,17 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP15. Show which template a task or day came from
-- **Source:** from data-map (backlog `PlannerTask.sourceTemplateTaskId`, `.isFromTemplate`, `Calendar.appliedTemplateId`)
-- **Data it spends:** `PlannerTask.sourceTemplateTaskId` (with `isFromTemplate` derived from it client-side),
-  `Calendar.appliedTemplateId`
-- **Where it would surface:** a small "from template" mark on task blocks. The *Using template …* line in
-  `DayTemplatePicker` and the month cell becomes a link to the template.
-- **Needs backend:** no
-- **Size:** S
-- **Value:** Telling a template task from a hand-added one is how a user sees whether their template still fits their
-  days. The glossary already claims "the origin survives". This makes that true on screen.
-
 ### OP17. To-do lists and routine rows: category, counts and colour
 - **Source:** from data-map (backlog `TodoList.category`, `TodoListCategory.listCount`, `RoutineTodoListItem.color`)
 - **Data it spends:** `TodoList.category` (echo), `TodoListCategory.listCount` (phantom), `RoutineTodoListItem.color`
@@ -101,6 +90,35 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP15**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** no write path had ever set
+  `PlannerTask.SourceTemplateTaskId`. The apply endpoints build their tasks from the client's lines, and
+  `PlannerTaskRequest` had no such field, so the column was null on every row and a mark would never have shown.
+  Each apply line is now a `TemplateAppliedTaskRequest` (a `PlannerTaskRequest` plus `SourceTemplateTaskId`), on
+  both the single-day and the batched apply. `PlannerTemplateApplier.BuildTasks` keeps the id only when it is a line
+  of the template being applied. A task added to the preview by hand, another template's line, another user's line
+  and a stale id all land as null rather than failing the apply, because the column is provenance with no FK. Only an
+  apply writes it: the plain create and the full-replace PUT do not carry the field, so an edit can neither clear nor
+  forge it. This is a request field only, with no migration, but the running API needs a restart to pick it up.
+  `ApplyingATemplate_RecordsEachTasksTemplateLine_AndDropsAForeignOne` pins all five cases on both routes, plus a PUT
+  keeping the origin. 75/75 pass across the apply, batch, ownership and lazy-day classes.
+  On the client, `isFromTemplate` is a getter over `sourceTemplateTaskId` (the server never sent it, so it was always
+  `undefined`), and `PlannerTask.fromTemplateTask` stamps the line id so all three apply call sites send it.
+  `PlannerTaskBlock` shows a `layer-group` mark before the title with a *From a day template* tooltip, and adds
+  "from a day template" to the block's accessible name. A template-preview block does not get the mark, because its
+  hatching already says so. Background blocks do not get it either. Rows applied before this read null, so a day
+  applied earlier shows no marks. The *Using:* line in `DayTemplatePicker` and the month cell's template name now link
+  to `/day-planner/templates/:id`. The month cell is itself `role="button"`, so its link is pointer-only
+  (`tabindex="-1"`, click stopped from opening the day). Keyboard users reach the same template through the day's
+  *Using:* link. A deleted template keeps its id on the day (no FK), so the link lands on the template view's
+  not-found alert.
+  Checked live with the responses route-patched, because the running API predates the change: one task carried the
+  mark and the accessible name, the others did not, the tooltip read *From a day template*, and both links opened
+  *Home Office*. The month-cell click did not open the day. Previewing *Home Office* and pressing *Apply*, with the
+  request aborted, sent the line ids 20101–20105, one per line. No console errors.
+  `e2e/tests/planner-template-origin.spec.ts` (4 tests, route-patched, apply aborted) covers the mark and its
+  accessible name against an unmarked block, the *Using:* link, the apply payload's line ids with no mark on preview
+  blocks, and the month-cell link. All 4 passed on 2026-10-05 (21 s).
 
 - **OP14**, built 2026-10-04, in both repos. The tracking ledgers' `averageSeconds` was already the right number: the
   baseline's mean day multiplied out to the selected span (`BaseSummaryCardsEndpoint.ScaleToSpan`), so it sits on

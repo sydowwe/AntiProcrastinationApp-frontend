@@ -96,8 +96,9 @@ produce the estimate-vs-actual calibration surfaces. Distinct from `dueTime`, wh
 | **Streak** | `PlannerStreak` | Consecutive days planned — the planner's own streak, unrelated to a routine item's `streak`. |
 
 **Applying a template** writes template tasks into a real day, which is why
-`ApplyTemplateToTaskPlannerRequest` carries an `ApplyTemplateConflictResolution`. `PlannerTask` records
-`isFromTemplate` and `sourceTemplateTaskId` so the origin survives.
+`ApplyTemplateToTaskPlannerRequest` carries an `ApplyTemplateConflictResolution`. Each applied `PlannerTask`
+records `sourceTemplateTaskId`, the template line it came from, so the origin survives (since OP15).
+`isFromTemplate` is derived from it on the client. The server never sends it.
 
 ---
 

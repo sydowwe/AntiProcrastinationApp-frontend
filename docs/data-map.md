@@ -77,10 +77,9 @@ and every save from `/routine-settings` wipes it. See *Server sends, client drop
 - `SuggestionResponse.recurrenceType`, `.scheduledDays`, `.scheduledDates`, `.activeFromDate`, `.activeToDate`,
   `.scheduledForDayTypes` · unread (derived), 6 fields. The same rule, copied onto every repeating-task suggestion. The
   suggestion row could say why it is offered today.
-- `PlannerTask.sourceTemplateTaskId` · unread (derived); `PlannerTask.isFromTemplate` · unread, **phantom**;
-  `Calendar.appliedTemplateId` · unread (derived). Template origin. Only `appliedTemplateName` reaches the screen. A
-  task block could say "from <template>", and the day's template name could link to the template. `isFromTemplate` can
-  be derived client-side as `sourceTemplateTaskId != null`.
+- ~~`PlannerTask.sourceTemplateTaskId` · unread (derived); `PlannerTask.isFromTemplate` · unread, **phantom**;
+  `Calendar.appliedTemplateId` · unread (derived).~~ Spent by OP15 (`docs/opportunities.md` § *Closed*).
+  `isFromTemplate` is now a getter over `sourceTemplateTaskId`. The server wrote no origin at all until then.
 - `TaskPlannerDayTemplate.suggestedLocation` · echo. Where a template is meant to be used, set in the details form. The
   server's suggestion matcher ignores it (B27 §5). `DayTemplatePicker` could mark templates whose location matches the
   day's `Calendar.location`.
@@ -226,7 +225,7 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
 
 ### The reverse: the client reads what the server never sends
 
-Phantoms: `TodoListCategory.listCount`, `RoutineTodoListItem.color`, `TodoList.description`, `PlannerTask.isFromTemplate`,
+Phantoms: `TodoListCategory.listCount`, `RoutineTodoListItem.color`, `TodoList.description`, ~~`PlannerTask.isFromTemplate`~~ (derived since OP15),
 ~~`DayTotals.totalVisits`~~ (removed by OP16), `SummaryCardsData.totalSeconds` (web ledger only), `User.lastLoginAt`, `LoginResponse.email`, and
 the nested `sortOrder` on leisure lookup copies. `TemplatePlannerTask.gridRowStart`/`gridRowEnd`/`isDuringBackgroundTask`
 are phantoms too, but deliberately: they are client layout state.

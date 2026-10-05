@@ -58,7 +58,25 @@
 				size="small"
 				class="mr-1"
 			/>
-			<span class="info-text">{{ day.appliedTemplateName }}</span>
+			<!-- A pointer shortcut only. The cell is itself `role="button"` (open the day, or select it in a bulk
+			     mode), so its contents are presentational and a focusable link here would be a control nested in a
+			     control. Keyboard users reach the same template through the day's own *Using:* link in
+			     `DayTemplatePicker`. `.stop` keeps the click from also opening the day. -->
+			<RouterLink
+				v-if="day.appliedTemplateId != null"
+				:to="{ name: 'dayPlannerTemplate', params: { templateId: day.appliedTemplateId } }"
+				class="info-text template-link"
+				tabindex="-1"
+				@click.stop
+			>
+				{{ day.appliedTemplateName }}
+			</RouterLink>
+			<span
+				v-else
+				class="info-text"
+			>
+				{{ day.appliedTemplateName }}
+			</span>
 		</div>
 
 		<!-- Weather -->
@@ -143,6 +161,11 @@
 
 	.cell-info.secondary-info .info-text {
 		font-size: 12px;
+	}
+
+	.template-link {
+		color: inherit;
+		text-decoration: underline dotted;
 	}
 
 	.info-text {

@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import { Time } from '@/_common/dto/dto/Time.ts'
 import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
-import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
+import { TemplateAppliedTaskRequest } from '@/core/dayPlanner/dto/request/TemplateAppliedTaskRequest.ts'
 import { TemplatePlannerTaskFilter } from '@/core/dayPlanner/dto/request/template/TemplatePlannerTaskFilter.ts'
 import { ApplyTemplateToTaskPlannerRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerRequest.ts'
 import { ApplyTemplatePlannerTaskResponse } from '@/core/dayPlanner/dto/response/ApplyTemplatePlannerTaskResponse.ts'
@@ -51,7 +51,7 @@ export function useTemplatePreview(
 		try {
 			const tasksIncluded = store.tasks
 				.filter(task => task.id < 0)
-				.map(task => PlannerTaskRequest.fromEntity(task))
+				.map(task => TemplateAppliedTaskRequest.fromEntity(task))
 			const request = new ApplyTemplateToTaskPlannerRequest(
 				store.templateInPreview.id,
 				calendar.value!.id,

@@ -24,7 +24,11 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public status: PlannerTaskStatus,
 		public actualStartTime: Time | null = null,
 		public actualEndTime: Time | null = null,
-		public isFromTemplate?: boolean,
+		/**
+		 * The template line this task was applied from (OP15). Written only by an apply, so a task added by hand,
+		 * or one applied before the server recorded it, reads null. The line may since have been deleted: this is
+		 * provenance, not a reference.
+		 */
 		public sourceTemplateTaskId: number | null = null,
 		public skipReason: string | null = null,
 		/** One of the app's own reasons, stored as a key (B1). At most one of this and `skipReason` is set. */
@@ -38,6 +42,11 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		/** How many times the task has been carried over to a later day. "Pushed 4×" is the cue to split or drop it. */
 		public carryOverCount: number = 0,
 	) {}
+
+	/** Derived, not sent: the server has no `isFromTemplate` member, so reading one off the wire was always undefined. */
+	get isFromTemplate(): boolean {
+		return this.sourceTemplateTaskId != null
+	}
 
 	get isTaskOneRow(): boolean {
 		return this.gridRowEnd - this.gridRowStart === 1
@@ -65,6 +74,9 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			templateTask.importance,
 			templateTask.color,
 			PlannerTaskStatus.NotStarted,
+			null,
+			null,
+			templateTask.id,
 		)
 	}
 
@@ -84,7 +96,6 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			convertToEnum(PlannerTaskStatus, json.status),
 			json.actualStartTime ? Time.fromJson(json.actualStartTime) : null,
 			json.actualEndTime ? Time.fromJson(json.actualEndTime) : null,
-			json.isFromTemplate,
 			json.sourceTemplateTaskId ?? null,
 			json.skipReason ?? null,
 			parseBuiltInSkipReason(json.skipReasonKey),

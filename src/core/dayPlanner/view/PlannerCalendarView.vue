@@ -116,7 +116,7 @@
 	import { ApplyTemplateToTaskPlannerBatchRequest } from '@/core/dayPlanner/dto/request/ApplyTemplateToTaskPlannerBatchRequest.ts'
 	import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
 	import { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
-	import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
+	import { TemplateAppliedTaskRequest } from '@/core/dayPlanner/dto/request/TemplateAppliedTaskRequest.ts'
 	import type { CalendarTaskSummary } from '@/core/dayPlanner/dto/response/CalendarTaskSummary.ts'
 	import type { TaskPlannerDayTemplate } from '@/core/dayPlanner/dto/response/template/TaskPlannerDayTemplate.ts'
 	import { API, isRequestCanceled } from '@/_common/axiosConfig.ts'
@@ -332,7 +332,7 @@
 				new TemplatePlannerTaskFilter(template.id, template.defaultWakeUpTime, template.defaultBedTime),
 			)
 			const taskRequests = templateTasks.map(t =>
-				PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t)),
+				TemplateAppliedTaskRequest.fromEntity(PlannerTask.fromTemplateTask(day.id, t)),
 			)
 			await API.post(
 				'calendar/apply-planner-template',
@@ -399,7 +399,7 @@
 			// Per-task calendarId is ignored by the batch endpoint — every selected day comes from
 			// calendarIds below — so the placeholder here never reaches the server.
 			const taskRequests = templateTasks.map(t =>
-				PlannerTaskRequest.fromEntity(PlannerTask.fromTemplateTask(0, t)),
+				TemplateAppliedTaskRequest.fromEntity(PlannerTask.fromTemplateTask(0, t)),
 			)
 
 			const response = await applyTemplateBatch(

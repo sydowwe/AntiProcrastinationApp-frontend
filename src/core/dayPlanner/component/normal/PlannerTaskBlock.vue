@@ -8,6 +8,26 @@
 		@resizeStart="emit('resizeStart', $event)"
 		@keydown.d.exact.prevent="emit('toggleDone', task.id)"
 	>
+		<!-- Not on a preview block: the hatching already says the whole overlay is the template. -->
+		<template
+			v-if="task.isFromTemplate && task.id > 0"
+			#prepend
+		>
+			<VTooltip
+				:text="t('planner.calendar.fromTemplate')"
+				location="top"
+			>
+				<template #activator="{ props: tooltipProps }">
+					<VIcon
+						v-bind="tooltipProps"
+						class="from-template-mark"
+						icon="layer-group"
+						:size="task.isTaskOneRow ? 14 : 16"
+						aria-hidden="true"
+					/>
+				</template>
+			</VTooltip>
+		</template>
 		<template #time>
 			<div
 				v-if="!task.isTaskOneRow"
@@ -131,6 +151,7 @@
 	const extraLabelParts = computed(() => [
 		t('planner.a11y.statusPart', { status: t(`planner.status.${task.status}`) }),
 		...(task.carryOverCount > 0 ? [carriedOverLabel.value] : []),
+		...(task.isFromTemplate && task.id > 0 ? [t('planner.a11y.fromTemplatePart')] : []),
 	])
 
 	const classes = computed(() => {
@@ -158,6 +179,13 @@
 	.status-chip {
 		pointer-events: auto;
 		cursor: pointer;
+	}
+
+	/* `auto` so the tooltip can open: the block's content is `pointer-events-none`. A press still bubbles
+	   to the block, so dragging from the mark moves the task as before. */
+	.from-template-mark {
+		pointer-events: auto;
+		opacity: 0.7;
 	}
 
 	.task-time {
