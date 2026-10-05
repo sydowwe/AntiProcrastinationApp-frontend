@@ -17,7 +17,7 @@
 - **The embedded path drops all session data.** When a timer runs inside `TrackTimeDialog` (pinned activity, from dayPlanner/todoList/NowBar), `TimerView`/`PomodoroTimerView` emit a plain `done(start, length)` (`TimerView.vue:226-229`, `PomodoroTimerView.vue:280-282`). The embedder writes one row with no session, phase or outcome, and an embedded pomodoro's **rest time is not logged at all**.
 - **The plan never reaches the server.** The countdown's `durationMs` and the pomodoro's `focusMs`/`shortRestMs`/`longRestMs` live only in the client running-timer session (`localStorage runningTimerSession::u<id>`, dropped after 12 h). The session request sends actual lengths plus `outcome`, and for a pomodoro the `plannedFocusPeriods` count. For a countdown stopped early, the planned length is unrecoverable, so there is no plan-vs-actual for history the way `PlannerTask` has it.
 - **Sub-minute length is discarded when it is captured, not left unread later.** `sessionLengthFromMs` rounds to whole minutes, and `Time` carries no seconds. See *Contradictions*.
-- **Derived but unread:** `HistorySummaryCard.averageSeconds` (also mis-assigned as the *baseline* average by the backend, per its DTO comment), `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange` (deliberately unused) and `CalendarActivityRoleSummary.roleId`. `ActivityHistoryResponse.EndTimestamp` is sent and dropped; the client recomputes it from start + length in two places.
+- **Derived but unread:** `HistorySummaryCard.averageSeconds` (also mis-assigned as the *baseline* average by the backend, per its DTO comment), `HistoryTimeOfDayHour.entries` and `CalendarActivityRoleSummary.roleId`. (`HistoryTimeOfDayResponse.daysInRange` is spent since OP21.) `ActivityHistoryResponse.EndTimestamp` is sent and dropped; the client recomputes it from start + length in two places.
 - **Cross-module reads:** `todoList` is the only outside consumer of history *data*: `ActivityLoggedTimeAggregate`, for estimate calibration. `home` reads the pie-chart response (widget) and the running-timer **store** directly (`NowBar.vue`). History's calendar reads dayPlanner-owned day fields (`dayType`, `wakeUpTime`, `bedTime`, `label`).
 - **Time-bearing data sent to the server with no read path:** `ScheduleTimerAlarmsRequest` posts every pomodoro boundary (instant, phase, cycle/period indices) to the server, which is write-only by design. The backend notification audit should start there. It is the only time-bearing structure this group pushes server-side that is not a history row.
 
@@ -188,13 +188,20 @@ No response DTO and no status endpoint, by design (DTO header comment).
 | --- | --- | --- | --- | --- | --- |
 | `hour` | `number` (0–23) | server | time-of-day insight band start (`useHistoryInsights.ts` `findConcentrationBand`) | derived · spent | yes |
 | `totalSeconds` | `number` | server | time-of-day insight (band sums, threshold) | derived · spent | yes |
-| `entries` | `number` | server | — (`useHistoryInsights` reads only `hour`/`totalSeconds` off hours) | derived · unread | — |
+| `entries` | `number` | server | — (`useHistoryInsights` reads only `hour`/`totalSeconds` off hours; OP21 counts days from `days`, because `entries` counts records and cannot tell three days from twelve) | derived · unread | — |
 
 ### HistoryTimeOfDayResponse — `src/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts`
 | field | type | captured in | read in | status | time |
 | --- | --- | --- | --- | --- | --- |
-| `daysInRange` | `number` | server | — (deliberately unused, `useHistoryInsights.ts` comment on `deriveTimeOfDay`) | derived · unread | yes |
+| `daysInRange` | `number` | server | the "of 30 days" in the time-of-day insight (`useHistoryInsights.ts` `countBandDays`, OP21) | derived · spent | yes |
 | `daysWithActivity` | `number` | server | time-of-day insight threshold (`MIN_DAYS_WITH_ACTIVITY`) | derived · spent | — |
+| `days` | `HistoryTimeOfDayDay[] \| null` | server (OP21) | the "on 12" in the time-of-day insight; `null` from an older API, which falls back to the share-only sentence | derived · spent | yes |
+
+### HistoryTimeOfDayDay — `src/core/historyDashboard/dto/response/HistoryTimeOfDayDay.ts`
+| field | type | captured in | read in | status | time |
+| --- | --- | --- | --- | --- | --- |
+| `date` | `string` (`YYYY-MM-DD`, user's clock) | server | `countBandDays`: one night per date, a post-midnight hour stepped back a day | derived · spent | yes |
+| `hourMask` | `number` (bit `h` = hour `h` touched) | server | `countBandDays`: intersected with the band's hours | derived · spent | yes |
 
 ### Dashboard query parameters — request only: `ActivityDateRangeRequest.ts` + `historySummary/*`, `DetailTimelineRequest.ts` + `historyDetail/*`, `CalendarActivityRequest.ts`
 These are filters, not stored data. `echo`: set by a control and shown back by the same control (URL-synced on Summary/Detail). They are listed so the reconcile pass does not mistake them for missing entity fields.
@@ -243,7 +250,8 @@ Reverse direction, writes into this group's entity: dayPlanner `component/normal
 | `HistorySummaryCard` | `HistorySummaryCard` | none | kept but unread: `AverageSeconds` |
 | `HistoryPeriodComparison` | `HistoryPeriodComparison` | none | |
 | `HistoryTimeOfDayHour` | `HistoryTimeOfDayHour` | none | kept but unread: `Entries` |
-| `HistoryTimeOfDayResponse` | `HistoryTimeOfDayResponse` | none | kept but unread: `DaysInRange` |
+| `HistoryTimeOfDayResponse` | `HistoryTimeOfDayResponse` | none | |
+| `HistoryTimeOfDayDay` | `HistoryTimeOfDayDay` | none | added by OP21 |
 | `HistoryStackedBarsResponse` / `HistoryPieChartResponse` / `HistorySummaryCardsResponse` | same names | none | wrappers |
 
 ## Opportunities

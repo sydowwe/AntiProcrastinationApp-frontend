@@ -99,6 +99,11 @@ export interface HistoryTimeOfDayInsight {
 	/** Seconds inside the band, and its share of the period as a 0–1 fraction. */
 	windowSeconds: number
 	share: number
+	/**
+	 * How often the band was used: days with anything logged in it, out of the days the range covers
+	 * (OP21). `null` from an API that does not send `days`, and the sentence then states the share alone.
+	 */
+	frequency: { daysInBand: number; daysInRange: number } | null
 }
 
 /**
@@ -218,14 +223,49 @@ function findConcentrationBand(
 	return best
 }
 
+/** The calendar day before a `YYYY-MM-DD` string. Read and printed in UTC, so no zone can shift it. */
+function previousDate(date: string): string {
+	const day = new Date(`${date}T00:00:00Z`)
+	day.setUTCDate(day.getUTCDate() - 1)
+	return day.toISOString().slice(0, 10)
+}
+
+/**
+ * On how many days the band was used (OP21). "Most of your time is 9–11" can come from three long days,
+ * and this tells a habit from a few marathons.
+ *
+ * A band that wraps midnight counts *nights*, not calendar days. Otherwise one 22:00–02:00 session would
+ * count twice, once on each side of midnight. A night is named by the day its evening falls on, so an
+ * hour after midnight counts towards the day before.
+ *
+ * That can name the day before the range: a record starting at 00:30 on its first day reads as the
+ * previous night. The count is therefore capped at `daysInRange`. It can only exceed it by that one day.
+ */
+function countBandDays(
+	data: HistoryTimeOfDayResponse,
+	startHour: number,
+	hourCount: number,
+): { daysInBand: number; daysInRange: number } | null {
+	if (!data.days || data.daysInRange <= 0) return null
+
+	const lateHours = Math.min(hourCount, HOURS_IN_DAY - startHour)
+	const lateMask = ((1 << lateHours) - 1) << startHour
+	const earlyMask = (1 << (hourCount - lateHours)) - 1
+
+	const nights = new Set<string>()
+	for (const day of data.days) {
+		if (day.hourMask & lateMask) nights.add(day.date)
+		if (day.hourMask & earlyMask) nights.add(previousDate(day.date))
+	}
+	return { daysInBand: Math.min(nights.size, data.daysInRange), daysInRange: data.daysInRange }
+}
+
 /**
  * Where in the day the period's time lands, at hour resolution and independent of every chart control.
  *
- * `daysInRange` is deliberately unused, and stays unused now that B3 has it reading correctly on a
- * custom range. The sentence this produces is a *share* — which slice of the clock holds half the
- * period's time — and a share is scale-free: dividing both the band and the total by the same day
- * count leaves it unchanged. Reading `daysInRange` here could only turn it into a per-day average,
- * which is a different claim than the one the surface makes.
+ * The band itself is a *share*, which slice of the clock holds half the period's time. A share is
+ * scale-free, so `daysInRange` cannot move it. `daysInRange` is read only for the frequency next to it
+ * ("on 12 of 30 days"), which is a separate claim with its own source, `days`.
  */
 function deriveTimeOfDay(data: HistoryTimeOfDayResponse): HistoryInsight | null {
 	// The contract guarantees 24 ordered elements; this reads them by position and neither sorts nor pads.
@@ -245,6 +285,7 @@ function deriveTimeOfDay(data: HistoryTimeOfDayResponse): HistoryInsight | null 
 		endHour: (band.startHour + band.hourCount) % HOURS_IN_DAY,
 		windowSeconds: band.seconds,
 		share: band.seconds / totalSeconds,
+		frequency: countBandDays(data, band.startHour, band.hourCount),
 	}
 }
 

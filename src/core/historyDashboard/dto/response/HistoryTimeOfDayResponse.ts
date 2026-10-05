@@ -1,4 +1,5 @@
 import { HistoryTimeOfDayHour } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayHour.ts'
+import { HistoryTimeOfDayDay } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayDay.ts'
 
 /**
  * The range folded into hours of the day — the one shape none of the other dashboard endpoints exposes,
@@ -18,17 +19,20 @@ export class HistoryTimeOfDayResponse {
 		 */
 		public hours: HistoryTimeOfDayHour[],
 		/**
-		 * Calendar days the range covers, so a total can become a per-day figure without re-deriving the
-		 * range's length.
-		 *
-		 * B3: reads `2` for **any** `CustomRange` request regardless of the `endDate` sent, because
-		 * `DateRangeDto.ToDateRange()` never reads `endDate` and a `to <= from` guard widens the result to
-		 * two days. That is pre-existing and shared by all four `summary/` endpoints — see
-		 * `prompts/activity-history/backend/B3-custom-range.md`.
+		 * Calendar days the range covers. The denominator of "on 12 of 30 days" (OP21). B3 made it honour
+		 * `endDate` on a `CustomRange`.
 		 */
 		public daysInRange: number,
-		/** Days in the range with at least one record. The insight's data threshold. */
+		/** Days in the range with at least one record, by the record's start. The insight's data threshold. */
 		public daysWithActivity: number,
+		/**
+		 * The hours each day of the range touched, ordered by date (OP21). `null` from an API older than
+		 * the field, so the insight can tell "no days" from "not sent" and fall back to its plain sentence.
+		 *
+		 * Unlike `hours`, a tail past the range's last midnight is left out here. A day is the one each
+		 * hour fell on, not the record's start, so this can hold more days than `daysWithActivity`.
+		 */
+		public days: HistoryTimeOfDayDay[] | null = null,
 	) {}
 
 	static fromJson(json: any): HistoryTimeOfDayResponse {
@@ -36,6 +40,7 @@ export class HistoryTimeOfDayResponse {
 			json.hours?.map((h: any) => HistoryTimeOfDayHour.fromJson(h)) ?? [],
 			json.daysInRange ?? 0,
 			json.daysWithActivity ?? 0,
+			Array.isArray(json.days) ? HistoryTimeOfDayDay.listFromObjects(json.days) : null,
 		)
 	}
 }

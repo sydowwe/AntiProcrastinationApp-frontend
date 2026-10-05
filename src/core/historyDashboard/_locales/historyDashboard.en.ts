@@ -46,6 +46,8 @@ const messages = {
 		title: `Insights`,
 		sessionLength: `You logged {total} across {entries} entries — about {mean} each.`,
 		timeOfDay: `Between {from} and {to} you logged {total} — {share}% of the period.`,
+		// OP21: the same sentence when the API says on how many days the band was used.
+		timeOfDayFrequency: `Between {from} and {to} you logged {total} — {share}% of the period — on {days} of {range} days.`,
 		mostFragmented: `{name} is the most broken up: {total} across {entries} entries, about {mean} each.`,
 		longestStretches: `{name} comes in your longest stretches: {total} across {entries} entries, about {mean} each.`,
 	},

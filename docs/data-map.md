@@ -114,9 +114,10 @@ of its fields is `spent` on the planner's own screens, so it is not in the 121. 
 
 - `HistorySummaryCard.averageSeconds` · unread (derived). The same idea as tracking's `averageSeconds`. The DTO comment
   (B2) says the backend fills it with the *baseline* daily average, so check what it holds before showing it.
-- `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange` · unread (derived), 2 fields. How many sessions
-  fall in an hour, and over how many days. The time-of-day insight could say "on 12 of 30 days" instead of only "most of
-  your time". `daysInRange` is unused on purpose today (`useHistoryInsights.ts` comment), so this is a design change.
+- ~~`HistoryTimeOfDayResponse.daysInRange` · unread (derived).~~ Spent by OP21 (`docs/opportunities.md` § *Closed*) as
+  the "of 30 days" in the time-of-day insight. The "12" comes from the new `days` hour masks, not from
+  `HistoryTimeOfDayHour.entries`. `entries` counts records per hour summed over the range, so it cannot tell three days
+  from twelve. It stays unread.
 
 Not a status, but the history group's largest loss: **the timer's plan never reaches the server.** `durationMs`,
 `focusMs`, `shortRestMs` and `longRestMs` are `spent` client-side and are lost when the session clears, after 12 h at the
@@ -360,7 +361,8 @@ What the flow shows:
 | `HistoryPeriodComparison.previousPeriodTotalSeconds`, `.currentPeriodTotalSeconds` (2) | historyDashboard | duration (actual): period totals | derived · spent |
 | `HistoryTimeOfDayHour.totalSeconds` | historyDashboard | duration (actual): per hour of day | derived · spent |
 | `HistorySummaryCard.averageSeconds` | historyDashboard | duration (baseline average) | derived · unread |
-| `HistoryTimeOfDayResponse.daysInRange` | historyDashboard | duration: range length in days | derived · unread |
+| `HistoryTimeOfDayResponse.daysInRange` | historyDashboard | duration: range length in days | derived · spent |
+| `HistoryTimeOfDayDay.date`, `.hourMask` (2) | historyDashboard | audit: hours of day touched, per day | derived · spent |
 | `ActivityHistory.startTimestamp` | activityHistory | audit: when the time was spent | spent |
 | `ActivityHistory.phase` | activityHistory | audit: pomodoro focus or rest | spent |
 | `HistoryTimeOfDayHour.hour` | historyDashboard | audit: hour of day (aggregate) | derived · spent |

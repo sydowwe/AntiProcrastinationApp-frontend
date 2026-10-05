@@ -18,15 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP21. Time-of-day insight: how often, not only how much
-- **Source:** from data-map (backlog `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`)
-- **Data it spends:** `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`
-- **Where it would surface:** the time-of-day insight on `/activity-history` ("mornings, on 12 of 30 days")
-- **Needs backend:** no. But `daysInRange` is unused on purpose today (`useHistoryInsights.ts`), so this is a design
-  decision, not a wiring fix.
-- **Size:** S
-- **Value:** "Most of your time is 9–11" can come from three long days. Frequency tells the user whether it's a habit.
-
 ### OP22. Mapping rules aimed at a role or category show their target
 - **Source:** from data-map (backlog `TrackerDesktopMapping.roleId/categoryId` and the Android twins)
 - **Data it spends:** `roleId`, `categoryId` on both mapping responses
@@ -48,6 +39,33 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP21**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** neither field it named can count
+  days. `HistoryTimeOfDayHour.entries` counts *records* per hour, summed over the range, so two records on one
+  morning and one record on each of two mornings read the same. The band is found client-side, so the server cannot
+  count its days either. `summary/time-of-day` now also sends `days`: one `{ date, hourMask }` per day of the range
+  that touched any hour, where bit *h* is set when a record touched hour *h* (the same rule as `entries`). A record
+  crossing midnight marks hour 23 on one day and hour 0 on the next. A tail past the range's last midnight still
+  counts in the hour totals, which have to equal the pie chart's, but is left out of `days`.
+  `Days_MarkTheHoursEachUserDayTouched_AndStopAtTheRangesLastMidnight` pins all three. 15/15 pass across the
+  time-of-day and route-smoke classes. This is a response field only, with no migration, but the running API needs a
+  restart to pick it up.
+  On `/activity-history`, the time-of-day insight now ends "— on 3 of 7 days" (SK "— v 3 z 7 dní"), with
+  `daysInRange` as the denominator. That is one new locale key, `timeOfDayFrequency`, not an appended fragment. A
+  band that wraps midnight counts *nights*: an hour after midnight belongs to the evening before, so one 22:00–02:00
+  session counts once. That can name the night before the range's first day, so the count is capped at `daysInRange`.
+  An API without `days` gets the old share-only sentence. The band itself is unchanged, because a share cannot move
+  with the day count. `entries` stays unread.
+  Checked live with the time-of-day response route-patched, because the running API predates the field: a 09–11 band
+  over five days, three of which touched hours 9–10 and one only hour 11, read "Between 09:00 and 11:00 you logged
+  2h — 50% of the period — on 3 of 7 days." No console errors. After the API restart, the seed account's real
+  response read "Between 11:00 and 16:00 you logged 15h 52m — 60% of the period — on 7 of 8 days". Checked by hand
+  against its masks: every day touched hours 11–15 except 28 Sep, which touched only 18–20. The unit tests
+  (`useHistoryInsights.test.ts`, 29/29) cover the wrap, the cap and a month boundary.
+  `e2e/tests/time-of-day-frequency.spec.ts` (4 tests) covers the real response's `days` contract and the sentence
+  wired to it, a route-patched count where a day touching only the hours beside the band is left out, a band across
+  midnight counting each night once, and the share-only sentence when `days` is absent. All 4 passed on 2026-10-05
+  (22 s).
 
 - **OP20**, built 2026-10-05, app-side only. `DesktopProcessDetailsEndpoint` already sent every per-title split, and
   every unified card and bar item already carried `sources`, so the backend did not change. In

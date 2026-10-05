@@ -46,6 +46,8 @@ const messages = {
 		title: `Postrehy`,
 		sessionLength: `Zaznamenali ste {total} v {entries} záznamoch — v priemere {mean} na jeden.`,
 		timeOfDay: `Medzi {from} a {to} ste zaznamenali {total} — {share} % z celého obdobia.`,
+		// OP21: tá istá veta, keď API pošle, v koľkých dňoch sa pásmo použilo.
+		timeOfDayFrequency: `Medzi {from} a {to} ste zaznamenali {total} — {share} % z celého obdobia — v {days} z {range} dní.`,
 		mostFragmented: `Najviac rozdrobené je {name}: {total} v {entries} záznamoch, teda priemerne {mean} na jeden.`,
 		longestStretches: `Najdlhšie súvislé úseky má {name}: {total} v {entries} záznamoch, teda priemerne {mean} na jeden.`,
 	},

@@ -4,6 +4,7 @@ import { HistoryPieChartResponse } from '@/core/historyDashboard/dto/response/Hi
 import { HistoryPieTotals } from '@/core/historyDashboard/dto/response/HistoryPieTotals.ts'
 import { HistoryTimeOfDayHour } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayHour.ts'
 import { HistoryTimeOfDayResponse } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayResponse.ts'
+import { HistoryTimeOfDayDay } from '@/core/historyDashboard/dto/response/HistoryTimeOfDayDay.ts'
 import { deriveHistoryInsights } from '@/core/historyDashboard/composable/useHistoryInsights.ts'
 
 /**
@@ -41,9 +42,18 @@ function timeOfDay(
 	secondsByHour: Record<number, number>,
 	daysWithActivity = 5,
 	daysInRange = 7,
+	days: HistoryTimeOfDayDay[] | null = null,
 ): HistoryTimeOfDayResponse {
 	const hours = Array.from({ length: 24 }, (_, hour) => new HistoryTimeOfDayHour(hour, secondsByHour[hour] ?? 0, 0))
-	return new HistoryTimeOfDayResponse(hours, daysInRange, daysWithActivity)
+	return new HistoryTimeOfDayResponse(hours, daysInRange, daysWithActivity, days)
+}
+
+/** One day's hour mask from the hours it touched. */
+function day(date: string, ...hours: number[]): HistoryTimeOfDayDay {
+	return new HistoryTimeOfDayDay(
+		date,
+		hours.reduce((mask, hour) => mask | (1 << hour), 0),
+	)
 }
 
 // Mail 3600/60 = 60s · Coding 14400/6 = 2400s · Reading 3600/10 = 360s · Calls 3600/12 = 300s
@@ -60,6 +70,10 @@ const MIXED_PERIOD = [
 // 3600 s in each of 09, 10 and 11, then 600 s in each of 14…19. Total 14400 s, half of it 7200 s.
 // No single hour reaches 7200, and 09+10 does exactly — so the band is two hours from 09:00.
 const CONCENTRATED_MORNING = { 9: 3600, 10: 3600, 11: 3600, 14: 600, 15: 600, 16: 600, 17: 600, 18: 600, 19: 600 }
+
+// 3600 s in each of 22, 23, 00 and 01, then 2000 s in each of 08…13. Total 26400 s, half of it 13200 s.
+// Three night hours reach only 10800, so the band is the four hours from 22:00, across midnight.
+const NIGHT_OWL = { 22: 3600, 23: 3600, 0: 3600, 1: 3600, 8: 2000, 9: 2000, 10: 2000, 11: 2000, 12: 2000, 13: 2000 }
 
 describe('deriveHistoryInsights', () => {
 	it('returns nothing without either response', () => {
@@ -99,7 +113,7 @@ describe('deriveHistoryInsights', () => {
 		it('names the narrowest run of hours holding half the period', () => {
 			const insights = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING))
 			expect(insights).toEqual([
-				{ kind: 'timeOfDay', startHour: 9, endHour: 11, windowSeconds: 7200, share: 0.5 },
+				{ kind: 'timeOfDay', startHour: 9, endHour: 11, windowSeconds: 7200, share: 0.5, frequency: null },
 			])
 		})
 
@@ -143,6 +157,69 @@ describe('deriveHistoryInsights', () => {
 			const asWeek = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 7))
 			const asCustomRange = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 2))
 			expect(asCustomRange).toEqual(asWeek)
+		})
+	})
+
+	describe('how often the band was used (OP21)', () => {
+		it('counts the days that touched any hour of the band, out of the days in the range', () => {
+			// Band 09–11 (hours 9 and 10). The 1st and 2nd touch it, the 3rd only at 08 and 11 (outside both
+			// ends), the 4th at 10 only. Three of seven.
+			const days = [
+				day('2026-10-01', 9, 10),
+				day('2026-10-02', 10, 14),
+				day('2026-10-03', 8, 11),
+				day('2026-10-04', 10),
+			]
+			const [insight] = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 7, days))
+			expect(insight).toMatchObject({
+				kind: 'timeOfDay',
+				startHour: 9,
+				frequency: { daysInBand: 3, daysInRange: 7 },
+			})
+		})
+
+		it('counts a night once when the band wraps midnight', () => {
+			const days = [
+				// One night running 22:30 on the 1st to 00:30 on the 2nd: one night, not two. The 2nd also has
+				// an evening of its own (23).
+				day('2026-10-01', 22, 23),
+				day('2026-10-02', 0, 23),
+				// The 4th has only an after-midnight hour: the night of the 3rd.
+				day('2026-10-04', 1),
+			]
+			const [insight] = deriveHistoryInsights(null, timeOfDay(NIGHT_OWL, 5, 7, days))
+			expect(insight).toMatchObject({ startHour: 22, endHour: 2, frequency: { daysInBand: 3, daysInRange: 7 } })
+		})
+
+		it('never claims more days than the range has', () => {
+			// Every day's 00:30 reads as the night before, so the first one names the day before the range.
+			const days = ['01', '02', '03', '04'].map(d => day(`2026-10-${d}`, 0, 22))
+			const [insight] = deriveHistoryInsights(null, timeOfDay(NIGHT_OWL, 4, 4, days))
+			expect(insight).toMatchObject({ frequency: { daysInBand: 4, daysInRange: 4 } })
+		})
+
+		it('steps back across a month boundary', () => {
+			// 00:30 on 1 Oct is the night of 30 Sep, the same night as the 30th's 23:00.
+			const days = [day('2026-09-30', 23), day('2026-10-01', 0)]
+			const [insight] = deriveHistoryInsights(null, timeOfDay(NIGHT_OWL, 4, 7, days))
+			expect(insight).toMatchObject({ frequency: { daysInBand: 1 } })
+		})
+
+		it('falls back to the share alone when the API does not send days', () => {
+			const [insight] = deriveHistoryInsights(null, timeOfDay(CONCENTRATED_MORNING, 5, 7, null))
+			expect(insight).toMatchObject({ kind: 'timeOfDay', frequency: null })
+		})
+
+		it('reads days from the wire, and an absent field as not sent', () => {
+			const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, totalSeconds: 0, entries: 0 }))
+			const sent = HistoryTimeOfDayResponse.fromJson({
+				hours,
+				daysInRange: 7,
+				daysWithActivity: 1,
+				days: [{ date: '2026-10-01', hourMask: 512 }],
+			})
+			expect(sent.days).toEqual([new HistoryTimeOfDayDay('2026-10-01', 512)])
+			expect(HistoryTimeOfDayResponse.fromJson({ hours, daysInRange: 7, daysWithActivity: 1 }).days).toBeNull()
 		})
 	})
 

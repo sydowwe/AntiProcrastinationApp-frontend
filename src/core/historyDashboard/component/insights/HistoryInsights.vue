@@ -47,6 +47,12 @@
 						<template #share>
 							<strong>{{ line.params.share }}</strong>
 						</template>
+						<template #days>
+							<strong>{{ line.params.days }}</strong>
+						</template>
+						<template #range>
+							<strong>{{ line.params.range }}</strong>
+						</template>
 					</i18n-t>
 				</p>
 			</div>
@@ -130,16 +136,20 @@
 						mean: formatMean(insight.meanSeconds),
 					},
 				}
-			case 'timeOfDay':
+			case 'timeOfDay': {
+				const params: InsightLine['params'] = {
+					from: formatHour(insight.startHour),
+					to: formatHour(insight.endHour),
+					total: fromSeconds(insight.windowSeconds),
+					share: Math.round(insight.share * 100),
+				}
+				if (!insight.frequency) return { ...base, params }
 				return {
 					...base,
-					params: {
-						from: formatHour(insight.startHour),
-						to: formatHour(insight.endHour),
-						total: fromSeconds(insight.windowSeconds),
-						share: Math.round(insight.share * 100),
-					},
+					keypath: 'historyDashboard.insights.timeOfDayFrequency',
+					params: { ...params, days: insight.frequency.daysInBand, range: insight.frequency.daysInRange },
 				}
+			}
 			default:
 				return {
 					...base,
