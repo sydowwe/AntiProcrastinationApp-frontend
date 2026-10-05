@@ -904,7 +904,8 @@
   dispatched, which is what `usePolling` reads. On `/planovac/pozornost` (60 s): hidden 135 s → +0 `GET
   /scheduler-dashboard/health` (two polls would have fired); back to visible → +1 at once; 65 s later → +1. **Not
   covered:** the jobs list's 120 s poller (same composable, not run separately) and a real hidden tab, which needs a
-  headed browser. `reminders-admin/U1` stays open for that reason. No batch results.
+  headed browser. ~~`reminders-admin/U1` stays open for that reason.~~ It closed 2026-10-05 on the same simulated
+  basis: a headed `playwright-cli` tab never reports hidden either. No batch results.
 - **`U3`** ✅ (closed 2026-10-05) — the orphan surfaces, untestable because no job was orphaned. Settled by a fixture
   row, not a test-only handler: the API's e2e seed (`e2e-v5`) now upserts `E2e.OrphanedFixtureJob` (`Active`, handler
   `E2e.RemovedHandler`, `nextRunAt` null) and one succeeded run of it, by key, in the scheduler schema the reset
@@ -925,6 +926,21 @@
   headline is the server's count, not `items.length`, and `total` in the line is read from `count`. Mocked, so it
   proves the client logic only. It does not prove the server's count equals the history list's `needsAttention` total
   (the seed's one real failure was settled by the unit). `reminders-admin/U1` stays open. No batch results.
+- **`U1`** ✅ — the overview's 5-minute poll, its hidden-tab pause and the ticking freshness label. As `adminUser`
+  (form sign-in) on `/pripomienky/prehlad` against the live API. **Visible:** loaded 00:56:40 local, label read "Updated
+  just now" then "1/2/3 minutes ago" on each minute without a reload, and the poll's `GET /reminder-dashboard/overview`
+  reached the server at 01:01:40, load + 5:00 to the second (API log). Left visible for about an hour afterwards: about
+  12 polls, and the two that met an expired access token each went 401 → refresh → 200. **Hidden:** the same *simulated*
+  hidden tab as `scheduler/U2`. A real one is not reachable: in a headed `playwright-cli` session a background tab still
+  reports `visible` (tab 0 logged no `visibilitychange` with tab 1 in front), because of Playwright's focus emulation.
+  Hidden for 6 min 19 s with `performance.timeOrigin` unchanged (no reload): +0 requests, although a poll was due at
+  5:00. Back to visible: +1 at once, label "just now". **Not covered:** a real browser-hidden tab, and the poll
+  restarting after a return. That run was cut when a concurrent e2e run's `POST /api/test/seed` revoked the session,
+  as did two earlier attempts. Run this kind of check while no e2e suite is reseeding. **Server side:**
+  `GetReminderOverviewEndpoint` is 7 aggregate reads, admin-gated (a non-admin state got 403), with no cache to go
+  stale under a poll. The only unindexed predicate, `DispatchedAt >= now − 7 d`, scans a ledger that
+  `PurgeExpiredReminderLedgersJobHandler` bounds, and `ReminderOverviewFailuresTests` pass (3/3). No backend change is
+  needed. No batch results.
 
 ### `reminders-user` — closed 2026-10-05
 - **`U3`** ✅ — do instants follow the browser's timezone rather than the account's? Settled by source, **not a defect**.

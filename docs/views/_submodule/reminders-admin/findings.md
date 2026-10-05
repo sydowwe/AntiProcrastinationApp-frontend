@@ -3,7 +3,7 @@
 > Pass: inventory · captured 2026-10-01 · commit `4d890646` (framework `b1b82a1`)
 
 **Tally:** blocker 1 · bug 6 · a11y 4 · polish 8 · opportunity 1 · unverified 2  (22 entries)
-**Open after round 2 (2026-10-05):** 20 fixed (S5, S7, S18–S27, O1) · 1 verified (U2) · 1 unverified (U1)
+**Open after round 2 (2026-10-05):** 20 fixed (S5, S7, S18–S27, O1) · 2 verified (U1, U2) · nothing open
 
 Visual sweep: one screenshot read back per view. It found X1 (detail cards clipped) and B6 (history notice crushed),
 neither visible in the accessibility snapshot, and the empty last column (P6). The register, Upcoming and overview
@@ -431,7 +431,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 ## Unverified
 
 ### U1. [framework] Overview's 5-minute poll, its pause while hidden, and the ticking "Updated N minutes ago"
-- **Status:** open (queued under `_fix-queue.md` → *Needs verification*; needs the headed two-tab run, together with `scheduler/U2`)
+- **Status:** verified 2026-10-05 (as `adminUser`, live API; the hidden tab is *simulated*, because Playwright keeps a background tab `visible` even headed. Visible from 22:56:40Z: label "just now" → "1/2/3 minutes ago" on the minute, the poll's `GET …/overview` at 01:01:40 local = load + 5:00; left open ~1 h, ~12 polls, two expired-token 401s each recovered by refresh. Hidden 6 min 19 s, no reload: +0 (a poll was due at 5:00). Back to visible: +1 at once, label "just now". **Not covered:** a real browser-hidden tab, and the poll restarting after a return (that run was cut by a concurrent e2e reseed revoking the session). Server: `GetReminderOverviewEndpoint` is 7 aggregate reads with no cache layer; the one unindexed predicate, `DispatchedAt >= now − 7 d`, runs over a ledger `PurgeExpiredReminderLedgersJobHandler` bounds, so a 5-min poll per open admin tab needs no backend change)
 - **Severity:** unverified
 - **Where:** `/pripomienky/prehlad` · `ReminderOverviewView.vue:321-371` (poll, visibility handling),
   `:298-307` (freshness label)

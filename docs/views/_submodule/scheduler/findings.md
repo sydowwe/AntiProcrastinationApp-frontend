@@ -325,7 +325,7 @@ the data a real registry produces (B6, P4).
   the grid row, watch *Last run* for 30 s.
 
 ### U2. The two pollers' hidden-tab pause was not observed
-- **Status:** settled 2026-10-05 for the needs-attention poller, with a simulated hidden tab. Headless Chrome never reports hidden, so `document.visibilityState` was overridden and `visibilitychange` dispatched, which is exactly what `usePolling` reads. On `/planovac/pozornost` (60 s cadence): hidden for 135 s gave +0 `GET /scheduler-dashboard/health` (two polls would have fired); returning visible gave +1 at once; 65 s later +1 more. **Not covered:** the jobs list's 120 s poller (same `usePolling`, not run separately), and a real hidden tab, which only a headed browser shows. `reminders-admin/U1` is still open for the same reason.
+- **Status:** settled 2026-10-05 for the needs-attention poller, with a simulated hidden tab. Headless Chrome never reports hidden, so `document.visibilityState` was overridden and `visibilitychange` dispatched, which is exactly what `usePolling` reads. On `/planovac/pozornost` (60 s cadence): hidden for 135 s gave +0 `GET /scheduler-dashboard/health` (two polls would have fired); returning visible gave +1 at once; 65 s later +1 more. **Not covered:** the jobs list's 120 s poller (same `usePolling`, not run separately), and a real hidden tab, which only a headed browser shows. `reminders-admin/U1` closed 2026-10-05 on the same simulated basis (a headed `playwright-cli` tab never reports hidden either).
 - **Severity:** unverified
 - **Where:** `usePolling` in `SchedulerNeedsAttentionView.vue` (60 s) and `SchedulerJobsView.vue` (120 s)
 - **Claim:** S5: requests stop while the tab is hidden and one fires on return.

@@ -218,12 +218,7 @@ can go.
 
 <!-- `notifications` U1, U2 verified 2026-10-04 — moved to _fix-queue-log.md → Closed verification items. -->
 
-### `reminders-admin`
-- **`U1`**: the overview's 5-minute poll, its pause while the tab is hidden, and the "Updated N minutes ago" tick.
-  Only the focus path was observed (throttled within 30 s, fires after 32 s). Settled by the same headed two-tab run as
-  a real headed hidden tab: 6 min visible (+1 `GET …/overview`, label "5 minutes ago"), 6 min hidden (+0), return (+1).
-  `scheduler/U2` was settled with a simulated hidden tab (same `usePolling`), so this one still needs the real run.
-<!-- `reminders-admin` U2 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
+<!-- `reminders-admin` U1, U2 verified 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 
 <!-- `reminders-user` U3 settled 2026-10-05 — moved to _fix-queue-log.md → Closed verification items. -->
 
