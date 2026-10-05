@@ -1,7 +1,7 @@
 <template>
 	<VChip
 		v-if="coveredBy"
-		:to="{ name: settingsRouteName, params: { tableView: 'mappings' }, query: { mappingId: coveredBy.mappingId } }"
+		:to="{ name: settingsRouteName, params: { tableView: 'mappings' }, query: ruleQuery }"
 		:color="chipColor"
 		:prependIcon="chipIcon"
 		size="small"
@@ -42,6 +42,21 @@
 			? t('activityTracking.settings.coverage.ignored')
 			: (coveredBy?.targetName ?? t('activityTracking.settings.coverage.rule')),
 	)
+	/**
+	 * The Mappings tab lists one *Type* at a time and opens on Activity, so the link names the type that
+	 * lists this rule — without it an ignored or role/category rule was not on the page the chip opened.
+	 * A role/category target does not say which of the two it is, hence `All`. Both platforms' type enums
+	 * spell these values alike; Activity is the default and stays out of the URL.
+	 */
+	const TYPE_BY_TARGET: Record<MappingCoverageTarget, string | undefined> = {
+		[MappingCoverageTarget.Activity]: undefined,
+		[MappingCoverageTarget.Ignored]: 'Ignored',
+		[MappingCoverageTarget.RoleOrCategory]: 'All',
+	}
+	const ruleQuery = computed(() => {
+		const type = coveredBy ? TYPE_BY_TARGET[coveredBy.target] : undefined
+		return { mappingId: coveredBy?.mappingId, ...(type ? { type } : {}) }
+	})
 	const chipColor = computed(() => (isIgnored.value ? 'textMuted' : 'secondaryOutline'))
 	const chipIcon = computed(() => (isIgnored.value ? 'eye-slash' : 'link'))
 </script>

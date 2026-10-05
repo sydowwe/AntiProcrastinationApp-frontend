@@ -171,6 +171,18 @@ const messages = {
 		toActivity: `To activity`,
 		toIgnored: `To ignored`,
 		mappingTarget: `Map to`,
+		/** OP22 — a rule aimed at a role or category, which this form shows and keeps but cannot create. */
+		roleTarget: `Role: {name}`,
+		categoryTarget: `Category: {name}`,
+		keepTargetHint: `This rule maps to a role or category. Saving keeps that target unless you pick another.`,
+		/** The Mappings tab's *Type* filter. `Role` / `Category` are OP22's: without them such a rule never lists. */
+		mappingType: {
+			All: `All`,
+			Ignored: `Ignored`,
+			Activity: `Activity`,
+			Role: `Role`,
+			Category: `Category`,
+		},
 		section: `Settings section`,
 		hintText: `Use the filter fields to define a matching pattern, then choose an activity or mark as ignored and click {save}. The filter becomes the rule — future entries matching it will be mapped automatically. To edit an existing rule, open the {mappingsTab} tab and click edit.`,
 		failedToSaveMapping: `Failed to save mapping`,

@@ -1,7 +1,8 @@
 import type { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 import { ActivityFilterFormResponse } from '@/core/activity/dto/response/ActivityFilterFormResponse.ts'
+import type { RoleCategoryTarget } from '@/core/activityTracking/dto/RoleCategoryTarget.ts'
 
-export class TrackerDesktopMappingResponse {
+export class TrackerDesktopMappingResponse implements RoleCategoryTarget {
 	constructor(
 		public id: number,
 		public processName: string | null,
@@ -17,6 +18,9 @@ export class TrackerDesktopMappingResponse {
 		 *  toggle re-sends the row as a full replace — dropped here, the PUT would clear the target (O1). */
 		public roleId: number | null,
 		public categoryId: number | null,
+		/** The target's names, for the Mappings tab's target column (OP22). */
+		public roleName: string | null,
+		public categoryName: string | null,
 	) {}
 
 	/** What the delete confirmation names (B7) — the form guarantees at least one of the three. */
@@ -39,6 +43,8 @@ export class TrackerDesktopMappingResponse {
 			json.activity ? ActivityFilterFormResponse.fromJson(json.activity) : null,
 			json.roleId ?? null,
 			json.categoryId ?? null,
+			json.roleName ?? null,
+			json.categoryName ?? null,
 		)
 	}
 }

@@ -36,6 +36,10 @@
 					@update:modelValue="onActiveChange(item, $event === true)"
 				/>
 			</template>
+			<!-- A role/category rule has no activity; its target used to render blank here (OP22). -->
+			<template #item.activity.text="{ item }">
+				{{ item.activity?.text ?? roleCategoryTargetLabel(item) }}
+			</template>
 		</BasicTable>
 	</div>
 </template>
@@ -53,6 +57,7 @@
 		applyMappingsControlsParams,
 		mappingsControlsToParams,
 	} from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
+	import { useRoleCategoryTarget } from '@/core/activityTracking/composable/useRoleCategoryTarget.ts'
 	import { useTrackerAndroidMappingCrud } from '@/core/activityTracking/api/androidActivityTrackingApi.ts'
 	import { TrackerAndroidMappingRequest } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingRequest.ts'
 	import type { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
@@ -75,6 +80,7 @@
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
+	const { roleCategoryTargetLabel } = useRoleCategoryTarget()
 	const {
 		fetchFilteredTable: fetchFilteredTableMappings,
 		update,
@@ -88,7 +94,7 @@
 		new TableColumn('appLabelMatchType', t('activityTracking.settings.matchType')),
 		new TableColumn('packageName', t('activityTracking.settings.packageName')),
 		new TableColumn('packageNameMatchType', t('activityTracking.settings.matchType')),
-		new TableColumn('activity.text', t('activities.activity')),
+		new TableColumn('activity.text', t('activityTracking.settings.mappingTarget')),
 		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
 	]
 

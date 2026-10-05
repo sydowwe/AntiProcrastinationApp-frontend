@@ -3,8 +3,16 @@ import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 import { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
+import type { ActivityFilterFormResponse } from '@/core/activity/dto/response/ActivityFilterFormResponse.ts'
+import { hasRoleCategoryTarget, type RoleCategoryTarget } from '@/core/activityTracking/dto/RoleCategoryTarget.ts'
 
-export type MappingMode = 'toActivity' | 'toIgnored'
+/** `keepTarget` exists only while a role/category rule is loaded for edit — the form cannot create one (OP22). */
+export type MappingMode = 'toActivity' | 'toIgnored' | 'keepTarget'
+
+/** What `loadTarget()` reads off a Mappings row; both sources' responses carry it. */
+interface MappingRowTarget extends RoleCategoryTarget {
+	activity: ActivityFilterFormResponse | null
+}
 
 interface MappingRequestBase<TFilter> {
 	isActive: boolean
@@ -41,21 +49,53 @@ export function useMappingSettings<TFilter extends object, TRequest extends Mapp
 	const request = ref(config.requestFactory()) as Ref<TRequest>
 	/** Shown on the filter bar's pattern fields; the activity field marks itself through its own rule. */
 	const patternError = ref<string | null>(null)
+	/** The role/category target of the rule being edited, offered as *Keep* beside the two modes (OP22). */
+	const keptTarget = ref<RoleCategoryTarget | null>(null)
 
 	watch(filter, () => (patternError.value = null), { deep: true })
+
+	/**
+	 * Loads a Mappings row's target into the form. A role/category rule used to fall through to *To
+	 * ignored*, so saving an edited pattern silently turned it into an ignore rule (OP22). It now opens on
+	 * *Keep*, and becomes an activity or ignore rule only when the user picks that mode.
+	 */
+	function loadTarget(row: MappingRowTarget) {
+		keptTarget.value = null
+		if (row.activity) {
+			formData.value.activityId = row.activity.id
+			formData.value.roleId = row.activity.roleId
+			formData.value.categoryId = row.activity.categoryId
+			mode.value = 'toActivity'
+		} else if (hasRoleCategoryTarget(row)) {
+			keptTarget.value = {
+				roleId: row.roleId,
+				categoryId: row.categoryId,
+				roleName: row.roleName,
+				categoryName: row.categoryName,
+			}
+			mode.value = 'keepTarget'
+		} else {
+			mode.value = 'toIgnored'
+		}
+	}
 
 	/**
 	 * Resolves `true` once the rule is stored. The server takes exactly one target (F72): *To ignored* is
 	 * `isIgnored = true` and no ids, *To activity* is the activity alone — the role and category in
 	 * `formData` only narrow the picker, and sending them beside the activity is two targets. This form
-	 * therefore never writes the server's role/category target; it always needs an activity.
+	 * never creates the server's role/category target; *Keep* only re-sends the one an edited rule had.
 	 */
 	async function saved(): Promise<boolean> {
 		const req = request.value
 		req.updatePattern(filter.value)
 		req.roleId = null
 		req.categoryId = null
-		if (mode.value === 'toIgnored') {
+		if (mode.value === 'keepTarget' && keptTarget.value) {
+			req.isIgnored = null
+			req.activityId = null
+			req.roleId = keptTarget.value.roleId
+			req.categoryId = keptTarget.value.categoryId
+		} else if (mode.value === 'toIgnored') {
 			req.isIgnored = true
 			req.activityId = null
 		} else {
@@ -84,10 +124,18 @@ export function useMappingSettings<TFilter extends object, TRequest extends Mapp
 		// reset its `isActive` to the default.
 		editedId.value = null
 		request.value = config.requestFactory()
+		resetKeptTarget()
 		return true
 	}
 
+	/** *Keep* belongs to the rule being edited; once the edit is over, the form is back to its two modes. */
+	function resetKeptTarget() {
+		keptTarget.value = null
+		if (mode.value === 'keepTarget') mode.value = 'toActivity'
+	}
+
 	function clear() {
+		resetKeptTarget()
 		editedId.value = null
 		filter.value = config.filterFactory()
 		mode.value = 'toActivity'
@@ -96,5 +144,5 @@ export function useMappingSettings<TFilter extends object, TRequest extends Mapp
 		patternError.value = null
 	}
 
-	return { filter, formData, mode, editedId, request, patternError, saved, clear }
+	return { filter, formData, mode, editedId, request, patternError, keptTarget, loadTarget, saved, clear }
 }

@@ -8,7 +8,7 @@
 		<VSelect
 			v-model="mappingFilter.type"
 			:label="$t('activityTracking.settings.type')"
-			:items="TrackerAndroidMappingTypeOptions"
+			:items="typeOptions"
 			density="compact"
 			hideDetails
 			maxWidth="150"
@@ -34,9 +34,11 @@
 	import NullFalseTrueCheckbox from '@/_common/component/inputs/NullFalseTrueCheckbox.vue'
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import type { TrackerAndroidMappingsFilter } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingsFilter.ts'
-	import { TrackerAndroidMappingTypeOptions } from '@/core/activityTracking/dto/enum/TrackerAndroidMappingTypeEnum.ts'
+	import { TrackerAndroidMappingTypeEnum } from '@/core/activityTracking/dto/enum/TrackerAndroidMappingTypeEnum.ts'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
+	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 
 	const mappingFilter = defineModel<TrackerAndroidMappingsFilter>({ required: true })
 	const formData = defineModel<ActivityFormRequest>('formData', { required: true })
+	const typeOptions = getEnumSelectOptions(TrackerAndroidMappingTypeEnum, 'activityTracking.settings.mappingType')
 </script>

@@ -19,4 +19,9 @@ export class TrackerDesktopMappingsFilter extends DesktopDistinctEntriesFilterRe
 	) {
 		super(processName, processNameMatchType, productName, productNameMatchType, windowTitle, windowTitleMatchType)
 	}
+
+	/** `All` has no server member; a `null` type is the server's "no target shape asked for". */
+	toJSON() {
+		return { ...this, type: this.type === TrackerDesktopMappingTypeEnum.All ? null : this.type }
+	}
 }

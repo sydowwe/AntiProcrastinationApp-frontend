@@ -14,6 +14,12 @@
 				layout="row"
 			/>
 		</div>
+		<p
+			v-else-if="mode === 'keepTarget'"
+			class="flex-fill text-body-2 text-medium-emphasis mb-0"
+		>
+			{{ $t('activityTracking.settings.keepTargetHint') }}
+		</p>
 		<VBtn
 			color="error"
 			prependIcon="broom"
@@ -44,6 +50,13 @@
 			>
 				{{ $t('activityTracking.settings.toIgnored') }}
 			</VBtn>
+			<VBtn
+				v-if="keptTargetLabel"
+				value="keepTarget"
+				height="40"
+			>
+				{{ keptTargetLabel }}
+			</VBtn>
 		</MyBtnToggle>
 		<VBtn
 			color="secondary"
@@ -56,16 +69,24 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { VForm } from 'vuetify/components'
 	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
+	import type { MappingMode } from '@/core/activityTracking/composable/useMappingSettings.ts'
+	import { useRoleCategoryTarget } from '@/core/activityTracking/composable/useRoleCategoryTarget.ts'
+	import type { RoleCategoryTarget } from '@/core/activityTracking/dto/RoleCategoryTarget.ts'
 
+	const { keptTarget = null } = defineProps<{ keptTarget?: RoleCategoryTarget | null }>()
 	const emit = defineEmits<{ clear: []; save: [] }>()
-	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
+	const mode = defineModel<MappingMode>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const form = ref<InstanceType<typeof VForm>>()
+
+	const { roleCategoryTargetLabel } = useRoleCategoryTarget()
+	/** The third button exists only while a role/category rule is being edited (OP22). */
+	const keptTargetLabel = computed(() => (keptTarget ? roleCategoryTargetLabel(keptTarget) : null))
 
 	/** Marks a missing activity; whether to send at all is `useMappingSettings.saved()`'s call (F72). */
 	async function onSave() {

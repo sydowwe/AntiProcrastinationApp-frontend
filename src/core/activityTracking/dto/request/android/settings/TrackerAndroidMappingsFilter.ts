@@ -15,4 +15,9 @@ export class TrackerAndroidMappingsFilter extends AndroidDistinctEntriesFilterRe
 	) {
 		super(appLabel, appLabelMatchType, packageName, packageNameMatchType)
 	}
+
+	/** `All` has no server member; a `null` type is the server's "no target shape asked for". */
+	toJSON() {
+		return { ...this, type: this.type === TrackerAndroidMappingTypeEnum.All ? null : this.type }
+	}
 }

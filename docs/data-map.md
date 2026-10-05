@@ -106,9 +106,9 @@ of its fields is `spent` on the planner's own screens, so it is not in the 121. 
   (derived), 4 fields.~~ Spent by OP20 (`docs/opportunities.md` § *Closed*): a split caption under each window title.
 - ~~`UnifiedSummaryItem.sources`, `UnifiedWindowItem.sources` · unread (derived), 2 fields.~~ Spent by OP20: source
   icons on the unified cards and a *Recorded by* row in the bar tooltip.
-- `TrackerDesktopMapping.roleId` / `.categoryId` and the Android twins · unread, 2 fields. This client never writes a
-  role/category target, but a rule that has one renders with a blank target, and `edit()` reopens it in *To ignored*
-  mode (`DesktopSettingsView.vue:160-167`).
+- ~~`TrackerDesktopMapping.roleId` / `.categoryId` and the Android twins · unread, 2 fields.~~ Spent by OP22
+  (`docs/opportunities.md` § *Closed*): the Mappings tab's *Map to* column names the target, and `edit()` reopens such
+  a rule on a *Keep* button that re-sends it, instead of on *To ignored*.
 
 ### activityHistory and historyDashboard
 

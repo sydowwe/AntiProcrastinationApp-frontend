@@ -53,6 +53,7 @@
 					v-model:mode="mode"
 					v-model:formData="formData"
 					:filter="filter"
+					:keptTarget
 					@clear="clearKeepingCoverage"
 					@save="saveAndReload"
 				/>
@@ -86,12 +87,13 @@
 	import { useDistinctEntriesUrlState } from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 
 	const { create, update } = useTrackerAndroidMappingCrud()
-	const { filter, formData, mode, editedId, request, patternError, saved, clear } = useMappingSettings({
-		filterFactory: () => new AndroidDistinctEntriesFilterRequest(),
-		requestFactory: () => new TrackerAndroidMappingRequest(),
-		create,
-		update,
-	})
+	const { filter, formData, mode, editedId, request, patternError, keptTarget, loadTarget, saved, clear } =
+		useMappingSettings({
+			filterFactory: () => new AndroidDistinctEntriesFilterRequest(),
+			requestFactory: () => new TrackerAndroidMappingRequest(),
+			create,
+			update,
+		})
 
 	const route = useRoute()
 	const tableView = computed<'distinctEntries' | 'mappings'>(() =>
@@ -153,14 +155,7 @@
 		filter.value.appLabelMatchType = item.appLabelMatchType ?? filter.value.appLabelMatchType
 		filter.value.packageName = item.packageName ?? undefined
 		filter.value.packageNameMatchType = item.packageNameMatchType ?? filter.value.packageNameMatchType
-		if (item.activity) {
-			formData.value.activityId = item.activity.id
-			formData.value.roleId = item.activity.roleId
-			formData.value.categoryId = item.activity.categoryId
-			mode.value = 'toActivity'
-		} else {
-			mode.value = 'toIgnored'
-		}
+		loadTarget(item)
 		router.push(distinctEntriesRoute.value)
 	}
 

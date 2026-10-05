@@ -1,14 +1,10 @@
-import { ValueTitleDto } from '@/_common/dto/dto/ValueTitleDto.ts'
-
 export enum TrackerDesktopMappingTypeEnum {
+	/** Client-only: sent as `null`, which the server reads as every rule (`TrackerDesktopMappingsFilter.toJSON`). */
+	All = 'All',
 	Ignored = 'Ignored',
 	Activity = 'Activity',
-	// Category= 'Category',
-	// Role= 'Role',
+	/** OP22 — rules with a role / a category target. The server's `CategoryAndRole` is a subset of both. */
+	Role = 'Role',
+	Category = 'Category',
 	// CategoryAndRole= 'CategoryAndRole'
 }
-
-export const TrackerDesktopMappingTypeOptions = [
-	new ValueTitleDto(TrackerDesktopMappingTypeEnum.Ignored, TrackerDesktopMappingTypeEnum.Ignored),
-	new ValueTitleDto(TrackerDesktopMappingTypeEnum.Activity, TrackerDesktopMappingTypeEnum.Activity),
-]

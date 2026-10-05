@@ -3,6 +3,7 @@
 		<DesktopDistinctEntriesActions
 			v-model:mode="mode"
 			v-model:formData="formData"
+			:keptTarget
 			@clear="emit('clear')"
 			@save="emit('save')"
 		/>
@@ -43,10 +44,16 @@
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import DesktopDistinctEntriesActions from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesActions.vue'
 	import MappingCoverageChip from '@/core/activityTracking/component/settings/MappingCoverageChip.vue'
+	import type { MappingMode } from '@/core/activityTracking/composable/useMappingSettings.ts'
+	import type { RoleCategoryTarget } from '@/core/activityTracking/dto/RoleCategoryTarget.ts'
 
-	const props = defineProps<{ filter: DesktopDistinctEntriesFilterRequest }>()
+	const props = defineProps<{
+		filter: DesktopDistinctEntriesFilterRequest
+		/** The edited rule's role/category target, offered as *Keep* (OP22). */
+		keptTarget?: RoleCategoryTarget | null
+	}>()
 	const emit = defineEmits<{ clear: []; save: [] }>()
-	const mode = defineModel<'toActivity' | 'toIgnored'>('mode')
+	const mode = defineModel<MappingMode>('mode')
 	const formData = defineModel<ActivityFormRequest>('formData')
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()

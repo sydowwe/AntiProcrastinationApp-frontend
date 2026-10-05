@@ -18,16 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP22. Mapping rules aimed at a role or category show their target
-- **Source:** from data-map (backlog `TrackerDesktopMapping.roleId/categoryId` and the Android twins)
-- **Data it spends:** `roleId`, `categoryId` on both mapping responses
-- **Where it would surface:** the Mappings tab's target column, and `edit()` in `DesktopSettingsView` /
-  `AndroidSettingsView`
-- **Needs backend:** no
-- **Size:** S
-- **Value:** This client never creates such a rule. But one that exists renders blank and reopens as "ignored", so a
-  save could silently turn it into an ignore rule. Worth it only if such rows exist in real data.
-
 ### OP23. "Experienced" opens the exact memory
 - **Source:** from data-map (backlog `memoryAnchorId` on the backlog and bucket-list profiles; the leftover of
   leisure-backlog-picker O2, closed)
@@ -39,6 +29,47 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP22**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** the responses carried `roleId` /
+  `categoryId` but no names, and the client has no sanctioned way to look roles and categories up from
+  `activityTracking` (the `activity` module's options live in its store). Both mapping projections
+  (`TrackerDesktopMappingResponse`, `TrackerAndroidMappingResponse`) now also send `RoleName` / `CategoryName`. This is a
+  response field only, with no migration, but the running API needs a restart to pick it up.
+  `MappingGrids_NameTheRoleAndCategoryTarget` pins a role+category desktop rule and a category-only Android rule.
+  55/55 pass across the mapping-ownership, tracking route-smoke and sort-key classes.
+  On both Mappings tabs, the *Activity* column is now *Map to*: an activity rule shows the activity as before, and a
+  role/category rule reads "Role: Work · Category: Deep work". An API without the names prints `#id`, so the cell is
+  never blank. `edit()` no longer drops such a rule into *To ignored*: `useMappingSettings.loadTarget()` (now shared
+  by both views) opens it on a third toggle button labelled with the target, plus a one-line hint, and *Save* re-sends
+  `roleId` / `categoryId`. Picking *To activity* or *To ignored* still converts it, deliberately. The button exists
+  only while such a rule is being edited, and *Clear* or a successful save removes it. The form still cannot create
+  a role/category rule.
+  **Found against the real API: such a rule could not be listed at all.** The Mappings tab's *Type* filter defaults
+  to *Activity* and offered only *Activity* / *Ignored*, so the server never returned one. The route-patched first
+  check missed this, because the patch added rows after the server's filter. Both type enums now carry `Role` and
+  `Category` (the server already had both, and `type=Role` round-trips through the URL). The options are localized
+  through `getEnumSelectOptions` (`activityTracking.settings.mappingType.*`). They used to print the raw enum value,
+  in English, on the SK locale too. **Fixed on the way:** a distinct-entries *Rule* chip linked to `?mappingId=`
+  alone, so the Mappings tab opened on *Activity*, and an **ignored** rule (the common case, not only OP22's) was not
+  on the page its chip opened. `MappingCoverageChip` now adds `type=Ignored` for an ignored rule and `type=All` for a
+  role/category one (the coverage target does not say which of the two). *All* is a client-only type value: the
+  filter's `toJSON()` sends it as `null`, which the server reads as every rule. An Activity chip's link is unchanged.
+  **Not checked:** whether such rules exist in real data. The dev database has no mapping rows at all, and prod was
+  not queried. The fix is cheap either way, because the failure it removes (a pattern edit silently turning a rule
+  into an ignore rule) is silent.
+  `e2e/tests/mapping-role-category-target.spec.ts` (2 tests, against the restarted API; it creates its rules through
+  the API under its own pattern and deletes them) covers both repos' halves. On desktop, a role+category rule lists
+  under *Type: Role* as "Role: … · Category: …", *Edit* opens on the pressed target button with the hint, and *Save*
+  PUTs `roleId` / `categoryId` with no activity or ignore flag, which the server keeps. On Android, a category-only
+  rule lists under *Type: Category*, and *To ignored* converts it to `isIgnored: true` with every id and name
+  `null`. Two more cases cover the chip: an ignore rule and a category rule, each aimed at an uncovered seeded
+  entry (the fixture's own ignore rule matches no recorded entry, so it has no chip), open the Mappings tab on
+  `type=Ignored` / `type=All` with the rule listed. All 4 passed on 2026-10-05 (17.8 s), and
+  `tracking-settings.draft` (whose Activity-chip case pins the unchanged link) passed beside them (15 passed,
+  5 skipped). The first pair also passed beside `tracking-settings.draft` and `account-isolation` (17 passed,
+  5 skipped). The one failure in that run, *the dismissible hint stays dismissed*, is order coupling
+  that predates OP22: `account-isolation` dismisses the same account's hint first, and the auth write-back carries
+  it over. It passes alone.
 
 - **OP21**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** neither field it named can count
   days. `HistoryTimeOfDayHour.entries` counts *records* per hour, summed over the range, so two records on one

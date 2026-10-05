@@ -174,6 +174,18 @@ const messages = {
 		toActivity: `Na aktivitu`,
 		toIgnored: `Na ignorované`,
 		mappingTarget: `Priradiť k`,
+		/** OP22 — pravidlo mierené na rolu alebo kategóriu, ktoré formulár zobrazí a zachová, no nevytvorí. */
+		roleTarget: `Rola: {name}`,
+		categoryTarget: `Kategória: {name}`,
+		keepTargetHint: `Toto pravidlo priraďuje k role alebo kategórii. Uložením sa tento cieľ zachová, ak nevyberiete iný.`,
+		/** Filter *Typ* na záložke Mapovania. `Role` / `Category` pribudli s OP22 — bez nich sa také pravidlo nezobrazí. */
+		mappingType: {
+			All: `Všetky`,
+			Ignored: `Ignorované`,
+			Activity: `Aktivita`,
+			Role: `Rola`,
+			Category: `Kategória`,
+		},
 		section: `Sekcia nastavení`,
 		hintText: `Pomocou polí filtra definujte vzor zhody, potom vyberte aktivitu alebo označte ako ignorované a kliknite na {save}. Filter sa stane pravidlom – budúce záznamy, ktoré mu zodpovedajú, budú namapované automaticky. Ak chcete upraviť existujúce pravidlo, otvorte záložku {mappingsTab} a kliknite na upraviť.`,
 		failedToSaveMapping: `Uloženie mapovania zlyhalo`,

@@ -53,6 +53,7 @@
 					v-model:mode="mode"
 					v-model:formData="formData"
 					:filter="filter"
+					:keptTarget
 					@clear="clearKeepingCoverage"
 					@save="saveAndReload"
 				/>
@@ -87,12 +88,13 @@
 	import { useDistinctEntriesUrlState } from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 
 	const { create, update } = useTrackerDesktopMappingCrud()
-	const { filter, formData, mode, editedId, request, patternError, saved, clear } = useMappingSettings({
-		filterFactory: () => new DesktopDistinctEntriesFilterRequest(),
-		requestFactory: () => new TrackerDesktopMappingRequest(),
-		create,
-		update,
-	})
+	const { filter, formData, mode, editedId, request, patternError, keptTarget, loadTarget, saved, clear } =
+		useMappingSettings({
+			filterFactory: () => new DesktopDistinctEntriesFilterRequest(),
+			requestFactory: () => new TrackerDesktopMappingRequest(),
+			create,
+			update,
+		})
 
 	const route = useRoute()
 	const tableView = computed<'distinctEntries' | 'mappings'>(() =>
@@ -157,14 +159,7 @@
 		filter.value.productNameMatchType = item.productNameMatchType ?? PatternMatchType.Contains
 		filter.value.windowTitle = item.windowTitle ?? undefined
 		filter.value.windowTitleMatchType = item.windowTitleMatchType ?? PatternMatchType.Contains
-		if (item.activity) {
-			formData.value.activityId = item.activity.id
-			formData.value.roleId = item.activity.roleId
-			formData.value.categoryId = item.activity.categoryId
-			mode.value = 'toActivity'
-		} else {
-			mode.value = 'toIgnored'
-		}
+		loadTarget(item)
 		router.push(distinctEntriesRoute.value)
 	}
 

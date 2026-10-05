@@ -36,6 +36,10 @@
 					@update:modelValue="onActiveChange(item, $event === true)"
 				/>
 			</template>
+			<!-- A role/category rule has no activity; its target used to render blank here (OP22). -->
+			<template #item.activity.text="{ item }">
+				{{ item.activity?.text ?? roleCategoryTargetLabel(item) }}
+			</template>
 		</BasicTable>
 	</div>
 </template>
@@ -53,6 +57,7 @@
 		applyMappingsControlsParams,
 		mappingsControlsToParams,
 	} from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
+	import { useRoleCategoryTarget } from '@/core/activityTracking/composable/useRoleCategoryTarget.ts'
 	import { useTrackerDesktopMappingCrud } from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
 	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import type { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
@@ -75,6 +80,7 @@
 
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
+	const { roleCategoryTargetLabel } = useRoleCategoryTarget()
 	const {
 		fetchFilteredTable: fetchFilteredTableMappings,
 		update,
@@ -90,7 +96,7 @@
 		new TableColumn('productNameMatchType', t('activityTracking.settings.matchType')),
 		new TableColumn('windowTitle', t('activityTracking.settings.windowTitle')),
 		new TableColumn('windowTitleMatchType', t('activityTracking.settings.matchType')),
-		new TableColumn('activity.text', t('activities.activity')),
+		new TableColumn('activity.text', t('activityTracking.settings.mappingTarget')),
 		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
 	]
 
