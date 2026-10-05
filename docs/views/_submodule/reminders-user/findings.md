@@ -6,9 +6,10 @@
 P1–P7, O1, U2–U3. U1 became B6. U2 is `stale`, settled in round 2, and stays listed so the ids do not move.) The
 current state is in the status line below.
 
-**Status (2026-10-05):** 16 fixed or fixed-in-part (X1, B1, B2, B3, B4, B5, A1, A2, A3, A4, P1, P2, P4, P5, P6, P7; A2's
-*Snooze* half and P2's badge half are won't-fix by owner decision) · 2 escalated to the backend (B6 → §S7, P3 → §S2) ·
-O1 deferred behind §S7 · U2 stale · U3 settled as not a defect. Fix batches are in
+**Status (2026-10-05):** 18 fixed or fixed-in-part (X1, B1, B2, B3, B4, B5, B6, A1, A2, A3, A4, P1, P2, P3, P4, P5, P6,
+P7; A2's *Snooze* half and P2's badge half are won't-fix by owner decision, and P3 took the interim instead of waiting
+on §S2) · O1 built (the chip; its filter and *Undo* are not) · U2 stale · U3 settled as not a defect. B6 and O1 still need a live
+check once the API is restarted. Fix batches are in
 `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the pass wrote to the database for real. Through the real API: one snooze marker (23202, the
@@ -36,7 +37,7 @@ into that batch rather than open a new one.
 | claim (source) | observed |
 | --- | --- |
 | Dismiss copy states it cannot be undone (R10 §1) | holds — "This cannot be undone from here." |
-| Dialog closes before the row drops; pager refetches instead of lying (R10 §2–3) | holds mechanically (round 2, success mocked: dialog closes, row drops, `reload()` fires once). But the refetch returns the row again (**B6**, still open, §S7). The action now reaches the server (**X1**, fixed 2026-10-04) |
+| Dialog closes before the row drops; pager refetches instead of lying (R10 §2–3) | holds mechanically (round 2, success mocked: dialog closes, row drops, `reload()` fires once). But the refetch returned the row again (**B6**). Since §S7 (2026-10-05) the row is kept and marked instead, and the refetch agrees. The action now reaches the server (**X1**, fixed 2026-10-04) |
 | Snooze / dismiss reach the server and are recorded (R10, the whole feature) | **failed in round 2**: wrong JSON keys, 404 every time (**X1**). Fixed 2026-10-04 (S28): both now return 204 |
 | Presets show their resolved instant; *tomorrow* and *next week* both anchor to 09:00 (R10 §4) | holds — see snooze dialog in inventory. Round 2 found them relative to *now*, not to the occurrence (**B2**); fixed 2026-10-04 (S28), they now count from the occurrence |
 | One reset path in the snooze dialog; stale presets explained (R10 §5–6) | holds in source (`SnoozeDialog.vue` open-time watch only; warning alert covers the stale case); staleness not waited out |
@@ -126,7 +127,7 @@ into that batch rather than open a new one.
   that: render it as the row's primary text and in both `a11y.*For` labels instead of `kind`.
 
 ### B2. Snooze presets are relative to *now*, so the default moves a future occurrence *earlier*
-- **Status:** fixed 2026-10-04 (S28, framework `4e385e5`; client half. Presets now count from the occurrence and the custom picker is floored at it; verified live: 17:30 same day, 07.10 9:00, 13.10 16:30 for a 06.10 16:30 row. Whether the *server* should refuse an earlier `snoozeUntil` is §S7(c), still open)
+- **Status:** fixed 2026-10-04 (S28, framework `4e385e5`; client half. Presets now count from the occurrence and the custom picker is floored at it; verified live: 17:30 same day, 07.10 9:00, 13.10 16:30 for a 06.10 16:30 row. Server half closed 2026-10-05 with §S7 (c): a `snoozeUntil` at or before the occurrence is now a 400, so the client's floor is the contract)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → row *Snooze* → *Snooze reminder* dialog; `SnoozeDialog.vue:96` (default
   `in1Hour`), `:104-121` (presets); server `SnoozeReminderOccurrenceEndpoint.cs:50` (only checks
@@ -225,7 +226,7 @@ into that batch rather than open a new one.
   alert with retry = `reload()`, and skip the announcer while `error` is set.
 
 ### B6. A snoozed or dismissed occurrence stays in the list unchanged, and can be dismissed again (was U1)
-- **Status:** escalated — backend ask §S7 in `_fix-queue.md` (`my-upcoming` must project the caller's effective action, and a repeat dismiss needs a defined outcome; the client half replaces `dropActiveRow()` + `reload()` with O1's chip once it lands. Confirmed unchanged after S28 made the actions reach the server: the snoozed row comes back on the reload)
+- **Status:** fixed 2026-10-05 (§S7, closed in `_fix-queue-log.md` → *Closed escalations*). Server: `my-upcoming` carries `myAction` (`Snoozed` / `Dismissed` / null) and `snoozeUntil` for the caller's effective action on the pending occurrence. A repeat dismiss is a 204 that writes nothing, and a `snoozeUntil` at or before the occurrence is a 400. Pinned by `MyOccurrenceActionTests` (5/5). Client: a successful action marks the row instead of dropping it (O1's chip), and a dismissed row offers no action. **Verified** against a mock that answers like the new server: after *Dismiss delivery* the row reads "Dismissed" with no buttons, both at 100 ms and after the reload, and focus is on the heading. **Not verified live:** the API under Rider still runs the old build. The new e2e block `My reminders — acted-on rows` fails until the API is restarted (no migration needed)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje`; `MyRemindersView.vue:287-294` (`dropActiveRow` → `reload()`); server
   `GetMyUpcomingRemindersEndpoint.cs:40-41` (filters on recipient only), `DismissReminderOccurrenceEndpoint.cs` (no
@@ -358,7 +359,7 @@ into that batch rather than open a new one.
   `[nextOccurrenceAt asc, kind asc]` as the default.
 
 ### P3. Raw internal codes on screen, and free-text filters that need them typed exactly
-- **Status:** escalated — waits on the kind catalog, backend ask §S2 in `_fix-queue.md` (with it both filters become selects and the cells take its labels; without it the interim is to drop the two filters from this view, an owner call. Largely moot once §S6 gives rows a title)
+- **Status:** fixed 2026-10-05, without the catalog (owner decision: the interim). The kind cell, its caption and the row buttons' names go through `reminderKindLabel` ("Personal reminders"). The *Owner module* column ("App" on every row) and both free-text filters are gone from this view, and its URL codec ignores `module` / `kind`. Verified live: four headers, labelled rows, a Filter dialog with only *Schedule type* and the dates, and `?kind=NoSuchKind` lists all 3 rows with no chip (the param stays in the URL until the first table change). §S2 stays open for `notifications/B3`. If it lands, *Kind* can return as a select
 - **Severity:** polish
 - **Where:** Kind / Owner module columns; *Filter* → *Owner module*, *Kind* (`MyRemindersView.vue:34-43`)
 - **Expected:** a user-facing page shows names, not identifiers, and a text field implies search.
@@ -428,7 +429,7 @@ into that batch rather than open a new one.
   refreshed."), or branch on whether `activeOccurrence` is still in the future when the 400 arrives.
 
 ### O1. The list cannot show that an occurrence is already snoozed or dismissed
-- **Status:** deferred — it is §S7's client half (the chip is B6's fix), so it waits on that backend ask. Listed under *Deferred to opportunities* in `_fix-queue.md`
+- **Status:** built 2026-10-05, chip only (with B6, §S7). Each row shows *Snoozed until …* (clock, `primaryOutline`) or *Dismissed* (bell-slash, `warning`) under its title, from `my-upcoming`'s `myAction` / `snoozeUntil`. New keys `reminderDashboard.my.snoozedUntil` / `.dismissed` (sk + en). **Not built:** the *Snoozed* filter (`myAction` is filled after the page is projected, so the server cannot filter or sort on it yet) and an *Undo* (no reversal endpoint exists, and the Dismiss confirm still says it cannot be undone from here)
 - **Severity:** opportunity
 - **Where:** `/pripomienky/moje`
 - **What exists:** the server keeps per-recipient `ReminderOccurrenceAction` markers (dismiss, and snooze with

@@ -910,6 +910,47 @@ render the title as the row's primary text, in both `a11y.*For` labels and in th
 comment, which says `MyRemindersView` renders none of the missing fields except `cronExpression`. It renders
 `intervalPreset` too.
 
+### §S7 — acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence (`reminders-user/B6`, `B2`)
+> ✅ **FIXED 2026-10-05.** All three parts are server-side in `Sydowwe.Reminders` (no migration). (a)
+> `MyUpcomingReminderDto` carries `MyAction` (new wire enum `MyOccurrenceAction { Snoozed, Dismissed }`, or null) and
+> `SnoozeUntil`. They come from the new `EffectiveOccurrenceActions`, which uses the scanner's rule (reversals and what
+> they reverse are excluded, the latest `ActedAt` wins, the id breaks a tie). It is read per caller after the page is
+> projected and matched to the row's *pending* occurrence only, so an action on a recurring reminder's earlier
+> occurrence does not show. Like `DisplayLabel`, it cannot be sorted or filtered. (b) **A repeat dismiss is a no-op**:
+> 204, nothing written. A refusal would turn a double-click or a retry into an error for a state the caller already
+> has. Snoozing a dismissed occurrence is still accepted server-side (latest wins). (c) **Earlier is not valid**: a
+> `snoozeUntil` at or before `OccurrenceAt` is a 400 ("SnoozeUntil must be after the occurrence it postpones."). So
+> S28's custom-time floor stays, and it now matches the contract. The `SnoozeDialog` comment that called it the only
+> guard was corrected. Module doc: `docs/summary.md` (snooze/dismiss endpoints, plus a new "says what they did to it"
+> note). **Client half** (framework): `UpcomingReminderGridResponse` reads `myAction` / `snoozeUntil`, and new enum
+> `dto/enum/MyOccurrenceAction.ts`. In `MyRemindersView`, a successful snooze or dismiss calls `markActiveRow()`
+> (patch the row, quiet `reload()`) instead of `dropActiveRow()`, which is now used only on 404. The row shows O1's
+> chip. A dismissed row renders **neither** action, not only no *Dismiss*: the copy calls a dismissal final, and a
+> snooze would quietly undo it. `restoreFocusAfterRowDrop` became `restoreFocusIfLost`, which also covers the hidden
+> buttons. **Verified:** server — new `MyOccurrenceActionTests` 5/5 (snooze reported, idempotent dismiss writes one
+> row, latest wins, a reversed dismiss is ignored and re-dismissable, earlier snooze → 400), plus
+> `MyUpcomingScheduleTests`, `ReminderSelfServiceAuthTests`, `ReminderDisplayLabelTests` and `SortKeyRejectionTests`,
+> 31/31 in total (built to a separate artifacts path because Rider locks `bin/`). Client — `type-check` and the e2e
+> `typecheck` exit 0. `playwright-cli` with `my-upcoming` mocked as the new server answers: a dismissed row reads
+> "Dismissed" with no buttons, a snoozed one reads "Snoozed until 10/09/2026 12:00:00 PM" with both buttons, and an
+> untouched one is unchanged. After *Dismiss delivery* (mocked 204) the row is marked at 100 ms and still marked after
+> the reload, with focus on the heading. **Not verified live:** the API under Rider runs the old build. The new e2e
+> block `My reminders — acted-on rows` (freshSeed, reseeds after) replaced U1's `fixme`, and it fails until the API is
+> restarted.
+
+Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.
+`DismissReminderOccurrenceEndpoint` does not check for an existing marker. `SnoozeReminderOccurrenceEndpoint.cs:50`
+checks only `SnoozeUntil > now`. Observed with the real API: after a snooze of 23202 and a dismiss of 23201 (both
+204), `my-upcoming` returned both rows unchanged, and 23202 was still offered after its snoozed delivery had fired.
+A second identical dismiss also returned 204. The ask has three parts. (a) Project the caller's effective action onto
+the personal row (`myAction: Snoozed | Dismissed | null`, `snoozeUntil`), using the same "latest non-reversed" rule as
+`LoadEffectiveActionsAsync`. (b) Say whether a repeat dismiss is refused or a no-op. (c) Say whether a `snoozeUntil`
+earlier than the occurrence is valid. Today it moves the delivery earlier for good, because the original send is then
+skipped as `Snoozed`. **Client half after it lands:** replace `dropActiveRow()` + `reload()` with
+`reminders-user/O1`'s chip ("Snoozed until …" / "Dismissed"), and hide *Dismiss* on a dismissed row. If (c) comes back
+"earlier is valid", S28's B2 half still stands, because the *default* must not be earlier, but its custom-time floor
+can go.
+
 ## Closed verification items
 
 ### `notifications` — closed 2026-10-04
@@ -1014,6 +1055,15 @@ comment, which says `MyRemindersView` renders none of the missing fields except 
   history empty-row text. Commits: `Sydowwe.Reminders` `13b1bd6` + API `26d5f8d` (server), framework `81b82c1`
   (client).
 
+### `reminders-user` — closed 2026-10-05
+- **`O1`** ✅ (the chip only) — the list could not show that an occurrence was already snoozed or dismissed. It was
+  §S7's client half and landed with it (*Closed escalations* above). Each row shows *Snoozed until …* (clock,
+  `primaryOutline`) or *Dismissed* (bell-slash, `warning`) under its title. New keys `reminderDashboard.my.snoozedUntil`
+  and `.dismissed`, sk + en. **Not built:** a *Snoozed* filter, because `myAction` is filled after projection and the
+  server cannot filter or sort on it, so it would need a query-side join first. Also an R10 §1 *Undo*: no reversal
+  endpoint exists, and the Dismiss confirm still says it cannot be undone from here. Re-open either as its own
+  opportunity if wanted.
+
 ## Contradictions & re-grades
 
 ### Contradictions
@@ -1065,6 +1115,19 @@ Fourth pass (unit 16 `reminders-user`):
 - **`B1` bug and `B6` bug, kept**, escalated as §S6 and §S7. Both are contract gaps the client cannot close.
 - **`P3` polish, not batched.** It is parked under §S2: the selects and the labels need the kind catalog, and the
   interim (dropping the two filters) is an owner call.
+  **Fixed 2026-10-05, without the catalog** (owner decision: take the interim). The labels never needed it, because
+  `reminderKindLabel` already resolves `PersonalReminder`. The kind cell, its caption and both row-button names now go
+  through that seam. The *Owner module* column (it read "App" on every row) and both free-text filters were dropped
+  from `MyRemindersView` only. `myReminderFilterToParams` / `paramsToMyReminderFilter` stop reading and writing
+  `module` / `kind`, so an old bookmark's param no longer narrows the list invisibly. The DTO keeps both fields because
+  the server binds them and the class is exported. This is the first `reminders` → `notifications` import
+  (`reminderLabels.ts`, a pure lookup). Docs: `docs/modules/notifications.md`, `SETUP.md`. **Verified** with
+  `playwright-cli` (EN, `primaryUser`): headers `Kind | Schedule type | Next occurrence | Actions`, rows "Call the
+  dentist / Personal reminders …", the Filter dialog has only *Schedule type* and the two dates, and
+  `?kind=NoSuchKind&module=X` lists all 3 rows with no chip. The param stays in the address bar until the first table
+  change, since `useTableUrlState` syncs on change only. e2e: the read-only block of `reminders-user.draft.spec.ts`
+  passes, 21 passed and 3 fixme. Four stale assertions left by A3, P2 and P6 were corrected along the way.
+  §S2 stays open for `notifications/B3`. If the catalog lands, the two filters can come back as selects.
 - **`B5` + `P4` merged into S29.** They are the same `#no-data` slot. B5's "all four tables share it" is source-only
   (the same helper at four `onError` sites, confirmed by grep). S29's verification adds one admin-table check rather
   than asserting it.

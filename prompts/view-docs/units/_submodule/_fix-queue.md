@@ -123,7 +123,7 @@
 | §S3 | The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | open — not yet written |
 | §S4 | The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | open — not yet written |
 | §S6 | ✅ **FIXED 2026-10-05** (`Sydowwe.Reminders` `13b1bd6` + `a983eea`, framework `81b82c1` + `26e8693`) — The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | closed |
-| §S7 | Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | open — not yet written |
+| §S7 | ✅ **FIXED 2026-10-05** (server + framework, live check pending an API restart) — Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | closed |
 
 `§S5` is unused on purpose. The third pass reserved it for wall-clock (DST) recurrence, if the product ever asks for
 that (log, third pass).
@@ -155,11 +155,10 @@ if S12 has not shipped. If the product decision is instead "the card only shows 
 only: the subtitle stops promising muting and the planner's hint points at the delivery matrix. The app-side planner
 string is then an app batch. Write to `prompts/_common/notifications/backend/` (or the reminders folder, whichever owns
 `Sydowwe.Reminders`) in that folder's format, once someone owns it.
-**Also waiting on this catalog: `reminders-user/P3`** (polish). `/pripomienky/moje` shows the raw codes
-`PersonalReminder` / `Portal`, and its *Kind* and *Owner module* filters are free text matched exactly server-side
-(`?kind=Personal` → 0 rows). With a catalog, both filters become selects and the cells take its labels. Without one,
-the interim is to drop the two filters from the personal view, which never holds more than a handful of rows. That is
-an owner call. §S6 gave the rows a title on 2026-10-05, so the label half now matters much less.
+**`reminders-user/P3` no longer waits on this.** It was closed on 2026-10-05 with the interim (owner decision; log,
+fourth-pass notes). The kind cell is labelled through `reminderKindLabel`, and the *Owner module* column and the two
+exact-match filters were dropped from `MyRemindersView`. If the catalog lands, the *Kind* filter can come back as a
+select fed from it. That is optional, not a debt.
 
 ### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
 Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
@@ -183,19 +182,9 @@ accounts that cannot raise it (or entirely outside Development). Catalog decisio
 <!-- §S6 (The personal reminder row has no recipient-safe identity and no interval — reminders-user/B1, B4) fixed
      2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
-### §S7 — acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence (`reminders-user/B6`, `B2`)
-Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.
-`DismissReminderOccurrenceEndpoint` does not check for an existing marker. `SnoozeReminderOccurrenceEndpoint.cs:50`
-checks only `SnoozeUntil > now`. Observed with the real API: after a snooze of 23202 and a dismiss of 23201 (both
-204), `my-upcoming` returned both rows unchanged, and 23202 was still offered after its snoozed delivery had fired.
-A second identical dismiss also returned 204. The ask has three parts. (a) Project the caller's effective action onto
-the personal row (`myAction: Snoozed | Dismissed | null`, `snoozeUntil`), using the same "latest non-reversed" rule as
-`LoadEffectiveActionsAsync`. (b) Say whether a repeat dismiss is refused or a no-op. (c) Say whether a `snoozeUntil`
-earlier than the occurrence is valid. Today it moves the delivery earlier for good, because the original send is then
-skipped as `Snoozed`. **Client half after it lands:** replace `dropActiveRow()` + `reload()` with
-`reminders-user/O1`'s chip ("Snoozed until …" / "Dismissed"), and hide *Dismiss* on a dismissed row. If (c) comes back
-"earlier is valid", S28's B2 half still stands, because the *default* must not be earlier, but its custom-time floor
-can go.
+<!-- §S7 (Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence —
+     reminders-user/B6, B2 server half) fixed 2026-10-05 — body moved to _fix-queue-log.md → Closed escalations.
+     Number retired, not reused; the table keeps its ✅ row. -->
 
 ## Needs verification (unverified findings, and what would settle each)
 
@@ -215,6 +204,5 @@ can go.
   by default and group per-instance one-shots by handler, so the 11 recurring jobs stay visible.
 <!-- `reminders-admin/O1` built 2026-10-05 (server `displayLabel` from an owner-registered resolver) — moved to
      _fix-queue-log.md → Closed opportunities. It also landed §S6 (a). -->
-- **`reminders-user/O1`**: a *Snoozed until …* / *Dismissed* chip on each personal row, a *Snoozed* filter, and
-  somewhere for an R10 §1 *Undo* to live. It is not purely an opportunity: the chip is §S7's client half and the
-  fix for `B6` once the server projects the action. Deferred until then.
+<!-- `reminders-user/O1` built 2026-10-05 (the chip, with §S7) — moved to _fix-queue-log.md → Closed opportunities.
+     Its *Snoozed* filter and *Undo* were not built; see the log entry. -->
