@@ -43,11 +43,14 @@
 		activityId,
 		activityName,
 		isAnchored,
+		memoryAnchorId = null,
 		eligible = true,
 	} = defineProps<{
 		activityId: number
 		activityName: string
 		isAnchored: boolean | null
+		/** The anchor this row produced, when the API says which. Without it the link opens the filtered list only. */
+		memoryAnchorId?: number | null
 		/** False for rows that can never be anchored — a repeatable backlog entry. */
 		eligible?: boolean
 	}>()
@@ -62,7 +65,11 @@
 
 	// The reciprocal of MemoryAnchorTable's source chip. By id, not name: the name filter is a contains
 	// match, so it would also catch "Read a Novel II", and a bookmarked link would break on a rename.
+	// `anchorId` makes the view open that exact anchor; `activityId` stays as the fallback list behind it,
+	// which is what the user lands on when the anchor has since been deleted.
 	function openAnchor() {
-		void router.push({ name: 'leisureMemoryAnchors', query: { activityId: String(activityId) } })
+		const query: Record<string, string> = { activityId: String(activityId) }
+		if (memoryAnchorId != null) query.anchorId = String(memoryAnchorId)
+		void router.push({ name: 'leisureMemoryAnchors', query })
 	}
 </script>

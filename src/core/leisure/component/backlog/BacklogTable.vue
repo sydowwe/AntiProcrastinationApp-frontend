@@ -26,6 +26,7 @@
 				:activityId="item.activityId"
 				:activityName="item.activity.name"
 				:isAnchored="item.isAnchored"
+				:memoryAnchorId="item.memoryAnchorId"
 				:eligible="!item.isRepeatable"
 				@anchored="emit('onReload')"
 			/>

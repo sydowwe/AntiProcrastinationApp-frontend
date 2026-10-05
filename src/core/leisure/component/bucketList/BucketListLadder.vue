@@ -125,6 +125,7 @@
 												:activityId="item.activityId"
 												:activityName="item.activity.name"
 												:isAnchored="item.isAnchored"
+												:memoryAnchorId="item.memoryAnchorId"
 												@anchored="emit('onReload')"
 											/>
 										</span>

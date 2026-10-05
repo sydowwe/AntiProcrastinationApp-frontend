@@ -18,17 +18,19 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP23. "Experienced" opens the exact memory
-- **Source:** from data-map (backlog `memoryAnchorId` on the backlog and bucket-list profiles; the leftover of
-  leisure-backlog-picker O2, closed)
-- **Data it spends:** `ActivityBacklogProfile.memoryAnchorId`, `ActivityBucketListProfile.memoryAnchorId`
-- **Where it would surface:** `ExperiencedCell`'s link, opening the anchor itself rather than the list filtered by activity
-- **Needs backend:** no
-- **Size:** S
-- **Value:** Small. For a one-time experience the filtered list usually holds one anchor anyway, which is why O2 was
-  closed by `activityId`.
-
 ## Closed
+
+- **OP23**, built 2026-10-05, app-side only. Both profile responses already send `MemoryAnchorId` (null for a
+  repeatable backlog row or one with no anchor), so the backend did not change. `ExperiencedCell` takes an optional
+  `memoryAnchorId` (passed from the backlog table and the bucket-list table and ladder) and adds `?anchorId=` to its
+  link, keeping `?activityId=`. `MemoryAnchorsView` reads `anchorId` once at setup, drops it from the URL, fetches the
+  anchor (`_silent`) and opens it in its edit form over the activity-filtered list. A deleted anchor (404) or a bad id
+  leaves just that filtered list, which is the old behaviour. Saving reloads the table, and the timeline when it is
+  showing. **Found by the spec:** removing `anchorId` at setup did not stick, because `useTableUrlState` writes
+  the whole query it read back on mount. The view now strips it after the fetch settles.
+  `e2e/tests/leisure-experienced-opens-anchor.spec.ts` (2 tests, read-only) covers the chip opening the seeded
+  anchor's form with the param gone from the URL, and an unknown id leaving the list with no dialog. Both passed on
+  2026-10-05 (12.6 s). The timeline-mode reload after save is not covered.
 
 - **OP22**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** the responses carried `roleId` /
   `categoryId` but no names, and the client has no sanctioned way to look roles and categories up from

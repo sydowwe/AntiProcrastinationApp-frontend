@@ -99,6 +99,8 @@
 	import { useRoute, useRouter } from 'vue-router'
 	import FilterPanel, { type ChipFormatters } from '@/_common/component/FilterPanel.vue'
 	import MemoryAnchorTable from '@/core/leisure/component/memoryAnchor/MemoryAnchorTable.vue'
+	import MemoryAnchorForm from '@/core/leisure/component/memoryAnchor/MemoryAnchorForm.vue'
+	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import MemoryAnchorTimeline from '@/core/leisure/component/memoryAnchor/MemoryAnchorTimeline.vue'
 	import { MemoryAnchorFilter } from '@/core/leisure/dto/request/MemoryAnchorFilter.ts'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
@@ -177,6 +179,41 @@
 	function reloadTimeline() {
 		void loadTimeline()
 	}
+
+	// The "Experienced" chip's deep link: `?anchorId=` opens that exact anchor in its edit form, over the
+	// list `?activityId=` already filtered. The param is one-shot — dropped as soon as it is read, so a
+	// reload or a back-navigation does not reopen the dialog. A deleted anchor (404, `_silent` in
+	// `fetchById`) simply leaves the filtered list.
+	const { fetchById: fetchAnchorById } = useMemoryAnchorCrud()
+	const { openDialog } = useDialog()
+
+	async function openLinkedAnchor() {
+		const anchorId = Number(route.query.anchorId)
+		if (route.query.anchorId == null || !Number.isInteger(anchorId) || anchorId <= 0) return
+		let anchor: MemoryAnchor | null = null
+		try {
+			anchor = await fetchAnchorById(anchorId)
+		} catch {
+			// 404 or cancelled: fall through to the cleanup, the filtered list is the answer
+		}
+		// Stripped after the fetch, not before: `useTableUrlState` writes the whole query back on mount
+		// from the one it read, and would restore a param removed any earlier than that.
+		const rest = { ...route.query }
+		delete rest.anchorId
+		await router.replace({ query: rest })
+		if (!anchor) return
+		const result = await openDialog({
+			component: MemoryAnchorForm,
+			componentProps: { entityToEdit: anchor },
+			dialogProps: { title: i18n.t('leisure.memoryAnchors'), confirmBtnLabel: i18n.t('general.save') },
+		})
+		if (result) {
+			reload()
+			if (viewMode.value === 'timeline') reloadTimeline()
+		}
+	}
+
+	void openLinkedAnchor()
 
 	const isFiltered = computed(() => filter.value?.hasAny() ?? false)
 	// The timeline's rows only answer to the fields it sends — year and month are navigated and
