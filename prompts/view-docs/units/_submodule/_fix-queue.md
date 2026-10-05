@@ -191,8 +191,11 @@ and `cron`, neither of which is recipient-sensitive. **Client half after it land
 render the title as the row's primary text, in both `a11y.*For` labels and in the Dismiss dialog (S30's P5). Pass
 `intervalPreset` / `cronExpression` to `ReminderScheduleDisplay`. Correct `UpcomingReminderGridResponse.ts`'s header
 comment, which says `MyRemindersView` renders none of the missing fields except `cronExpression`. It renders
-`intervalPreset` too. Weigh (a) together with `reminders-admin/O1` (deferred): both ask whether a reminder's human
-label is server-rendered or host-registered.
+`intervalPreset` too.
+> **(a) landed 2026-10-05 with `reminders-admin/O1`** (see the log's *Closed opportunities*). Not the notification
+> render path: an owner-registered `IReminderLabelResolver` (keyed by template key, pure, recipient-safe by contract)
+> fills `MyUpcomingReminderDto.DisplayLabel`; the payload still never crosses. Client half done for the row's primary
+> text and both `a11y.*For` labels (now `{label}`). **Still open:** the title in the Dismiss dialog, and all of (b).
 
 ### §S7 — acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence (`reminders-user/B6`, `B2`)
 Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.
@@ -229,12 +232,8 @@ can go.
 <!-- `scheduler/O1` built 2026-10-05 — moved to _fix-queue-log.md → Closed opportunities. -->
 - **`scheduler/O2`** — 50 of the 73 rows are spent or removed `History.TimerBoundaryAlarm` one-shots. Hide `Removed`
   by default and group per-instance one-shots by handler, so the 11 recurring jobs stay visible.
-- **`reminders-admin/O1`**: reminders are named by kind and id everywhere, although each row's `payloadJson` carries
-  a human title ("Call the dentist"). The right shape is a host-registered per-`(ownerModule, kind)` label resolver
-  (like `notificationTypeMeta`) or a server `displayLabel`, not parsing the payload. Whether a title is PII in
-  another host is part of the decision. S22 is the no-decision half of this. `reminders-user/B1` (rows
-  indistinguishable on `/pripomienky/moje`) is the same gap from the user's side, now escalated as §S6. Weigh the two
-  together.
+<!-- `reminders-admin/O1` built 2026-10-05 (server `displayLabel` from an owner-registered resolver) — moved to
+     _fix-queue-log.md → Closed opportunities. It also landed §S6 (a). -->
 - **`reminders-user/O1`**: a *Snoozed until …* / *Dismissed* chip on each personal row, a *Snoozed* filter, and
   somewhere for an R10 §1 *Undo* to live. It is not purely an opportunity: the chip is §S7's client half and the
   fix for `B6` once the server projects the action. Deferred until then.

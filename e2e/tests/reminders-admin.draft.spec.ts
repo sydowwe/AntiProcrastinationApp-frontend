@@ -11,10 +11,20 @@ import { expect, test } from '../fixtures/auth'
 // Two id spaces for the same six rows: `seed.reminderDefinitions` is what these routes take;
 // `seed.reminders` is the portal id the register's Subject cell *shows*.
 //
-// Rows are addressed by their subject ("Reminder #23001"), which since S22 is also what names every row
-// action and select checkbox — so a role locator can now reach a single row's control directly.
+// Rows are addressed by their subject ("Reminder #23001"), which the register and Upcoming render as a
+// caption under the reminder's display label. Since O1 the *label* ("Call the dentist") is what names the
+// row's link, row actions, select checkbox and detail heading, so those locators use TITLES.
 
 const REGISTER = '/pripomienky/register'
+
+// The portal reminders' titles, which `PersonalReminderLabelResolver` serves as their display label. The seed
+// response carries no titles, so these mirror `E2eFixtureSeeder.cs` in the API; a renamed fixture fails here.
+const TITLES = {
+	callTheDentist: 'Call the dentist',
+	fileTaxReturn: 'File the tax return',
+	payRentRecurring: 'Pay the rent',
+	paused: 'Before the feature block',
+} as const
 const UPCOMING = '/pripomienky/nadchadzajuce'
 const HISTORY = '/pripomienky/historia'
 const OVERVIEW = '/pripomienky/prehlad'
@@ -51,8 +61,9 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 		await expect(adminPage).toHaveURL(/sortBy=status:asc/)
 	})
 
-	test('the Subject link shows the portal id and opens the definition', async ({ adminPage, seed }) => {
-		await adminPage.getByRole('link', { name: `Reminder #${seed.reminders.callTheDentist}` }).click()
+	test('the Subject link shows the title and opens the definition', async ({ adminPage, seed }) => {
+		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toBeVisible()
+		await adminPage.getByRole('link', { name: TITLES.callTheDentist, exact: true }).click()
 		await expect(adminPage).toHaveURL(new RegExp(`${REGISTER}/${seed.reminderDefinitions.callTheDentist}$`))
 	})
 
@@ -75,8 +86,8 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 		await expect(resultCount(adminPage)).toHaveText(/results? found/)
 	})
 
-	test('ticking a row shows the bulk bar, and Unselect hides it', async ({ adminPage, seed }) => {
-		await adminPage.getByRole('checkbox', { name: `Select Reminder #${seed.reminders.callTheDentist}` }).click()
+	test('ticking a row shows the bulk bar, and Unselect hides it', async ({ adminPage }) => {
+		await adminPage.getByRole('checkbox', { name: `Select ${TITLES.callTheDentist}` }).click()
 		const bar = adminPage.getByRole('group', { name: 'Actions for the selected reminders' })
 		await expect(bar.getByRole('button', { name: 'Pause 1 reminder' })).toBeVisible()
 		await bar.getByRole('button', { name: 'Unselect' }).click()
@@ -95,20 +106,27 @@ test.describe(`Reminder register (${REGISTER})`, () => {
 		await expect(dataRow(adminPage, seed.reminders.callTheDentist)).toContainText(`Due ${dueAt}`)
 	})
 
-	// A1 (S22) — names were built from `kind`, identical on every row.
-	test('each row action has a distinct accessible name', async ({ adminPage, seed }) => {
+	// A1 (S22) — names were built from `kind`, identical on every row. O1 — now from the display label.
+	test('each row action has a distinct accessible name', async ({ adminPage }) => {
 		const names = await accessibleNames(adminPage.getByRole('button', { name: /^Pause reminder for / }))
 		expect(names.length).toBeGreaterThan(1)
 		expect(new Set(names).size).toBe(names.length)
-		expect(names).toContain(`Pause reminder for Reminder #${seed.reminders.callTheDentist}`)
+		expect(names).toContain(`Pause reminder for ${TITLES.callTheDentist}`)
 	})
 
 	// A2 (S25) — the select column's checkboxes were unnamed (BasicTable, framework-wide).
-	test('row checkboxes are named after their row', async ({ adminPage, seed }) => {
+	test('row checkboxes are named after their row', async ({ adminPage }) => {
 		await expect(adminPage.getByRole('checkbox', { name: 'Select all rows' })).toBeVisible()
 		await expect(
-			adminPage.getByRole('checkbox', { name: `Select Reminder #${seed.reminders.callTheDentist}`, exact: true }),
+			adminPage.getByRole('checkbox', { name: `Select ${TITLES.callTheDentist}`, exact: true }),
 		).toHaveCount(1)
+	})
+
+	// O1 — the row is named by its title, and keeps the subject as a caption because titles may repeat.
+	test('a row shows its title with the subject under it', async ({ adminPage, seed }) => {
+		const row = dataRow(adminPage, seed.reminders.callTheDentist)
+		await expect(row.getByRole('link', { name: TITLES.callTheDentist, exact: true })).toBeVisible()
+		await expect(row.getByText(`Reminder #${seed.reminders.callTheDentist}`, { exact: true })).toBeVisible()
 	})
 
 	// A3 (S26) — FilterPanel chip remove buttons were all named "Close".
@@ -172,17 +190,23 @@ test.describe(`Reminder detail (${REGISTER}/:id)`, () => {
 		expect(clipped).toBe(0)
 	})
 
+	// O1 — the last breadcrumb is the title too, not the kind or the subject.
+	test('the breadcrumb ends in the reminder\'s title', async ({ adminPage, seed }) => {
+		await adminPage.goto(`${REGISTER}/${seed.reminderDefinitions.callTheDentist}`)
+		await expect(adminPage.locator('.v-breadcrumbs-item').last()).toHaveText(TITLES.callTheDentist)
+	})
+
 	// B3 — the view prepends a register crumb the host's nav already supplies.
 	test.fixme('the breadcrumb names the register exactly once', async () => {})
 
 	// P2 — the 404 is stated by the page and again by the interceptor's snackbar.
 	test.fixme('a not-found id shows no error snackbar', async () => {})
 
-	// P3 (S22) — the h1 was the kind, identical for every seeded reminder.
+	// P3 (S22) — the h1 was the kind, identical for every seeded reminder. O1 — it is now the title.
 	test('two different reminders have different headings', async ({ adminPage, seed }) => {
 		for (const key of ['callTheDentist', 'fileTaxReturn'] as const) {
 			await adminPage.goto(`${REGISTER}/${seed.reminderDefinitions[key]}`)
-			await expect(adminPage.getByRole('heading', { level: 1 })).toHaveText(`Reminder #${seed.reminders[key]}`)
+			await expect(adminPage.getByRole('heading', { level: 1 })).toHaveText(TITLES[key])
 		}
 	})
 
@@ -272,9 +296,16 @@ test.describe(`Upcoming reminders (${UPCOMING})`, () => {
 		await expect(dataRow(adminPage, seed.reminders.fileTaxReturn)).not.toContainText('With lead time')
 	})
 
+	// O1 — the row's link is the title, with the subject under it.
+	test('a row shows its title with the subject under it', async ({ adminPage, seed }) => {
+		const row = dataRow(adminPage, seed.reminders.callTheDentist)
+		await expect(row.getByRole('link', { name: TITLES.callTheDentist, exact: true })).toBeVisible()
+		await expect(row.getByText(`Reminder #${seed.reminders.callTheDentist}`, { exact: true })).toBeVisible()
+	})
+
 	// P5 (S22) — there was no link from a row to its detail.
 	test('a row links to its reminder detail', async ({ adminPage, seed }) => {
-		await adminPage.getByRole('link', { name: `Reminder #${seed.reminders.callTheDentist}` }).click()
+		await dataRow(adminPage, seed.reminders.callTheDentist).getByRole('link', { name: TITLES.callTheDentist }).click()
 		await expect(adminPage).toHaveURL(new RegExp(`${REGISTER}/${seed.reminderDefinitions.callTheDentist}$`))
 	})
 })
@@ -328,6 +359,19 @@ test.describe(`Dispatch history (${HISTORY})`, () => {
 		await adminPage.goto(`${HISTORY}?from=${yyyy}-${mm}-${dd}&to=${yyyy}-${mm}-${dd}`)
 		await expect(adminPage.locator('main tbody tr').filter({ hasText: day }).first()).toBeVisible()
 		await expect(adminPage.getByText(`Dispatched to: ${day}`, { exact: true })).toBeVisible()
+	})
+
+	// O1 — the Reminder ID cell names the reminder under the id.
+	test('a ledger row names its reminder under the id', async ({ adminPage, seed }) => {
+		await adminPage.goto(`${HISTORY}?reminderId=${seed.reminderDefinitions.payRentRecurring}`)
+		const rows = adminPage.locator('main tbody tr')
+		await rows.first().waitFor()
+		for (const row of await rows.all()) {
+			// Link and caption are sibling blocks, so the cell's text has no separator between them.
+			const cell = row.getByRole('cell').nth(1)
+			await expect(cell.getByRole('link', { name: `#${seed.reminderDefinitions.payRentRecurring}` })).toBeVisible()
+			await expect(cell.getByText(TITLES.payRentRecurring, { exact: true })).toBeVisible()
+		}
 	})
 
 	// B5 (S21) — `reminderDashboard.skipReason.QuietHours` rendered raw.
@@ -389,6 +433,14 @@ test.describe(`Reminders overview (${OVERVIEW})`, () => {
 	test('a module rollup row links to the filtered upcoming list', async ({ adminPage }) => {
 		await adminPage.getByRole('link', { name: /Show upcoming reminders for module Portal/ }).click()
 		await expect(adminPage).toHaveURL(new RegExp(`${UPCOMING}\\?module=Portal`))
+	})
+
+	// O1 — a failure row leads with the reminder's title; the kind moves beside the module.
+	test('a failure row is named by its reminder\'s title', async ({ adminPage, seed }) => {
+		const row = adminPage.getByRole('link').filter({ hasText: TITLES.paused })
+		await expect(row).toHaveCount(1)
+		await expect(row).toContainText('Portal · PersonalReminder')
+		await expect(row).toHaveAttribute('href', new RegExp(`reminderId=${seed.reminderDefinitions.paused}`))
 	})
 
 	// Semantic: each drill-down lands on the number that was clicked (observed true for all eleven on 2026-10-01).

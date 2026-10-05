@@ -92,7 +92,7 @@ into that batch rather than open a new one.
   succeed, B6 is what the user sees next.
 
 ### B1. The three rows are indistinguishable — nothing says what any reminder is about
-- **Status:** escalated — backend ask §S6 in `_fix-queue.md` (needs a recipient-safe display title on `my-upcoming`; the client half is appended as a batch once it lands. S22 does not cover it, because the personal row has no `subjectType`/`subjectId`)
+- **Status:** fixed 2026-10-05, except the Dismiss dialog (landed with `reminders-admin/O1`: `my-upcoming` now carries `displayLabel` from the owner's `IReminderLabelResolver`, and the row's primary text plus both `a11y.*For` labels use it. The Dismiss dialog does not name the reminder yet, see §S6. Server-tested; not yet seen in the browser, pending an API restart)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → table rows; `MyRemindersView.vue:86-96` (kind cell), `:124-149` (row actions);
   server `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs`

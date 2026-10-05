@@ -3,7 +3,7 @@
 > Pass: inventory · captured 2026-10-01 · commit `4d890646` (framework `b1b82a1`)
 
 **Tally:** blocker 1 · bug 6 · a11y 4 · polish 8 · opportunity 1 · unverified 2  (22 entries)
-**Open after round 2 (2026-10-05):** 19 fixed (S5, S7, S18–S27) · 1 deferred (O1) · 1 verified (U2) · 1 unverified (U1)
+**Open after round 2 (2026-10-05):** 20 fixed (S5, S7, S18–S27, O1) · 1 verified (U2) · 1 unverified (U1)
 
 Visual sweep: one screenshot read back per view. It found X1 (detail cards clipped) and B6 (history notice crushed),
 neither visible in the accessibility snapshot, and the empty last column (P6). The register, Upcoming and overview
@@ -401,7 +401,7 @@ All findings are **[framework]** — `src/_common/modules/reminders/` or a frame
 ## Opportunities
 
 ### O1. [framework] Reminders are named by type and id everywhere, while the row already carries a human title
-- **Status:** deferred (`_fix-queue.md` → *Deferred to opportunities*; S22 shipped the no-decision half, `reminderLabel`. The resolver / `displayLabel` half is a product and PII decision, to be weighed with `reminders-user/B1` / §S6)
+- **Status:** fixed 2026-10-05 (server `displayLabel` from an owner-registered `IReminderLabelResolver`, resolved at read time; `reminderLabel` prefers it and keeps the subject as a caption; also lands §S6 (a). Server tests and the O1 e2e tests pass; verified live on all six screens. See `_fix-queue-log.md` → *Closed opportunities*)
 - **Severity:** opportunity
 - **Where:** register Subject, Upcoming Kind cell, detail `h1`, overview failure rows, dispatch history Reminder ID
 - **What exists:** every grid and detail response carries `payloadJson`, and for this app's Portal reminders it holds

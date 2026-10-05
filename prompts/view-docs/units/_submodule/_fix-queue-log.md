@@ -946,6 +946,28 @@
   confirming sent one `trigger-now` → 200. **Mocked only:** the paused/in-flight line, checked on the grid with a routed
   `jobs-overview`, because the API under Rider ran the old build.
 
+### `reminders-admin` — closed 2026-10-05
+- **`O1`** ✅ — reminders were named by type and id everywhere. **Decision: server-side `displayLabel`, supplied by the
+  owner, resolved at read time.** `Sydowwe.Framework.Contracts.reminders.IReminderLabelResolver` (keyed by template
+  key, like `IReminderRenderer`; pure, synchronous, never throws, safe for admins *and* the reminder's own
+  recipients) is called by `ReminderLabelService` after projection on every read that names a reminder: the register
+  grid, the inspector, both upcoming routes, the dispatch history and the overview's failure sample. Nothing is
+  stored, so no migration; the cost is that the label is not sortable or filterable. The PII question is answered by
+  the contract: the owner decides, and only the owner can see its payload's meaning. This app's resolver
+  (`PersonalReminderLabelResolver`, Planning slice) returns `PersonalReminderPayload.Title`. Client: `reminderLabel`
+  prefers `displayLabel` and falls back to the subject (`reminderSubjectLabel`), which the register and Upcoming keep
+  as a caption because two reminders may share a title; `ReminderActionButtons` takes a `label` prop; the dispatch
+  history shows the label under the id; the overview failure row leads with it. `/my-upcoming` carries it too, which
+  is **§S6 (a)** (row text and both `a11y.*For` labels, now `{label}`). **Verified:** server — the new
+  `ReminderDisplayLabelTests` (2) plus the five neighbouring reminder classes, 50/50; client — `type-check` and the
+  e2e `typecheck` exit 0. **Verified live** after an API restart (no migration): all six screens, as admin and as
+  the primary user. **E2E:** seven new tests (register and Upcoming caption, breadcrumb, ledger row, overview failure
+  row, and `reminders-user` B1, which replaced its `fixme`) pass, and so do the re-pointed register checkbox,
+  row-action, heading and link tests. The two specs' other 11 failures are unrelated drift: the S11 locale dates
+  (`10/07/2026 5:00:00 PM` against a `dd.mm.yyyy` regex), S23's bare URL, S31's second "Remind me on" textbox and the
+  history empty-row text. Commits: `Sydowwe.Reminders` `13b1bd6` + API `26d5f8d` (server), framework `81b82c1`
+  (client).
+
 ## Contradictions & re-grades
 
 ### Contradictions

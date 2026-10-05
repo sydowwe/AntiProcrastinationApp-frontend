@@ -9,10 +9,14 @@ import { expect, test } from '../fixtures/auth'
 // payRentRecurring` — the REGISTER ids, not `seed.reminders`). Read-only: nothing here confirms a
 // snooze or a dismiss.
 //
-// Row buttons all share one accessible name (findings B1), so rows are addressed by position — a
-// `.first()` / `.nth()` here is that finding's argument, not a style choice.
+// Row buttons used to share one accessible name (findings B1), which is why the older tests below address
+// rows by position. Since O1 each row and its buttons carry the reminder's title (TITLES).
 
 const MY_REMINDERS = '/pripomienky/moje'
+
+// The primary user's three titles, which `PersonalReminderLabelResolver` serves as `displayLabel`. The seed
+// response carries no titles, so these mirror `E2eFixtureSeeder.cs` in the API.
+const TITLES = ['Call the dentist', 'File the tax return', 'Pay the rent'] as const
 
 // `formatInstant`'s on-screen form, "06.10.2026 16:30:00", read back as a local instant. Both sides
 // of every comparison go through it, so the browser's timezone cancels out.
@@ -188,8 +192,18 @@ test.describe(`My reminders (${MY_REMINDERS})`, () => {
 	// user sees only `secondaryPostParcel`. Needs a `myUpcomingReminders` count from the seed to assert.
 	test.fixme('lists exactly the signed-in user’s own upcoming reminders', async () => {})
 
-	// B1 — every row reads "PersonalReminder | Portal"; the personal projection carries no title.
-	test.fixme('each row carries text that distinguishes it from the others', async () => {})
+	// B1 (O1) — every row read "PersonalReminder | Portal"; `my-upcoming` now carries the owner's title.
+	test('each row and its actions are named by the reminder\'s title', async ({ authenticatedPage }) => {
+		const rows = authenticatedPage.locator('main tbody tr')
+		await expect(rows).toHaveCount(TITLES.length)
+		for (const title of TITLES) {
+			await expect(rows.filter({ hasText: title })).toHaveCount(1)
+			await expect(authenticatedPage.getByRole('button', { name: `Snooze reminder ${title}`, exact: true })).toHaveCount(1)
+			await expect(
+				authenticatedPage.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }),
+			).toHaveCount(1)
+		}
+	})
 
 	// B3 — a date-only "to" bound is sent as that day's local midnight, excluding the day itself.
 	test.fixme('"Next occurrence to" includes reminders due on the chosen day', async () => {})
