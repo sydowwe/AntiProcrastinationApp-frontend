@@ -118,47 +118,20 @@
 
 | § | ask | findings | status |
 | --- | --- | --- | --- |
-| §S1 | Missed one-shot fires are never recovered; spent one-shots stay `Active` | `scheduler/B6` | open — not yet written |
-| §S2 | No catalog of reminder kinds, so the *Reminder types* card can never mute anything | `notifications/B3` | open — not yet written |
+| §S1 | ✅ **FIXED 2026-10-05** (server-side, verified live after a restart) — Missed one-shot fires were never recovered; spent one-shots stayed `Active` | `scheduler/B6` | closed |
+| §S2 | ✅ **FIXED 2026-10-05** (server `IReminderKindCatalog` + `kinds` on `GET /reminder-preference`, client renders it; verified live) — No catalog of reminder kinds, so the *Reminder types* card can never mute anything | `notifications/B3` | closed |
 | §S3 | The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | open — not yet written |
 | §S4 | The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | open — not yet written |
 | §S6 | ✅ **FIXED 2026-10-05** (`Sydowwe.Reminders` `13b1bd6` + `a983eea`, framework `81b82c1` + `26e8693`) — The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | closed |
-| §S7 | ✅ **FIXED 2026-10-05** (server + framework, live check pending an API restart) — Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | closed |
+| §S7 | ✅ **FIXED 2026-10-05** (server + framework, verified live 2026-10-05 after the API restart) — Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | closed |
 
 `§S5` is unused on purpose. The third pass reserved it for wall-clock (DST) recurrence, if the product ever asks for
 that (log, third pass).
 
-### §S1 — missed one-shot fires never recover; spent one-shots stay `Active` (`B6`)
-Server: `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer\framework\Sydowwe.Scheduler`. Twelve
-`History.TimerBoundaryAlarm` one-shots (`misfirePolicy: FireAndProceed`, `runAtUtc` 2026-09-15 22:49 → 09-16 01:54)
-are still `Active`, `lastRunAt: null`, overdue by ~14 days, while the dispatcher fires a 10-second cron job and
-`Scheduler.OverdueJobSweep` succeeds every 10 minutes. The health endpoint's own reason says *"the fire was missed
-rather than slow."* The ask covers three things. (a) What `FireAndProceed` is contracted to do for a one-shot whose
-instant passed while the host was down, and why these never fired. (b) Which terminal status a one-shot takes after
-it fires: 8 fired ones are still `Active` with `nextRunAt: null`. (c) For the owning module (History), whether alarms
-for timers that ended long ago should fire at all. Contract and behaviour only. This is shared framework
-infrastructure, so any change must keep existing `Active` semantics for recurring jobs. Write it to
-`prompts/_common/scheduler/backend/B4-<slug>.md` in that folder's format, once someone owns the fix. Nothing
-client-side changes: the overdue chip and list are correct *reports* of a server state.
+<!-- §S1 (Missed one-shot fires never recover; spent one-shots stay Active — scheduler/B6) fixed 2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
-### §S2 — no reminder-kind catalog; the *Reminder types* card only ever shows its empty state (`notifications/B3`)
-Server: `framework/Sydowwe.Reminders/application/endpoint/preference/` has only `GET /reminder-preference` (the user's
-stored overrides) and `PUT /reminder-preference/kind`. The client renders only stored rows, and nothing in `src/`
-creates one except a toggle on a row that already exists. So the card's promise ("Mute a specific reminder type…")
-can never be kept. The day planner's settings tab sends users to it to turn reminders off "for real"
-(`dayPlanner.en.ts:27`, `PlannerRemindersTab.vue:32-37`). The ask: a catalog of the `(ownerModule, kind)` pairs this
-deployment can raise, each with its effective `enabled`, either as `GET /reminder-preference/kinds` or folded into
-`GET /reminder-preference`. That is the same shape as the notification-type catalog that `GET
-/notification-preference/mine` already returns. **Client half after it lands** (a framework batch to append then):
-render every kind from the catalog in `ReminderKindList.vue`, drop the empty-state-only path, and carry S12's A7 name
-if S12 has not shipped. If the product decision is instead "the card only shows overrides", the client half is copy
-only: the subtitle stops promising muting and the planner's hint points at the delivery matrix. The app-side planner
-string is then an app batch. Write to `prompts/_common/notifications/backend/` (or the reminders folder, whichever owns
-`Sydowwe.Reminders`) in that folder's format, once someone owns it.
-**`reminders-user/P3` no longer waits on this.** It was closed on 2026-10-05 with the interim (owner decision; log,
-fourth-pass notes). The kind cell is labelled through `reminderKindLabel`, and the *Owner module* column and the two
-exact-match filters were dropped from `MyRemindersView`. If the catalog lands, the *Kind* filter can come back as a
-select fed from it. That is optional, not a debt.
+<!-- §S2 (No reminder-kind catalog; the Reminder types card only ever shows its empty state — notifications/B3) fixed
+     2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
 ### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
 Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
@@ -200,9 +173,9 @@ accounts that cannot raise it (or entirely outside Development). Catalog decisio
 ## Deferred to opportunities
 
 <!-- `scheduler/O1` built 2026-10-05 — moved to _fix-queue-log.md → Closed opportunities. -->
-- **`scheduler/O2`** — 50 of the 73 rows are spent or removed `History.TimerBoundaryAlarm` one-shots. Hide `Removed`
-  by default and group per-instance one-shots by handler, so the 11 recurring jobs stay visible.
+<!-- `scheduler/O2` built 2026-10-05 (Removed hidden by default, *Include removed* switch) — moved to
+     _fix-queue-log.md → Closed opportunities. -->
 <!-- `reminders-admin/O1` built 2026-10-05 (server `displayLabel` from an owner-registered resolver) — moved to
      _fix-queue-log.md → Closed opportunities. It also landed §S6 (a). -->
-<!-- `reminders-user/O1` built 2026-10-05 (the chip, with §S7) — moved to _fix-queue-log.md → Closed opportunities.
-     Its *Snoozed* filter and *Undo* were not built; see the log entry. -->
+<!-- `reminders-user/O1` built 2026-10-05 (the chip, with §S7; then *Undo* and the *My action* filter the same day) —
+     moved to _fix-queue-log.md → Closed opportunities. -->

@@ -8,8 +8,8 @@ current state is in the status line below.
 
 **Status (2026-10-05):** 18 fixed or fixed-in-part (X1, B1, B2, B3, B4, B5, B6, A1, A2, A3, A4, P1, P2, P3, P4, P5, P6,
 P7; A2's *Snooze* half and P2's badge half are won't-fix by owner decision, and P3 took the interim instead of waiting
-on §S2) · O1 built (the chip; its filter and *Undo* are not) · U2 stale · U3 settled as not a defect. B6 and O1 still need a live
-check once the API is restarted. Fix batches are in
+on §S2) · O1 built (the chip, then *Undo* and the *My action* filter on 2026-10-05) · U2 stale · U3 settled as not a defect. B6 and O1 were verified live
+on 2026-10-05 after the API restart (e2e `acted-on rows`, 2/2). Nothing is open. Fix batches are in
 `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the pass wrote to the database for real. Through the real API: one snooze marker (23202, the
@@ -226,7 +226,7 @@ into that batch rather than open a new one.
   alert with retry = `reload()`, and skip the announcer while `error` is set.
 
 ### B6. A snoozed or dismissed occurrence stays in the list unchanged, and can be dismissed again (was U1)
-- **Status:** fixed 2026-10-05 (§S7, closed in `_fix-queue-log.md` → *Closed escalations*). Server: `my-upcoming` carries `myAction` (`Snoozed` / `Dismissed` / null) and `snoozeUntil` for the caller's effective action on the pending occurrence. A repeat dismiss is a 204 that writes nothing, and a `snoozeUntil` at or before the occurrence is a 400. Pinned by `MyOccurrenceActionTests` (5/5). Client: a successful action marks the row instead of dropping it (O1's chip), and a dismissed row offers no action. **Verified** against a mock that answers like the new server: after *Dismiss delivery* the row reads "Dismissed" with no buttons, both at 100 ms and after the reload, and focus is on the heading. **Not verified live:** the API under Rider still runs the old build. The new e2e block `My reminders — acted-on rows` fails until the API is restarted (no migration needed)
+- **Status:** fixed 2026-10-05 (§S7, closed in `_fix-queue-log.md` → *Closed escalations*). Server: `my-upcoming` carries `myAction` (`Snoozed` / `Dismissed` / null) and `snoozeUntil` for the caller's effective action on the pending occurrence. A repeat dismiss is a 204 that writes nothing, and a `snoozeUntil` at or before the occurrence is a 400. Pinned by `MyOccurrenceActionTests` (5/5). Client: a successful action marks the row instead of dropping it (O1's chip), and a dismissed row offers no action. **Verified** against a mock that answers like the new server: after *Dismiss delivery* the row reads "Dismissed" with no buttons, both at 100 ms and after the reload, and focus is on the heading. **Verified live 2026-10-05** after the API restart: the e2e block `My reminders — acted-on rows` passes 2/2 (a real dismiss and a real snooze both mark the row, and both survive a reload)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje`; `MyRemindersView.vue:287-294` (`dropActiveRow` → `reload()`); server
   `GetMyUpcomingRemindersEndpoint.cs:40-41` (filters on recipient only), `DismissReminderOccurrenceEndpoint.cs` (no
@@ -429,7 +429,7 @@ into that batch rather than open a new one.
   refreshed."), or branch on whether `activeOccurrence` is still in the future when the 400 arrives.
 
 ### O1. The list cannot show that an occurrence is already snoozed or dismissed
-- **Status:** built 2026-10-05, chip only (with B6, §S7). Each row shows *Snoozed until …* (clock, `primaryOutline`) or *Dismissed* (bell-slash, `warning`) under its title, from `my-upcoming`'s `myAction` / `snoozeUntil`. New keys `reminderDashboard.my.snoozedUntil` / `.dismissed` (sk + en). **Not built:** the *Snoozed* filter (`myAction` is filled after the page is projected, so the server cannot filter or sort on it yet) and an *Undo* (no reversal endpoint exists, and the Dismiss confirm still says it cannot be undone from here)
+- **Status:** built 2026-10-05, in full. First the chip (with B6, §S7): each row shows *Snoozed until …* (clock, `primaryOutline`) or *Dismissed* (bell-slash, `warning`) under its title, from `my-upcoming`'s `myAction` / `snoozeUntil`. Then the other two halves, the same day. **Undo:** `POST /reminder-dashboard/undo` appends a `Reversal` marker (idempotent; a snooze already due is a 400), and acted rows get an *Undo* icon button with no confirm dialog; the Dismiss confirm now says it can be undone until the occurrence is due. **Filter:** `my-upcoming` takes `myAction` (`Snoozed` / `Dismissed`), computed in SQL so the pager's total counts the filtered set; the Filter dialog has a *My action* select, the URL carries `?action=`, and a chip shows it. Verified live: e2e (7 new in `reminders-user.draft.spec.ts`), server `UndoOccurrenceActionTests` (10)
 - **Severity:** opportunity
 - **Where:** `/pripomienky/moje`
 - **What exists:** the server keeps per-recipient `ReminderOccurrenceAction` markers (dismiss, and snooze with

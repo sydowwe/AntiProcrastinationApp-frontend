@@ -148,7 +148,18 @@ test.describe('Reminder preferences (/nastavenia/pripomienky)', () => {
 		await expect(page.getByText("Failed to load quiet hours. This doesn't mean you have none set.")).toBeVisible()
 	})
 
-	test.fixme('B3: the Reminder types card lists the available kinds (at least PersonalReminder) with no prior write', async () => {})
+	// B3 / §S2 — the card listed only stored rows, and nothing wrote one, so it was permanently the empty state.
+	// The server now declares the kinds it can raise, so a fresh account is offered the switch, on, with no write.
+	// Read-only; the toggling itself is `reminder-kind-catalog.spec.ts`.
+	test('B3: the Reminder types card offers the personal reminder kind, switched on, with no prior write', async ({
+		authenticatedPage: page,
+	}) => {
+		await page.goto('/nastavenia/pripomienky')
+		const card = page.locator('.v-card').filter({ has: page.getByText('Reminder types', { exact: true }) })
+		await expect(card.getByRole('checkbox', { name: 'Personal reminders' })).toBeChecked({ timeout: 15_000 })
+		await expect(card.getByText('Delivered')).toBeVisible()
+		await expect(card.getByText('There are no reminder types to set up yet.')).toHaveCount(0)
+	})
 	test.fixme('A4: card text and icons meet contrast', async () => {
 		// Fixed in S14 (surface cards; measured by hand, see _fix-queue-log.md). No computed-colour assertion written yet.
 	})

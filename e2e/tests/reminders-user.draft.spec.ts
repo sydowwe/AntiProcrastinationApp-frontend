@@ -194,7 +194,9 @@ test.describe(`My reminders (${MY_REMINDERS})`, () => {
 		await opener.focus()
 		await authenticatedPage.keyboard.press('Enter')
 		const dialog = authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' })
-		await expect(dialog.getByText('This cannot be undone from here.', { exact: false })).toBeVisible()
+		// O1 — the copy used to say "This cannot be undone from here."; Undo now exists on the row.
+		await expect(dialog.getByText('You can undo this from the list until the occurrence is due.', { exact: false })).toBeVisible()
+		await expect(dialog.getByText('cannot be undone', { exact: false })).toHaveCount(0)
 		await dialog.getByRole('button', { name: 'Cancel' }).click()
 		await expect(dialog).toBeHidden()
 		await expect(opener).toBeFocused()
@@ -294,5 +296,117 @@ test.describe(`My reminders — acted-on rows (${MY_REMINDERS})`, () => {
 			await expect(row, pass).toContainText('Snoozed until')
 			await expect(row.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }), pass).toBeEnabled()
 		}
+	})
+
+	// O1 (Undo) — the chip said what the user did, but nothing took it back. Undo appends a reversal on the
+	// server, so the occurrence is delivered as if the user had never acted.
+	const undoName = (title: string) => `Undo your snooze or dismissal of reminder ${title}`
+
+	test('an untouched row offers no Undo', async ({ authenticatedPage }) => {
+		await expect(authenticatedPage.getByRole('button', { name: /^Undo/ })).toHaveCount(0)
+	})
+
+	test('Undo on a dismissed row restores its actions, sends one undo, and survives a reload', async ({ authenticatedPage }) => {
+		const title = TITLES[0]
+		const row = authenticatedPage.locator('main tbody tr').filter({ hasText: title })
+		await authenticatedPage.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' }).getByRole('button', { name: 'Dismiss delivery' }).click()
+		await expect(row).toContainText('Dismissed')
+
+		const request = authenticatedPage.waitForRequest(r => r.url().includes('/reminder-dashboard/undo') && r.method() === 'POST')
+		await row.getByRole('button', { name: undoName(title), exact: true }).click()
+
+		const body = (await request).postDataJSON()
+		expect(Object.keys(body).sort()).toEqual(['occurrenceAt', 'reminderDefinitionId'])
+		await expect(authenticatedPage.getByText('Restored — this occurrence will be delivered as planned.')).toBeVisible()
+
+		for (const pass of ['after the undo', 'after a reload']) {
+			if (pass === 'after a reload') await authenticatedPage.reload()
+			await expect(row, pass).not.toContainText('Dismissed')
+			await expect(row.getByRole('button', { name: `Snooze reminder ${title}`, exact: true }), pass).toBeEnabled()
+			await expect(row.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }), pass).toBeEnabled()
+			await expect(row.getByRole('button', { name: /^Undo/ }), pass).toHaveCount(0)
+		}
+	})
+
+	test('Undo on a snoozed row clears the chip and stays cleared after a reload', async ({ authenticatedPage }) => {
+		const title = TITLES[1]
+		const row = authenticatedPage.locator('main tbody tr').filter({ hasText: title })
+		await authenticatedPage.getByRole('button', { name: `Snooze reminder ${title}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' }).getByRole('button', { name: 'Snooze' }).click()
+		await expect(row).toContainText('Snoozed until')
+
+		await row.getByRole('button', { name: undoName(title), exact: true }).click()
+
+		for (const pass of ['after the undo', 'after a reload']) {
+			if (pass === 'after a reload') await authenticatedPage.reload()
+			await expect(row, pass).not.toContainText('Snoozed until')
+			await expect(row.getByRole('button', { name: /^Undo/ }), pass).toHaveCount(0)
+		}
+	})
+
+	test('Undo is on the acted row only, and a keyboard user can reach it', async ({ authenticatedPage }) => {
+		const title = TITLES[2]
+		await authenticatedPage.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' }).getByRole('button', { name: 'Dismiss delivery' }).click()
+
+		const undo = authenticatedPage.getByRole('button', { name: /^Undo/ })
+		await expect(undo).toHaveCount(1)
+		await expect(undo).toHaveAccessibleName(undoName(title))
+		await undo.focus()
+		await expect(undo).toBeFocused()
+	})
+
+	// O1 (filter) — "show me what I snoozed". It is computed in SQL, so the pager's total counts the filtered set.
+	test('?action=Snoozed lists only the snoozed rows, shows a chip, and clears back to the full list', async ({ authenticatedPage }) => {
+		const snoozed = TITLES[1]
+		await authenticatedPage.getByRole('button', { name: `Snooze reminder ${snoozed}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' }).getByRole('button', { name: 'Snooze' }).click()
+		await expect(authenticatedPage.locator('main tbody tr').filter({ hasText: snoozed })).toContainText('Snoozed until')
+
+		await authenticatedPage.goto(`${MY_REMINDERS}?action=Snoozed`)
+		const rows = authenticatedPage.locator('main tbody tr')
+		await expect(rows).toHaveCount(1)
+		await expect(rows.first()).toContainText(snoozed)
+		await expect(authenticatedPage.locator('main .v-chip').filter({ hasText: 'My action: Snoozed' })).toBeVisible()
+		await expect(authenticatedPage.getByRole('status').filter({ hasText: /results? found/ })).toHaveText('1 result found')
+
+		await authenticatedPage.getByRole('button', { name: /^Remove filter/ }).click()
+		await expect(rows).toHaveCount(TITLES.length)
+		expect(new URL(authenticatedPage.url()).searchParams.get('action')).toBeFalsy()
+	})
+
+	test('?action=Dismissed matches the dismissed row and not the snoozed one', async ({ authenticatedPage }) => {
+		const dismissed = TITLES[0]
+		const snoozed = TITLES[1]
+		await authenticatedPage.getByRole('button', { name: `Dismiss delivery of reminder ${dismissed}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' }).getByRole('button', { name: 'Dismiss delivery' }).click()
+		await expect(authenticatedPage.locator('main tbody tr').filter({ hasText: dismissed })).toContainText('Dismissed')
+		await authenticatedPage.getByRole('button', { name: `Snooze reminder ${snoozed}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' }).getByRole('button', { name: 'Snooze' }).click()
+		await expect(authenticatedPage.locator('main tbody tr').filter({ hasText: snoozed })).toContainText('Snoozed until')
+
+		await authenticatedPage.goto(`${MY_REMINDERS}?action=Dismissed`)
+
+		const rows = authenticatedPage.locator('main tbody tr')
+		await expect(rows).toHaveCount(1)
+		await expect(rows.first()).toContainText(dismissed)
+	})
+
+	test('the Filter dialog offers My action, and choosing Snoozed narrows the list', async ({ authenticatedPage }) => {
+		const snoozed = TITLES[1]
+		await authenticatedPage.getByRole('button', { name: `Snooze reminder ${snoozed}`, exact: true }).click()
+		await authenticatedPage.getByRole('dialog', { name: 'Snooze reminder' }).getByRole('button', { name: 'Snooze' }).click()
+		await expect(authenticatedPage.locator('main tbody tr').filter({ hasText: snoozed })).toContainText('Snoozed until')
+
+		await authenticatedPage.getByRole('button', { name: 'Filter' }).click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Filter' })
+		// A VSelect is opened through its wrapper, not by role (a `data-no-activator` div eats the click).
+		await dialog.locator('.v-field').filter({ hasText: 'My action' }).click()
+		await authenticatedPage.getByRole('option', { name: 'Snoozed' }).click()
+		await dialog.getByRole('button', { name: /^(Confirm|Apply)/ }).click()
+
+		await expect(authenticatedPage).toHaveURL(/action=Snoozed/)
+		await expect(authenticatedPage.locator('main tbody tr')).toHaveCount(1)
 	})
 })

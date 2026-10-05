@@ -5,8 +5,8 @@
 **Tally:** blocker 1 · bug 6 · a11y 2 · polish 7 · opportunity 2 · unverified 3 (all three since settled, see Status)
 
 **Status (2026-10-04):** 16 of 21 closed or escalated: 15 fixed (X1, B1–B5, A1, A2, P1–P7), 1 escalated to the backend
-(B6 → §S1). That leaves O2 (opportunity, partly built). U1, U2 and U3 were settled on 2026-10-05 (U3 through a new
-orphaned-job fixture row), and O1 was built the same day. Fix batches are in
+(B6 → §S1, since fixed server-side and closed 2026-10-05). U1, U2 and U3 were settled on 2026-10-05 (U3 through a new
+orphaned-job fixture row), and O1 and O2 were built the same day. Nothing is open. Fix batches are in
 `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 Every finding is **[framework]** — the views, components and DTOs all live in `src/_common/modules/scheduler/`
@@ -309,7 +309,7 @@ the data a real registry produces (B6, P4).
   A product decision, not a defect.
 
 ### O2. The jobs list is 58 % spent one-shot alarms by default
-- **Status:** partly built 2026-10-05, not yet verified in the browser. The list now hides `Removed` by default; an
+- **Status:** built 2026-10-05, verified 2026-10-05 (`scheduler-removed-jobs.spec.ts` passes 3/3 against the running app; closed in `_fix-queue-log.md` → *Closed opportunities*). The list now hides `Removed` by default; an
   *Include removed* switch (URL `removed=true`, chip) lifts it. Server: opt-in `ExcludeRemoved` on
   `ScheduledJobsOverviewFilterRequest`, which yields to an explicit `status` (`SchedulerJobsOverviewExcludeRemovedTests`,
   3/3). The needs-attention *failed* "View all" lifts the exclusion, because that list counts Removed jobs. The 8

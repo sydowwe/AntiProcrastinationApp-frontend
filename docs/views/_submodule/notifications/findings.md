@@ -5,7 +5,7 @@
 
 **Tally:** blocker 0 · bug 4 · a11y 7 · polish 6 · opportunity 0 · unverified 2  (19 entries: B1–B4, A1–A7, P1–P6, U1–U2)
 
-**Status (2026-10-04):** 14 fixed (B1, B2, A1–A7, P1–P4, P6) · 3 escalated to the backend (B3 → §S2, B4 → §S3, P5 → §S4) ·
+**Status (2026-10-05):** 15 fixed (B1, B2, **B3**, A1–A7, P1–P4, P6) · 2 escalated to the backend (B4 → §S3, P5 → §S4) ·
 U1 and U2 verified (pass). Fix batches are in `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the mutation pass toggled quiet hours on/off/undo and edited the window, unticked *Personal
@@ -63,7 +63,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** take the locale from the registered translator / i18n instance inside `formatLocalized`, or add a locale parameter; update `docs/utils.md`.
 
 ### B3. "Reminder types" can never mute anything — the card lists only rows that already exist, and nothing creates one [framework]
-- **Status:** escalated — backend ask §S2 in `_fix-queue.md` (needs a kind catalog; client half is appended as a batch once it lands)
+- **Status:** fixed 2026-10-05 (§S2: the server declares the kinds through `IReminderKindCatalog` and `GET /reminder-preference` returns them as `kinds`; the card renders every kind, on by default. Verified live: e2e `reminder-kind-catalog.spec.ts` (4) and the read-only B3 test in `notifications.draft.spec.ts`; server `ReminderKindCatalogTests` (5))
 - **Severity:** bug
 - **Where:** `/nastavenia/pripomienky` → *Reminder types* card → `src/_common/modules/notifications/reminderPreference/component/ReminderKindList.vue:17-41`; the only caller of `upsertReminderKind` is `ReminderKindRow.vue:74-75`, i.e. an already-rendered row
 - **Expected:** the card's own subtitle — "Mute a specific reminder type without silencing all of them" — and the page intro ("…mute individual reminders…"). The day-planner settings tab sends users here for exactly this: "Reminders delivered even with the app closed — including turning them off entirely, and quiet hours — live under *Reminder preferences*" (`dayPlanner.en.ts:27`), and its source comment names the `("Portal", "PersonalReminder")` row as "the single switch that stops a reminder from being delivered" (`PlannerRemindersTab.vue:32-37`). CLAUDE.md's ownership table puts per-kind muting in reminder preferences.

@@ -882,6 +882,38 @@
 
 ## Closed escalations
 
+### §S2 — no reminder-kind catalog; the *Reminder types* card only ever shows its empty state (`notifications/B3`)
+> ✅ **FIXED 2026-10-05.** Decision: the card keeps its promise, so the server gets the catalog, not the client a copy
+> change. **Server** (framework submodule, no migration): `Sydowwe.Framework.Contracts.reminders.IReminderKindCatalog`
+> (+ `ReminderKindDescriptor(OwnerModule, Kind)`) is the owner's declaration of the kinds it can raise, in the shape of
+> `IReminderLabelResolver` (pure, synchronous, never throws). A declaration rather than a query because a kind is a free
+> string on a registration, so a kind nobody has registered yet, or one the user has no reminder of, would be missing.
+> `GET /reminder-preference` gains **`kinds`**: the declared kinds at their default (on), overlaid with the caller's stored
+> rows, plus any stored row for an undeclared kind, so an opt-out stays visible and reversible. **`kindPreferences` is
+> unchanged** (stored rows only), so `ReminderPreferenceAuthTests`' "set nothing → empty" assertion still holds and an
+> un-updated client keeps working. This host declares `("Portal", "PersonalReminder")` in
+> `PersonalReminderKindCatalog` (Planning), from `ReminderRegistrationService`'s constants so the two cannot drift.
+> **Client:** `ReminderPreferenceResponse` carries `kinds` (falling back to the stored rows against a server that predates
+> it) and `ReminderPreferencesView` hands that to the existing `ReminderKindList`; the empty-state copy no longer claims
+> "you haven't changed any" (sk + en). The A7 switch name was already shipped. **Verified:** server
+> `ReminderKindCatalogTests` (5) with the neighbouring reminder classes, 26/26 via `scripts/test.ps1`; client `type-check`
+> exit 0, `ReminderPreferenceResponse.test.ts` (4); live after the API restart, e2e `reminder-kind-catalog.spec.ts` (4:
+> off → PUT body + "Muted" + survives reload, back on is an explicit opt-in, a failed write reverts the switch, a server
+> without `kinds` still renders) and the read-only `notifications.draft.spec.ts` B3 test, which replaced its `fixme`.
+> Not done: the day planner's hint (`PlannerRemindersTab.vue`) was right all along once the switch exists.
+
+Server: `framework/Sydowwe.Reminders/application/endpoint/preference/` has only `GET /reminder-preference` (the user's
+stored overrides) and `PUT /reminder-preference/kind`. The client renders only stored rows, and nothing in `src/`
+creates one except a toggle on a row that already exists. So the card's promise ("Mute a specific reminder type…")
+can never be kept. The day planner's settings tab sends users to it to turn reminders off "for real"
+(`dayPlanner.en.ts:27`, `PlannerRemindersTab.vue:32-37`). The ask: a catalog of the `(ownerModule, kind)` pairs this
+deployment can raise, each with its effective `enabled`, either as `GET /reminder-preference/kinds` or folded into
+`GET /reminder-preference`. That is the same shape as the notification-type catalog that `GET
+/notification-preference/mine` already returns. **Client half after it lands:** render every kind from the catalog in
+`ReminderKindList.vue`, drop the empty-state-only path, and carry S12's A7 name if S12 has not shipped. **`reminders-user/P3`
+no longer waited on this** (closed 2026-10-05 with the interim). If the catalog lands, the *Kind* filter on My reminders
+can come back as a select fed from it. That is optional, not a debt.
+
 ### §S6 — the personal reminder row has no recipient-safe identity and no interval (`reminders-user/B1`, `B4`)
 > ✅ **FIXED 2026-10-05.** (a) landed with `reminders-admin/O1` (*Closed opportunities* below): not the notification
 > render path but an owner-registered `IReminderLabelResolver` filling `MyUpcomingReminderDto.DisplayLabel`, with the
@@ -934,9 +966,12 @@ comment, which says `MyRemindersView` renders none of the missing fields except 
 > `typecheck` exit 0. `playwright-cli` with `my-upcoming` mocked as the new server answers: a dismissed row reads
 > "Dismissed" with no buttons, a snoozed one reads "Snoozed until 10/09/2026 12:00:00 PM" with both buttons, and an
 > untouched one is unchanged. After *Dismiss delivery* (mocked 204) the row is marked at 100 ms and still marked after
-> the reload, with focus on the heading. **Not verified live:** the API under Rider runs the old build. The new e2e
-> block `My reminders — acted-on rows` (freshSeed, reseeds after) replaced U1's `fixme`, and it fails until the API is
-> restarted.
+> the reload, with focus on the heading. **Verified live 2026-10-05** against the restarted API: the e2e block
+> `My reminders — acted-on rows` (freshSeed, reseeds after; it replaced U1's `fixme`) passes 2/2 — a real dismiss leaves
+> the row reading "Dismissed" with no actions, a real snooze leaves "Snoozed until …" with *Dismiss* still enabled, and
+> both survive a reload. In one full-file run the snooze test failed on a 401 from `POST /reminder-dashboard/snooze`
+> (the cached auth state had outlived its ~15 min access token after the preceding reseeds). It is a fixture-session
+> flake, not a defect: the same block passed on a rerun and the other 25 tests in that run passed.
 
 Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.
 `DismissReminderOccurrenceEndpoint` does not check for an existing marker. `SnoozeReminderOccurrenceEndpoint.cs:50`
@@ -950,6 +985,25 @@ skipped as `Snoozed`. **Client half after it lands:** replace `dropActiveRow()` 
 `reminders-user/O1`'s chip ("Snoozed until …" / "Dismissed"), and hide *Dismiss* on a dismissed row. If (c) comes back
 "earlier is valid", S28's B2 half still stands, because the *default* must not be earlier, but its custom-time floor
 can go.
+
+### §S1 — missed one-shot fires never recover; spent one-shots stay `Active` (`scheduler/B6`)
+> ✅ **RESOLVED 2026-10-05** (server-side; no client change, as the ask predicted). The cause was not the missed-fire
+> path. (1) A fired one-shot was never retired, so it stayed `Active` with `nextRunAt: null` (the 8); the dispatcher now
+> sets it `Removed` once its occurrence is spent (`SchedulerSpentOneShotTests`, 6). (2) An alarm row deleted without a
+> cancel (it cascades with its user) stranded its job: no row meant no boot re-registration, so it stayed `Active` and
+> overdue (the 12). History's boot registrar now removes any alarm job with no row behind it, through the new
+> `IScheduler.RemoveJobsNotInAsync` (`TimerBoundaryAlarmRegistrarTests`, 2). The e2e seed now deletes alarm jobs too,
+> because its truncate restarts alarm ids and a kept job key was being re-used
+> (`Seed_DeletesTimerAlarmJobs_AndKeepsEveryOtherSchedulerJob`). **Verified live after a restart:** all 62
+> `History.TimerBoundaryAlarm` jobs read `Removed`, *Overdue / stuck* is 0, the default jobs list has 13 rows with no
+> alarms. e2e: `scheduler-removed-jobs.spec.ts` (3). Original ask (c), whether History should still create alarms for
+> long-ended timers, was answered by (2): they are now cleaned up rather than left stranded.
+
+Original ask, unchanged: what `FireAndProceed` is contracted to do for a one-shot whose instant passed while the host
+was down; which terminal status a one-shot takes after it fires; and, for the owning module (History), whether alarms
+for timers that ended long ago should fire at all. Contract and behaviour only; any change had to keep existing `Active`
+semantics for recurring jobs. Nothing client-side changed: the overdue chip and list were correct reports of a server
+state.
 
 ## Closed verification items
 
@@ -1032,6 +1086,13 @@ can go.
   (server, pinned by two `SchedulerJobSignalsTests`). **Verified:** on `/planovac/ulohy/10`, Cancel sent no request and
   confirming sent one `trigger-now` → 200. **Mocked only:** the paused/in-flight line, checked on the grid with a routed
   `jobs-overview`, because the API under Rider ran the old build.
+- **`O2`** ✅ — the jobs list was 58 % spent one-shot alarms. The list now hides `Removed` jobs by default and an
+  *Include removed* switch (URL `removed=true`, chip) lifts it; an explicit `status` filter wins over the exclusion and
+  disables the switch. Server: opt-in `ExcludeRemoved` on `ScheduledJobsOverviewFilterRequest`
+  (`SchedulerJobsOverviewExcludeRemovedTests`, 3/3); the needs-attention *failed* "View all" lifts it because that list
+  counts Removed jobs. Grouping one-shots by handler: not needed, since with `B6` fixed every alarm ends `Removed`.
+  **Evidence:** `e2e/tests/scheduler-removed-jobs.spec.ts` covers hidden-by-default, *Include removed*, and
+  `status=Removed`, and a bare list staying bare. **Verified 2026-10-05:** the spec passes 3/3 against the running app.
 
 ### `reminders-admin` — closed 2026-10-05
 - **`O1`** ✅ — reminders were named by type and id everywhere. **Decision: server-side `displayLabel`, supplied by the
@@ -1063,6 +1124,25 @@ can go.
   server cannot filter or sort on it, so it would need a query-side join first. Also an R10 §1 *Undo*: no reversal
   endpoint exists, and the Dismiss confirm still says it cannot be undone from here. Re-open either as its own
   opportunity if wanted.
+- **`O1`** ✅ (the other two halves, 2026-10-05) — *Undo* and the *My action* filter, both built. **Undo:** `POST
+  /reminder-dashboard/undo` (`UndoReminderOccurrenceActionEndpoint`) appends a `Reversal` row pointing at the caller's
+  effective action, using the model's existing `ReversesActionId`, so nothing is deleted and the scanner reads it with
+  the rule it already had. Idempotent (nothing to undo is a 204 that writes nothing). A snooze that has already come due
+  is a 400, because the scanner re-delivers it at `SnoozeUntil` and a reversal would promise what the server cannot
+  keep. Reversing a later dismiss re-exposes the snooze beneath it ("latest non-reversed wins"), pinned by a test.
+  Client: a row-level *Undo* icon button on acted rows (no confirm dialog: it is the safe direction), shown only while
+  the server would take it (`canUndo`: occurrence ahead, snooze not yet due); the Dismiss confirm now says "You can undo
+  this from the list until the occurrence is due" instead of "cannot be undone from here". **Filter:** `myAction` on
+  `UpcomingReminderFilterRequest`, honoured by `my-upcoming` only and computed **in SQL**
+  (`EffectiveOccurrenceActions.WhereEffective`), so the pager's total counts the filtered set, which is what the log's
+  earlier "needs a query-side join first" asked for. Client: `MyReminderFilter.myAction`, URL param `action`, a *My
+  action* select and a chip. New keys `reminderDashboard.undo.*`, `a11y.undoFor`, `my.myAction`, `my.snoozed` (sk + en).
+  **Verified:** server `UndoOccurrenceActionTests` (10: reversal row kept, idempotent, due-snooze 400, wrong occurrence
+  400, other user's 404, filter by snoozed/dismissed with totals, latest-wins, self-scoped) with the neighbouring
+  classes, 26/26; client `type-check` and e2e `typecheck` exit 0, `UndoOccurrenceRequest.test.ts` (key names, codec);
+  live after the API restart, 7 new e2e tests in `reminders-user.draft.spec.ts` (undo of a dismiss and of a snooze, each
+  surviving a reload; no Undo on an untouched row; keyboard reach; `?action=` for both values; the Filter dialog) and
+  the re-worded Dismiss-copy test, all passing. `npm run lint` 0 errors.
 
 ## Contradictions & re-grades
 
