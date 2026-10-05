@@ -508,6 +508,7 @@
 			backgroundMinutes: bar.data.backgroundMinutes,
 			totalMinutes: bar.data.activeMinutes + bar.data.backgroundMinutes,
 			url: bar.data.url,
+			sources: bar.data.sources,
 		}
 
 		tooltipPosition.value = {

@@ -176,7 +176,15 @@
 	// --- Response → view-model mapping ---
 	// The merged `label` is both the key and the label — see `UnifiedActivityItem`.
 	function toSummaryCardsData(item: UnifiedSummaryItem): SummaryCardsData {
-		return new SummaryCardsData(item.label, item.label, item.active, item.background, item.totalSeconds, item.isNew)
+		return new SummaryCardsData(
+			item.label,
+			item.label,
+			item.active,
+			item.background,
+			item.totalSeconds,
+			item.isNew,
+			item.sources,
+		)
 	}
 
 	function toStackedBarsWindow(window: UnifiedStackedBarsWindow): StackedBarsInputWindow {
@@ -191,6 +199,7 @@
 				// The one colour entry point for merged items, shared with the unified pie — see
 				// `unifiedItemColor` on why no call site picks its own field to hash.
 				color: unifiedItemColor(item.label),
+				sources: item.sources,
 			})),
 		}
 	}

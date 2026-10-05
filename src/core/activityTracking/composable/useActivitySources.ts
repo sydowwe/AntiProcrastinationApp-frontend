@@ -56,5 +56,26 @@ export function useActivitySources() {
 		return t(`activityTracking.sources.${source}`)
 	}
 
-	return { sourceOptions, sourceLabel }
+	function sourceIcon(source: ActivitySource): string {
+		return SOURCE_ICONS[source]
+	}
+
+	/**
+	 * "Browser, Desktop" — the list a unified card, bar or tooltip names its trackers with. Empty for
+	 * no sources, which is every per-source dashboard.
+	 */
+	function sourcesText(sources: readonly ActivitySource[] | undefined): string {
+		return (sources ?? []).map(sourceLabel).join(', ')
+	}
+
+	/**
+	 * Appends ", recorded by Browser, Desktop" to an accessible name. Icons and hover tooltips are not
+	 * read out, so a focused card or bar says it here; with no sources the name is returned unchanged.
+	 */
+	function withRecordedBy(name: string, sources: readonly ActivitySource[] | undefined): string {
+		const list = sourcesText(sources)
+		return list === '' ? name : t('activityTracking.sources.withRecordedBy', { name, sources: list })
+	}
+
+	return { sourceOptions, sourceLabel, sourceIcon, sourcesText, withRecordedBy }
 }

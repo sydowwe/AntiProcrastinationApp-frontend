@@ -102,10 +102,10 @@ of its fields is `spent` on the planner's own screens, so it is not in the 121. 
   panel's instant rows already print. Was: unread (derived), 6 fields. `getDomainDetails` had no caller.
 - `ActivityStat.averageSeconds` · unread (derived), all four ledgers. The baseline average behind each card's ▲/▼ %.
   "+40%" says nothing without "usually 25m".
-- `DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`, `.soundSeconds` · unread
-  (derived), 4 fields. The per-window-title split. Only the total per title is shown.
-- `UnifiedSummaryItem.sources`, `UnifiedWindowItem.sources` · unread (derived), 2 fields. Which ledgers recorded an item.
-  The unified pie shows these as chips; the cards and the bar tooltip could too.
+- ~~`DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`, `.soundSeconds` · unread
+  (derived), 4 fields.~~ Spent by OP20 (`docs/opportunities.md` § *Closed*): a split caption under each window title.
+- ~~`UnifiedSummaryItem.sources`, `UnifiedWindowItem.sources` · unread (derived), 2 fields.~~ Spent by OP20: source
+  icons on the unified cards and a *Recorded by* row in the bar tooltip.
 - `TrackerDesktopMapping.roleId` / `.categoryId` and the Android twins · unread, 2 fields. This client never writes a
   role/category target, but a rule that has one renders with a blank target, and `edit()` reopens it in *To ignored*
   mode (`DesktopSettingsView.vue:160-167`).

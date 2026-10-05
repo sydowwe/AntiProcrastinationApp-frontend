@@ -30,6 +30,9 @@ const messages = {
 		overlapNote: `{value} was recorded by two sources at once and is counted once.`,
 		displaced: `{value} from {source} is credited to {target}`,
 		overlapRule: `Where sources overlap, foreground time beats background time; otherwise the more specific source wins — browser, then desktop, then phone.`,
+		// OP20: a unified card's source icons, and the accessible name of a card or bar.
+		recordedByList: `Recorded by: {sources}`,
+		withRecordedBy: `{name}, recorded by {sources}`,
 	},
 	baseline: {
 		last7Days: `Last 7 days`,
@@ -88,6 +91,12 @@ const messages = {
 		windowTitles: `Window titles:`,
 		fullscreen: `Fullscreen:`,
 		playingSound: `Playing sound:`,
+		// OP20: one window title's caption, parts joined with " · ". Fullscreen and sound are shares of
+		// the active part (the server counts them from active seconds only).
+		splitActive: `{duration} active`,
+		splitBackground: `{duration} in background`,
+		splitFullscreen: `{duration} fullscreen`,
+		splitSound: `{duration} with sound`,
 		monitorBreakdown: `Monitor breakdown:`,
 		monitor: `Monitor {n}:`,
 		closeDetails: `Close details`,

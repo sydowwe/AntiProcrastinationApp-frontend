@@ -40,6 +40,7 @@
 	import { lightenColor } from '@/_common/utils/colorUtils.ts'
 	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
 	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { useActivitySources } from '@/core/activityTracking/composable/useActivitySources.ts'
 
 	const props = defineProps<{
 		data: ColumnData
@@ -61,6 +62,7 @@
 	}>()
 
 	const { t } = useI18n()
+	const { withRecordedBy } = useActivitySources()
 
 	const domainColor = computed(() => props.data.color ?? getDomainColor(props.data.key))
 
@@ -72,11 +74,14 @@
 	// tooltip. Interactive bars borrow the domain card's "View details for" verb so the two kinds of
 	// chart control on one dashboard read as the same kind.
 	const ariaLabel = computed(() => {
-		const label = t('activityTracking.stackedBars.barLabel', {
-			name: displayName.value,
-			duration: fromSeconds(props.data.activeSeconds + props.data.backgroundSeconds),
-			window: props.windowLabel,
-		})
+		const label = withRecordedBy(
+			t('activityTracking.stackedBars.barLabel', {
+				name: displayName.value,
+				duration: fromSeconds(props.data.activeSeconds + props.data.backgroundSeconds),
+				window: props.windowLabel,
+			}),
+			props.data.sources,
+		)
 		return props.interactive ? t('activityTracking.statColumn.viewDetails', { domain: label }) : label
 	})
 

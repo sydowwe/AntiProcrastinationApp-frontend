@@ -1,5 +1,6 @@
 import { ActivityStat } from '@/core/activityTracking/dto/response/topDomains/ActivityStat.ts'
 import { type DashboardItem, readDashboardItem } from '@/core/activityTracking/dto/DashboardItem.ts'
+import type { ActivitySource } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
 
 /** One summary card. Selection reads `key`, the card prints `label` — see `DashboardItem`. */
 export class SummaryCardsData implements DashboardItem {
@@ -10,6 +11,8 @@ export class SummaryCardsData implements DashboardItem {
 		public background: ActivityStat | null,
 		public totalSeconds: number,
 		public isNew: boolean,
+		/** Which trackers saw the item. Unified cards only; a per-source dashboard leaves it empty. */
+		public sources: ActivitySource[] = [],
 	) {}
 
 	static fromJson(json: any): SummaryCardsData {

@@ -1,3 +1,5 @@
+import type { ActivitySource } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
+
 export class ColumnData {
 	constructor(
 		/** The item's identity, or `OTHER_DOMAIN` for the folded column. */
@@ -9,5 +11,7 @@ export class ColumnData {
 		public backgroundMinutes: number,
 		public url?: string,
 		public color?: string,
+		/** Unified bars only; the folded column carries the union of what it folded. */
+		public sources?: ActivitySource[],
 	) {}
 }

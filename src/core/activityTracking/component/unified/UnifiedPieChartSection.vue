@@ -172,7 +172,6 @@
 	import { foldPieTail, OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
 	import type { UnifiedActivityItem } from '@/core/activityTracking/dto/response/unified/UnifiedActivityItem.ts'
 	import type { UnifiedPieTotals } from '@/core/activityTracking/dto/response/unified/UnifiedPieTotals.ts'
-	import type { ActivitySource } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
 	import type { ActivityEmptyProbeState } from '@/core/activityTracking/composable/useActivityDashboard.ts'
 
 	const {
@@ -201,11 +200,7 @@
 
 	const viewMode = ref<'total' | 'active' | 'background'>('total')
 
-	const { sourceOptions, sourceLabel } = useActivitySources()
-
-	function sourceIcon(source: ActivitySource): string {
-		return sourceOptions.value.find(option => option.value === source)?.icon ?? 'fas fa-question'
-	}
+	const { sourceLabel, sourceIcon } = useActivitySources()
 
 	const showTail = ref(false)
 

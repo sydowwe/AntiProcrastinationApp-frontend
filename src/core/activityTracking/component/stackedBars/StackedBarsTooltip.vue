@@ -14,6 +14,16 @@
 			<span>{{ $t('activityTracking.viewMode.background') }}</span>
 			<span>{{ formatMinutes(data.backgroundMinutes) }}</span>
 		</div>
+		<template v-if="sourcesText">
+			<VDivider class="my-1" />
+			<div
+				class="tooltip-row"
+				data-testid="stacked-bars-tooltip-sources"
+			>
+				<span>{{ $t('activityTracking.pieChart.recordedBy') }}</span>
+				<span>{{ sourcesText }}</span>
+			</div>
+		</template>
 		<template v-if="data.url">
 			<VDivider class="my-1" />
 			<div
@@ -32,6 +42,7 @@
 	import type { TooltipData } from '@/core/activityTracking/component/stackedBars/dto/TooltipData.ts'
 	import type { Position } from '@/core/activityTracking/dto/Position.ts'
 	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { useActivitySources } from '@/core/activityTracking/composable/useActivitySources.ts'
 
 	const props = defineProps<{
 		data: TooltipData
@@ -39,6 +50,10 @@
 	}>()
 
 	const { t } = useI18n()
+	const { sourcesText: formatSources } = useActivitySources()
+
+	// Unified bars only — a per-source dashboard's bars carry no sources and get no row.
+	const sourcesText = computed(() => formatSources(props.data.sources))
 
 	const displayDomain = computed(() => {
 		return props.data.key === OTHER_DOMAIN ? t('activityTracking.common.other') : props.data.label

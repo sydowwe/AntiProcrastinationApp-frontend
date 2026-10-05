@@ -5,7 +5,7 @@
 		:elevation="selected ? 6 : 2"
 		tabindex="0"
 		role="button"
-		:aria-label="$t('activityTracking.statColumn.viewDetails', { domain: name })"
+		:aria-label="$t('activityTracking.statColumn.viewDetails', { domain: withRecordedBy(name, domain.sources) })"
 		:data-key="domain.key"
 		@click="handleClick"
 		@keydown.enter="handleClick"
@@ -22,6 +22,27 @@
 						class="domain-name"
 					>
 						{{ name }}
+					</div>
+				</template>
+			</VTooltip>
+			<!-- Unified cards only: which trackers saw the item, the same icons as the source filter. -->
+			<VTooltip
+				v-if="domain.sources.length > 0"
+				:text="$t('activityTracking.sources.recordedByList', { sources: sourcesText(domain.sources) })"
+				location="bottom"
+			>
+				<template #activator="{ props: tooltipProps }">
+					<div
+						v-bind="tooltipProps"
+						class="d-flex justify-center ga-2 mt-1 text-medium-emphasis"
+						data-testid="summary-card-sources"
+					>
+						<VIcon
+							v-for="source in domain.sources"
+							:key="source"
+							:icon="sourceIcon(source)"
+							size="12"
+						/>
 					</div>
 				</template>
 			</VTooltip>
@@ -77,6 +98,7 @@
 	import { computed } from 'vue'
 	import ActivityStatColumn from './ActivityStatColumn.vue'
 	import type { SummaryCardsData } from '@/core/activityTracking/dto/response/topDomains/SummaryCardsData.ts'
+	import { useActivitySources } from '@/core/activityTracking/composable/useActivitySources.ts'
 
 	const props = defineProps<{
 		domain: SummaryCardsData
@@ -88,6 +110,8 @@
 	const emit = defineEmits<{
 		(e: 'click', key: string): void
 	}>()
+
+	const { sourceIcon, sourcesText, withRecordedBy } = useActivitySources()
 
 	const name = computed(() => props.displayName ?? props.domain.label)
 

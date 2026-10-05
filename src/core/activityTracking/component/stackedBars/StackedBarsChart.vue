@@ -97,6 +97,7 @@
 	import type { Time } from '@/_common/dto/dto/Time.ts'
 	import { distinctLabels } from '@/core/activityTracking/dto/DashboardItem.ts'
 	import { OTHER_DOMAIN } from '@/core/activityTracking/component/pieChart/PieSegment.ts'
+	import { type ActivitySource, parseActivitySources } from '@/core/activityTracking/dto/enum/ActivitySource.ts'
 	import { formatWindowMinutes, getRowUnit, getYAxisInterval } from './stackedBarsUtils'
 
 	const {
@@ -231,7 +232,15 @@
 			backgroundMinutes: Math.ceil(item.backgroundSeconds / 60),
 			url: item.url,
 			color: resolveColor(item.key, item.color),
+			sources: item.sources,
 		}
+	}
+
+	// Every tracker that saw any folded item, de-duplicated and in source order. Undefined on a
+	// per-source dashboard, whose items carry no sources, so its tooltip stays as it was.
+	function foldedSources(items: StackedBarsInputItem[]): ActivitySource[] | undefined {
+		if (items.every(i => i.sources === undefined)) return undefined
+		return parseActivitySources(items.flatMap(i => i.sources ?? []))
 	}
 
 	function processItems(items: StackedBarsInputItem[]): ColumnData[] {
@@ -264,6 +273,7 @@
 				backgroundSeconds: otherBackgroundSeconds,
 				activeMinutes: Math.ceil(otherActiveSeconds / 60),
 				backgroundMinutes: Math.ceil(otherBackgroundSeconds / 60),
+				sources: foldedSources(rest),
 			},
 		]
 	}

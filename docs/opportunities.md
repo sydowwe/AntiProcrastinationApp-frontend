@@ -18,17 +18,6 @@
 7. ~~**OP7. "Streak kept today" on the flame.**~~ Done. See *Closed*.
 8. ~~**OP8. Say when the longest focus block happened.**~~ Done. See *Closed*.
 
-### OP20. Tracking detail panels: show the splits already sent
-- **Source:** from data-map (backlog `DesktopWindowTitleStats.*Seconds`, `Unified*.sources`)
-- **Data it spends:** `DesktopWindowTitleStats.activeSeconds`, `.backgroundSeconds`, `.fullscreenSeconds`,
-  `.soundSeconds`; `UnifiedSummaryItem.sources`, `UnifiedWindowItem.sources`
-- **Where it would surface:** `DesktopProcessDetailsPanel` window-title rows; unified summary cards and the stacked-bar
-  tooltip
-- **Needs backend:** no
-- **Size:** S
-- **Value:** "Was that video playing in the background or watched fullscreen?" is the difference between noise and a
-  lost evening. The source chips already exist on the unified pie.
-
 ### OP21. Time-of-day insight: how often, not only how much
 - **Source:** from data-map (backlog `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`)
 - **Data it spends:** `HistoryTimeOfDayHour.entries`, `HistoryTimeOfDayResponse.daysInRange`
@@ -59,6 +48,32 @@
   closed by `activityId`.
 
 ## Closed
+
+- **OP20**, built 2026-10-05, app-side only. `DesktopProcessDetailsEndpoint` already sent every per-title split, and
+  every unified card and bar item already carried `sources`, so the backend did not change. In
+  `DesktopProcessDetailsPanel`, each window title gets a caption under it: "13m active · 1m in background · 13m with
+  sound", with zero parts left out. A title with no background, fullscreen or sound time gets none, because its total
+  already says it all. A part under a minute prints in seconds. The server counts fullscreen and sound from a title's
+  *active* seconds only (the process-level rows do the same), so both are shares of the active part, not additions to the
+  total. A video playing with sound in an unfocused window therefore shows background time but no sound. The parts can
+  also read a minute short of the total, because `fromSeconds` floors each one (825 s + 75 s print as 13m + 1m against
+  15m), as the panel's own Active and Background rows always have.
+  On `/activity-tracking/unified`, each summary card shows the icons of the trackers that saw the item under its name
+  (the source filter's icons), with a *Recorded by: Phone* tooltip. The bar tooltip gains a *Recorded by* row, and the
+  folded *Other* bar shows every tracker it folded. The card's and the bar's accessible names end with ", recorded by
+  Phone", since neither icons nor hover tooltips are read out. The per-source dashboards carry no sources and are
+  unchanged. `useActivitySources` now owns `sourceIcon`, `sourcesText` and `withRecordedBy`, and the unified pie uses
+  the shared `sourceIcon`.
+  Checked live against the seed data: *VLC media player* on `/activity-tracking/desktop` read "Documentary.mkv 15m ·
+  13m active · 1m in background · 13m with sound" (900 / 825 / 75 / 825 s in the response). The unified cards showed
+  *Spotify* and *Chrome* with the phone icon and *Google Chrome* with the desktop icon, so the two Chromes can now be
+  told apart. A bar read "View details for Spotify, 30m, 10:00 - 10:30, recorded by Phone", and its tooltip ended with
+  *Recorded by: Phone*. None of the 4 desktop-dashboard bars got the suffix. No console errors.
+  `e2e/tests/tracking-splits-sources.spec.ts` (8 tests, route-patched) covers the full caption, a sub-minute part with
+  zero parts left out, no caption on an all-foreground title, the card icons, tooltip and accessible name with
+  out-of-order sources rendered in precedence order, a card with no sources, the bar's tooltip and accessible name, the
+  folded *Other* bar's union, and no "recorded by" anywhere on the desktop dashboard. All 8 passed three runs in a row on
+  2026-10-05 (~26–32 s).
 
 - **OP19**, built 2026-10-05, in both repos (the framework halves of each). **"`createdAt` is client-only" was
   wrong:** the server did send it, but `BaseGetUserSessionsEndpoint` filled it from the live refresh-token row's

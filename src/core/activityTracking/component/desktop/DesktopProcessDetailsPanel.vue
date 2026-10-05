@@ -98,6 +98,18 @@
 								</span>
 							</div>
 						</template>
+						<!-- Only when it says more than the total does: an all-foreground row has nothing to split. -->
+						<template
+							v-if="titleSplit(wt)"
+							#subtitle
+						>
+							<span
+								class="text-caption"
+								data-testid="window-title-split"
+							>
+								{{ titleSplit(wt) }}
+							</span>
+						</template>
 					</VListItem>
 				</VList>
 				<VBtn
@@ -122,8 +134,12 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
-	import { fromSeconds } from '@/_common/utils/formatDuration.ts'
-	import type { DesktopProcessDetailsResponse } from '@/core/activityTracking/dto/response/desktop/DesktopProcessDetailsResponse.ts'
+	import { useI18n } from 'vue-i18n'
+	import { fromSeconds, fromSecondsDetailed } from '@/_common/utils/formatDuration.ts'
+	import type {
+		DesktopProcessDetailsResponse,
+		DesktopWindowTitleStats,
+	} from '@/core/activityTracking/dto/response/desktop/DesktopProcessDetailsResponse.ts'
 
 	const props = defineProps<{
 		details: DesktopProcessDetailsResponse
@@ -133,8 +149,35 @@
 		close: []
 	}>()
 
+	const { t } = useI18n()
+
 	const expanded = ref(false)
 	const maxVisible = 5
+
+	/**
+	 * "20m active · 5m in background · 15m fullscreen · 10m with sound", leaving out every zero part.
+	 * The server counts fullscreen and sound from a title's *active* seconds only, so both are shares
+	 * of the active part, not further additions to the total. A title with no background, fullscreen
+	 * or sound time returns '' — its total already says everything.
+	 */
+	function titleSplit(wt: DesktopWindowTitleStats): string {
+		if (wt.backgroundSeconds <= 0 && wt.fullscreenSeconds <= 0 && wt.soundSeconds <= 0) return ''
+		const parts: [key: string, seconds: number][] = [
+			['splitActive', wt.activeSeconds],
+			['splitBackground', wt.backgroundSeconds],
+			['splitFullscreen', wt.fullscreenSeconds],
+			['splitSound', wt.soundSeconds],
+		]
+		return parts
+			.filter(([, seconds]) => seconds > 0)
+			.map(([key, seconds]) => t(`activityTracking.pieChart.${key}`, { duration: formatPart(seconds) }))
+			.join(' · ')
+	}
+
+	// `fromSeconds` floors a sub-minute part to "0m", which reads as a part that is not there.
+	function formatPart(seconds: number): string {
+		return seconds < 60 ? fromSecondsDetailed(seconds) : fromSeconds(seconds)
+	}
 
 	const visibleWindowTitles = computed(() =>
 		expanded.value ? props.details.windowTitles : props.details.windowTitles.slice(0, maxVisible),

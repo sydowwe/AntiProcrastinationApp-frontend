@@ -89,7 +89,7 @@ Client-only, not sent: `desktopSettingsHintDismissed::u<id>` / the android twin 
 | `label` · U | `string` | server (merged identity) | → card title + selection key (`UnifiedActivityDashboard.vue:177-179`) | derived · spent | — |
 | `totalSeconds` · W U (D A synthesized client-side) | `number` | server (U only; **the web backend `DomainSummaryDto` has no such member**) | — no read; cards render `active`/`background` stats | derived · unread | yes |
 | `isNew` · W D A U | `boolean` | server | "NEW" chip in place of the % (`ActivityStatColumn.vue:11`) | derived · spent | — |
-| `sources` · U | `ActivitySource[]` | server | — dropped by `toSummaryCardsData` (`UnifiedActivityDashboard.vue:177-179`) | derived · unread | — |
+| `sources` · U | `ActivitySource[]` | server | source icons under the card's name, *Recorded by* tooltip and accessible name (`ActivityDomainCard`, OP20) | derived · spent | — |
 | `ActivityStat.seconds` · W D A U | `number` | server | card time (`ActivityStatColumn.vue:51`), which column shows (`ActivityDomainCard.vue:85-86`), empty check (`ActivitySummaryCards.vue:125-126`) | derived · spent | yes |
 | `ActivityStat.averageSeconds` · W D A U | `number \| null` | server (baseline average) | — no read outside the DTO | derived · unread | yes |
 | `ActivityStat.percentChange` · W D A U | `number \| null` | server | ▲/▼ % text, colour, aria-label (`ActivityStatColumn.vue:53-74`) | derived · spent | — |
@@ -146,10 +146,10 @@ Client-only, not sent: `desktopSettingsHintDismissed::u<id>` / the android twin 
 | `monitorBreakdown[].activeSeconds` · D | `number` | server | monitor row duration (`:63`) | derived · spent | yes |
 | `windowTitles[].windowTitle` · D | `string` | external client (desktop) | window-title list (`:84`) | derived · spent | — |
 | `windowTitles[].totalSeconds` · D | `number` | server | window-title duration (`:86`) | derived · spent | yes |
-| `windowTitles[].activeSeconds` · D | `number` | server | — | derived · unread | yes |
-| `windowTitles[].backgroundSeconds` · D | `number` | server | — | derived · unread | yes |
-| `windowTitles[].fullscreenSeconds` · D | `number` | server | — | derived · unread | yes |
-| `windowTitles[].soundSeconds` · D | `number` | server | — | derived · unread | yes |
+| `windowTitles[].activeSeconds` · D | `number` | server | window-title split caption (OP20) | derived · spent | yes |
+| `windowTitles[].backgroundSeconds` · D | `number` | server | window-title split caption (OP20) | derived · spent | yes |
+| `windowTitles[].fullscreenSeconds` · D | `number` | server | window-title split caption (OP20; a share of the active part) | derived · spent | yes |
+| `windowTitles[].soundSeconds` · D | `number` | server | window-title split caption (OP20; a share of the active part) | derived · spent | yes |
 | `AndroidAppDetailsResponse.packageName` · A | `string` | server | — the panel shows the pie row's `packageName` (`AndroidAppDetailsPanel.vue:30`) | derived · unread | — |
 | `AndroidAppDetailsResponse.appLabel` · A | `string` | server | — the title is the pie row's `appLabel` (`:4`) | derived · unread | — |
 | `AndroidAppDetailsResponse.totalSeconds` · A | `number` | server | — the *Total* row is the pie row's (`:22`) | derived · unread | yes |
@@ -183,7 +183,7 @@ All four are mapped into the client view-model `StackedBarsInputWindow` by each 
 | `backgroundSeconds` · W D U | `number` | server | hatched segment (`StackedBarColumn.vue:22`) | derived · spent | yes |
 | `seconds` · A | `number` | server | → `activeSeconds` (android has no split; background hardcoded `0`, `AndroidActivityDashboard.vue:147-148`) | derived · spent | yes |
 | `totalSeconds` · W D | `number` | server (`=> Active + Background`) | — the chart sums active + background itself (`StackedBarsChart.vue:231`) | derived · unread | yes |
-| `sources` · U | `ActivitySource[]` | server | — dropped by `toStackedBarsWindow` (`UnifiedActivityDashboard.vue:181-193`) | derived · unread | — |
+| `sources` · U | `ActivitySource[]` | server | *Recorded by* row in the bar tooltip and the bar's accessible name; the *Other* column gets the union (`StackedBarsTooltip`, `StackedBarColumn`, OP20) | derived · spent | — |
 
 ### Timeline family — `dto/response/timeline/{TimelineResponse,TimelineSessionDto}.ts` (W, and the view-model U maps into), `…/desktop/{DesktopTimelineResponse,DesktopTimelineSession}.ts`, `…/android/{AndroidTimelineResponse,AndroidTimelineSession}.ts`, `…/unified/UnifiedTimelineResponse.ts` · request: `TimelineRequest.ts` + per-ledger twins (single day only)
 | field | type | captured in | read in | status | time |
@@ -273,12 +273,12 @@ Backend types are in `AdhdTimeOrganizer.Tracking/application/dto/response/`. Eve
 | `DesktopPieTotals` | `DesktopDayTotalsResponse` | none | |
 | `AndroidPieTotals` | `AndroidPieTotals` | none | |
 | `ActivityStat` | `ActivityStatDto` / `AndroidActivityStatDto` | none | kept but unread: `AverageSeconds` |
-| `DesktopProcessDetailsResponse` (+ title/monitor) | `DesktopProcessDetailsResponse`, `DesktopWindowTitleVisitDto`, `DesktopMonitorUsageDto` | none | kept but unread: `ProcessName`, per-title `Active/Background/Fullscreen/SoundSeconds` |
+| `DesktopProcessDetailsResponse` (+ title/monitor) | `DesktopProcessDetailsResponse`, `DesktopWindowTitleVisitDto`, `DesktopMonitorUsageDto` | none | kept but unread: `ProcessName` (per-title seconds spent by OP20) |
 | `AndroidAppDetailsResponse` (+ device/day) | `AndroidAppDetailsResponse`, `AndroidDeviceUsageDto`, `AndroidDayUsageDto` | none | kept but unread: `PackageName`, `AppLabel`, `TotalSeconds` |
 | `ActivityWindow` / `DesktopStackedBarsWindow` / `AndroidStackedBarsWindow` | `WebExtensionStackedBarsWindow` / `DesktopStackedBarsWindow` / `AndroidStackedBarsWindow` | none | |
 | `TimelineResponse` / `DesktopTimelineResponse` / `AndroidTimelineResponse` | `WebExtensionTimelineResponse` / same / same | none | wrappers |
 | `FocusMetricsResponse` / `FocusBlock` / `FocusMetricsBaseline` | `FocusMetricsResponse` / `FocusBlockDto` / `FocusBaselineDto` | none | kept but unread: `FocusBlock.StartedAt`/`EndedAt` |
-| `UnifiedSummaryItem` / `UnifiedActivityItem` / `UnifiedPieTotals` / `UnifiedWindowItem` / `UnifiedStackedBarsWindow` / `UnifiedTimelineResponse` / `UnifiedSourceBreakdown` | `unified/UnifiedDashboardResponses.cs` (`UnifiedSummaryCardDto`, `UnifiedPieItemDto`, `UnifiedPieTotalsDto`, `UnifiedStackedBarsItemDto`, `UnifiedStackedBarsWindowDto`, `UnifiedTimelineResponse`, `UnifiedSourceStatusDto`) | none | kept but unread: `UnifiedSummaryCardDto.Sources`, `UnifiedStackedBarsItemDto.Sources` |
+| `UnifiedSummaryItem` / `UnifiedActivityItem` / `UnifiedPieTotals` / `UnifiedWindowItem` / `UnifiedStackedBarsWindow` / `UnifiedTimelineResponse` / `UnifiedSourceBreakdown` | `unified/UnifiedDashboardResponses.cs` (`UnifiedSummaryCardDto`, `UnifiedPieItemDto`, `UnifiedPieTotalsDto`, `UnifiedStackedBarsItemDto`, `UnifiedStackedBarsWindowDto`, `UnifiedTimelineResponse`, `UnifiedSourceStatusDto`) | none | none (`UnifiedSummaryCardDto.Sources`, `UnifiedStackedBarsItemDto.Sources` spent by OP20) |
 | `TrackerDesktopDistinctEntriesResponse` / `TrackerAndroidDistinctEntriesResponse` | `TrackerDesktopDistinctEntriesResponse` / `AndroidDistinctEntriesResponse` | none | |
 | `MappingCoverageResponse` | `MappingCoverageResponse` | none | |
 | `TrackerDesktopMappingResponse` / `TrackerAndroidMappingResponse` | same names | none | kept but unread: `RoleId`, `CategoryId` (round-trip only) |

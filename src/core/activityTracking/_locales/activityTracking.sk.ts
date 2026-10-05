@@ -30,6 +30,9 @@ const messages = {
 		overlapNote: `{value} zaznamenali dva zdroje naraz a je započítaný raz.`,
 		displaced: `{value} zo zdroja {source} je pripísaných zdroju {target}`,
 		overlapRule: `Pri prekryve má prednosť čas v popredí pred časom na pozadí; inak rozhoduje konkrétnejší zdroj — prehliadač, potom počítač, potom telefón.`,
+		// OP20: ikony zdrojov na zlúčenej karte a prístupný názov karty alebo stĺpca.
+		recordedByList: `Zaznamenali: {sources}`,
+		withRecordedBy: `{name}, zaznamenali: {sources}`,
 	},
 	baseline: {
 		last7Days: `Posledných 7 dní`,
@@ -88,6 +91,12 @@ const messages = {
 		windowTitles: `Názvy okien:`,
 		fullscreen: `Na celú obrazovku:`,
 		playingSound: `Prehrávanie zvuku:`,
+		// OP20: popis jedného názvu okna, časti spojené „ · “. Celá obrazovka a zvuk sú podielom
+		// aktívnej časti (server ich počíta len z aktívnych sekúnd).
+		splitActive: `{duration} aktívne`,
+		splitBackground: `{duration} na pozadí`,
+		splitFullscreen: `{duration} na celú obrazovku`,
+		splitSound: `{duration} so zvukom`,
 		monitorBreakdown: `Rozdelenie podľa monitora:`,
 		monitor: `Monitor {n}:`,
 		closeDetails: `Zavrieť detaily`,
