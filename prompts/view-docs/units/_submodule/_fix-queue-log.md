@@ -882,6 +882,58 @@
 
 ## Closed escalations
 
+### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
+> ✅ **FIXED 2026-10-05.** Decision: the server keeps the screen's promise (the ask's first option); the caption stays.
+> **Server** (framework submodule, no migration): `NotificationService.NotifyAsync` clears `webPushIds` / `emailIds` when
+> `PushNotificationOptions.IsConfigured` / `EmailNotificationOptions.IsConfigured` is false, before `activeIds` is
+> computed. The dispatcher, the dispatch guards and `GET /notification-preference/channels` now read the same options. A
+> side effect worth knowing: `ResolveDeferralsAsync` no longer stamps `DeferredUntil` for a channel that cannot deliver.
+> `DispatchDeferred` already re-checked, so the flush path needed nothing. **No client change.** **Verified:** server
+> `NotificationDeliverableChannelsTests` (3 for §S3 — muted + nothing deliverable writes no row; the same type with
+> In-app on still lands; muted In-app with Push configured still writes the row) with `NotificationCatalogTests` and
+> `NotificationLocaleTests`, 21/21 via `scripts/test.ps1`; live after the API restart, e2e `notification-delivery.spec.ts`
+> (admin account, `Test` kind: untick In-app → PUT 204 + the caption, `POST /notification/test` leaves unread and the
+> newest id unchanged and `/notifikacie?type=Test` shows nothing; control with In-app on is +1; re-ticking restores
+> delivery). The specs skip themselves if Web Push is configured, because then the premise is gone. **Not run red-first:**
+> the new server tests were written after the fix and not re-run against the old dispatcher.
+
+Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
+recipients whose **stored preference** is on for InApp, WebPush or Email, with no check that the deployment has that
+channel configured. Push is default-on for every type and unconfigured on this deployment. So a user who unticks a
+type's In-app box still gets the history row and the hub push, while the settings screen, which discounts unconfigured
+channels (`notificationPreferenceMatrix.ts`, `disabledChannels`), tells them "You will not get it at all — not even in
+the notification list". Observed with `Test` (22104). The ask: intersect `webPushIds` / `emailIds` with the configured
+channels, the same options `GET /notification-preference/channels` reads, before computing `activeIds`. Contract and
+behaviour only. No client change is needed once it lands. If the server keeps today's behaviour, the client half is to
+drop the silenced caption's "not even in the notification list" and count preferences rather than deliverable
+channels, which contradicts the channels work (N12). Say which is intended.
+
+### §S4 — `Test` is offered to every user as a delivery setting (`notifications/P5`)
+> ✅ **FIXED 2026-10-05 — matrix and write path; the inbox type filter is not.** Decision: the catalog gate is by
+> **role**, not environment, so it is testable in the e2e fixture (which runs in Development). **Server** (framework
+> submodule, no migration): `NotificationCatalogOptions.AdminOnlyTypes` (+ `IsOfferedTo(type, isAdmin)`,
+> `CatalogFor(isAdmin)`; empty by default, so a host that declares nothing is unchanged). `GET /notification-preference/mine`
+> returns `CatalogFor(User.IsAdminOrHigher())`, `UpdateNotificationPreferenceRequestValidator` refuses a kind the caller
+> is not offered (400, nothing stored), and `POST /notification/test` is now `GetAdminRole()`. That last one is a
+> **behaviour change**: it was open to every account, though `domain-map.md` always said Admin+. This host sets
+> `AdminOnlyTypes = [Test]` in `AddNotificationCatalog`. `Test` stays in `SupportedTypes`, so an admin still sees and can
+> mute it. **No client change** for the matrix. **Verified:** server `NotificationDeliverableChannelsTests` (5 for §S4:
+> user matrix has no `Test` but still has `PersonalReminder`; admin matrix has it on every channel; user PUT → 400 and no
+> row; admin PUT → 204; `POST /notification/test` 403 as user, 204 as admin), 21/21 with the §S3 set; e2e
+> `notification-delivery.spec.ts` (primary: no `Test` row or checkbox; admin: both present; primary's PUT → 400 and POST →
+> 403 with unread unchanged). `notifications.draft.spec.ts`'s `P5` `fixme` is gone, pointing here.
+> **Not done:** the `/notifikacie` Type filter still lists *Test* for everyone, because it is built from the app's
+> registered `notificationTypeMeta`, not from the server. Hiding it needs either a per-account catalog read in the inbox or
+> a client-side admin check, and the notifications README warns against the second (it once hid `TimerBoundary`).
+> Left as is. **Also not done:** `ScheduledJobFailed` / `ScheduledJobOverdue` are Admin alerts too and are still offered
+> to everyone; they are one `AdminOnlyTypes` entry each if the product wants them hidden.
+
+Server: the notification-type catalog behind `GET /notification-preference/mine` includes `Test`, whose only producer is
+the dev/QA `POST /notification/test` (`SendTestNotificationEndpoint.cs`). The client renders the catalog as given, on
+purpose: the one time it filtered, it hid `TimerBoundary` (notifications README). So a non-admin sees a *Test* row
+second in the matrix, and a *Test* option in the inbox's type filter. The ask: leave `Test` out of the catalog for
+accounts that cannot raise it (or entirely outside Development). Catalog decision only. No client change is needed.
+
 ### §S2 — no reminder-kind catalog; the *Reminder types* card only ever shows its empty state (`notifications/B3`)
 > ✅ **FIXED 2026-10-05.** Decision: the card keeps its promise, so the server gets the catalog, not the client a copy
 > change. **Server** (framework submodule, no migration): `Sydowwe.Framework.Contracts.reminders.IReminderKindCatalog`

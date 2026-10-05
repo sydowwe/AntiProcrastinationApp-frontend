@@ -5,8 +5,8 @@
 
 **Tally:** blocker 0 · bug 4 · a11y 7 · polish 6 · opportunity 0 · unverified 2  (19 entries: B1–B4, A1–A7, P1–P6, U1–U2)
 
-**Status (2026-10-05):** 15 fixed (B1, B2, **B3**, A1–A7, P1–P4, P6) · 2 escalated to the backend (B4 → §S3, P5 → §S4) ·
-U1 and U2 verified (pass). Fix batches are in `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
+**Status (2026-10-05):** 17 fixed (B1, B2, **B3**, **B4**, A1–A7, P1–P4, **P5**, P6; P5's inbox type filter half is open) ·
+none escalated · U1 and U2 verified (pass). Fix batches are in `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the mutation pass toggled quiet hours on/off/undo and edited the window, unticked *Personal
 reminder › In-app* and *Test › In-app*, created one reminder-kind row (`Portal`/`PersonalReminder`) and muted it, and
@@ -75,7 +75,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Suggested fix:** a `GET /reminder-preference/kinds` (or fold the catalog into `GET /reminder-preference`, returning every kind with its effective `enabled`), then render every kind.
 
 ### B4. Unticking a type's In-app box says "not even in the notification list", but the notification still lands in the inbox [framework]
-- **Status:** escalated — backend ask §S3 in `_fix-queue.md` (dispatcher's `activeIds`; no client change if the server discounts unconfigured channels)
+- **Status:** fixed 2026-10-05 (§S3: the dispatcher drops channels the deployment cannot deliver on before computing `activeIds`; verified live — e2e `notification-delivery.spec.ts`, server `NotificationDeliverableChannelsTests`)
 - **Severity:** bug
 - **Where:** `/nastavenia/pripomienky` → *Notification delivery* → any row whose Push (or E-mail) default is on, e.g. *Test* / *Personal reminder* → In-app checkbox. Client: `NotificationTypeSettingsRow.vue:28-37` (the `row.silenced` caption), `notificationPreferenceMatrix.ts` (silenced = no *deliverable* channel on). Server: `Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75` in the API repo.
 - **Expected:** what the caption says, and what the usecase entity lifecycle and the row's own source comment rely on: with no channel that can reach the user, the server "writes no history row, so the notification never reaches the inbox either". A user who mutes a type expects it gone.
@@ -211,7 +211,7 @@ What *is* still Slovak on this screen is client-side date formatting — see B2.
 - **Root cause guess:** two vocabularies — app locale keys vs. the backend `NotificationTextRenderer`. Deciding which wins is a wording call, possibly on the backend side; the label keys are app-side (`src/app/notifications/`), so this one may be app-side rather than framework. The same labels head the delivery-matrix rows on `/nastavenia/pripomienky`.
 
 ### P5. A developer "Test" alert type is offered to users as a delivery setting [framework]
-- **Status:** escalated — backend ask §S4 in `_fix-queue.md` (catalog decision; a client filter is the documented anti-pattern)
+- **Status:** fixed 2026-10-05, matrix half (§S4: `Test` is admin-only in the catalog, the write path and `POST /notification/test`; verified live). **Not fixed:** the `/notifikacie` Type filter still offers *Test* to everyone — it is built from the app's registered types, not the server catalog
 - **Severity:** polish
 - **Where:** `/nastavenia/pripomienky` → *Notification delivery* → second row `rowheader "Test"`; also the `/notifikacie` Type filter's last option "Test"
 - **Expected:** the settings screen lists alerts a user can actually receive in normal use. `POST /notification/test` is Admin-only ("send a Test notification to self (dev/QA)", `Sydowwe.Notifications/docs/domain-map.md:223`).

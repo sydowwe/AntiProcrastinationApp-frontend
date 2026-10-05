@@ -120,8 +120,8 @@
 | --- | --- | --- | --- |
 | §S1 | ✅ **FIXED 2026-10-05** (server-side, verified live after a restart) — Missed one-shot fires were never recovered; spent one-shots stayed `Active` | `scheduler/B6` | closed |
 | §S2 | ✅ **FIXED 2026-10-05** (server `IReminderKindCatalog` + `kinds` on `GET /reminder-preference`, client renders it; verified live) — No catalog of reminder kinds, so the *Reminder types* card can never mute anything | `notifications/B3` | closed |
-| §S3 | The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | open — not yet written |
-| §S4 | The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | open — not yet written |
+| §S3 | ✅ **FIXED 2026-10-05** (server `NotificationService` drops unconfigured channels before `activeIds`; verified live) — The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | closed |
+| §S4 | ✅ **FIXED 2026-10-05** (server `AdminOnlyTypes` + admin-only `POST /notification/test`; matrix verified live, the inbox type filter still lists *Test*) — The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | closed |
 | §S6 | ✅ **FIXED 2026-10-05** (`Sydowwe.Reminders` `13b1bd6` + `a983eea`, framework `81b82c1` + `26e8693`) — The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | closed |
 | §S7 | ✅ **FIXED 2026-10-05** (server + framework, verified live 2026-10-05 after the API restart) — Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | closed |
 
@@ -133,24 +133,11 @@ that (log, third pass).
 <!-- §S2 (No reminder-kind catalog; the Reminder types card only ever shows its empty state — notifications/B3) fixed
      2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
-### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
-Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
-recipients whose **stored preference** is on for InApp, WebPush or Email, with no check that the deployment has that
-channel configured. Push is default-on for every type and unconfigured on this deployment. So a user who unticks a
-type's In-app box still gets the history row and the hub push, while the settings screen, which discounts unconfigured
-channels (`notificationPreferenceMatrix.ts`, `disabledChannels`), tells them "You will not get it at all — not even in
-the notification list". Observed with `Test` (22104). The ask: intersect `webPushIds` / `emailIds` with the configured
-channels, the same options `GET /notification-preference/channels` reads, before computing `activeIds`. Contract and
-behaviour only. No client change is needed once it lands. If the server keeps today's behaviour, the client half is to
-drop the silenced caption's "not even in the notification list" and count preferences rather than deliverable
-channels, which contradicts the channels work (N12). Say which is intended.
+<!-- §S3 (The dispatcher counts undeliverable channels, so a muted type still reaches the inbox — notifications/B4) fixed
+     2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
-### §S4 — `Test` is offered to every user as a delivery setting (`notifications/P5`)
-Server: the notification-type catalog behind `GET /notification-preference/mine` includes `Test`, whose only producer is
-the dev/QA `POST /notification/test` (`SendTestNotificationEndpoint.cs`). The client renders the catalog as given, on
-purpose: the one time it filtered, it hid `TimerBoundary` (notifications README). So a non-admin sees a *Test* row
-second in the matrix, and a *Test* option in the inbox's type filter. The ask: leave `Test` out of the catalog for
-accounts that cannot raise it (or entirely outside Development). Catalog decision only. No client change is needed.
+<!-- §S4 (`Test` is offered to every user as a delivery setting — notifications/P5) fixed 2026-10-05 — body moved to
+     _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
 <!-- §S6 (The personal reminder row has no recipient-safe identity and no interval — reminders-user/B1, B4) fixed
      2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->

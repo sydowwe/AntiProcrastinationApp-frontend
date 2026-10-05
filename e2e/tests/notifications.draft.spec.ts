@@ -169,5 +169,5 @@ test.describe('Reminder preferences (/nastavenia/pripomienky)', () => {
 			page.getByRole('checkbox', { name: /Personal reminder.*In-app|In-app.*Personal reminder/ }),
 		).toHaveCount(1, { timeout: 15_000 })
 	})
-	test.fixme('P5: no developer "Test" row in the delivery matrix', async () => {})
+	// P5 / §S4: asserted in `notification-delivery.spec.ts`, where the admin side of the rule lives too.
 })
