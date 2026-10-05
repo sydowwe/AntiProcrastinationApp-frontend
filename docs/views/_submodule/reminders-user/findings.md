@@ -6,9 +6,9 @@
 P1–P7, O1, U2–U3. U1 became B6. U2 is `stale`, settled in round 2, and stays listed so the ids do not move.) The
 current state is in the status line below.
 
-**Status (2026-10-05):** 14 fixed or fixed-in-part (X1, B2, B3, B5, A1, A2, A3, A4, P1, P2, P4, P5, P6, P7; A2's *Snooze*
-half and P2's badge half are won't-fix by owner decision) · 4 escalated to the backend (B1 and B4 → §S6, B6 → §S7, P3 →
-§S2) · O1 deferred behind §S7 · U2 stale · U3 settled as not a defect. Fix batches are in
+**Status (2026-10-05):** 16 fixed or fixed-in-part (X1, B1, B2, B3, B4, B5, A1, A2, A3, A4, P1, P2, P4, P5, P6, P7; A2's
+*Snooze* half and P2's badge half are won't-fix by owner decision) · 2 escalated to the backend (B6 → §S7, P3 → §S2) ·
+O1 deferred behind §S7 · U2 stale · U3 settled as not a defect. Fix batches are in
 `prompts/view-docs/units/_submodule/_fix-queue-log.md`.
 
 **Cleanup (round 2):** the pass wrote to the database for real. Through the real API: one snooze marker (23202, the
@@ -41,7 +41,7 @@ into that batch rather than open a new one.
 | Presets show their resolved instant; *tomorrow* and *next week* both anchor to 09:00 (R10 §4) | holds — see snooze dialog in inventory. Round 2 found them relative to *now*, not to the occurrence (**B2**); fixed 2026-10-04 (S28), they now count from the occurrence |
 | One reset path in the snooze dialog; stale presets explained (R10 §5–6) | holds in source (`SnoozeDialog.vue` open-time watch only; warning alert covers the stale case); staleness not waited out |
 | `canAct` uses a reactive clock (R10 §7, README) | holds in source (`useCurrentTime`); no occurrence passed during the pass |
-| Icon-only row buttons have an accessible name naming the reminder (R8 §1) | names exist, but are identical on every row — **B1** (still open, §S6) |
+| Icon-only row buttons have an accessible name naming the reminder (R8 §1) | names existed but were identical on every row — **B1**, fixed 2026-10-05 (each names its reminder's title) |
 | Actions column has header text (R8 §2) | holds — sr-only "Actions" |
 | A polite live region announces the result count (R8 §5) | holds — `status "3 results found"`; but it announced a failed load as "0 results found" — **B5**, fixed 2026-10-04 (S29) |
 | No horizontal page scroll at 375 px (R8 §6) | holds |
@@ -92,7 +92,7 @@ into that batch rather than open a new one.
   succeed, B6 is what the user sees next.
 
 ### B1. The three rows are indistinguishable — nothing says what any reminder is about
-- **Status:** fixed 2026-10-05, except the Dismiss dialog (landed with `reminders-admin/O1`: `my-upcoming` now carries `displayLabel` from the owner's `IReminderLabelResolver`, and the row's primary text plus both `a11y.*For` labels use it. The Dismiss dialog does not name the reminder yet, see §S6. Server-tested; not yet seen in the browser, pending an API restart)
+- **Status:** fixed 2026-10-05 (landed with `reminders-admin/O1`: `my-upcoming` now carries `displayLabel` from the owner's `IReminderLabelResolver`, and the row's primary text plus both `a11y.*For` labels use it. The Dismiss dialog's *Reminder* row closed §S6 the same day. Verified live: the three rows read their titles, the six buttons carry six names, and *Dismiss* on "Pay the rent" shows "Reminder: Pay the rent" above the occurrence)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → table rows; `MyRemindersView.vue:86-96` (kind cell), `:124-149` (row actions);
   server `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs`
@@ -182,7 +182,7 @@ into that batch rather than open a new one.
   day's midnight with `<`. Show the chip as a date, not an instant.
 
 ### B4. A recurring-interval reminder's schedule reads "—"
-- **Status:** escalated — backend ask §S6 in `_fix-queue.md` (`intervalPreset` and `cron` missing from `MyUpcomingReminderDto`; the client half is appended as a batch once it lands)
+- **Status:** fixed 2026-10-05 (§S6 (b): `MyUpcomingReminderDto` projects `IntervalPreset` and `Cron`, pinned by `MyUpcomingScheduleTests`. The client already passed both to `ReminderScheduleDisplay`, so no client change was needed beyond correcting `UpcomingReminderGridResponse.ts`'s header. **Not yet seen in the browser:** the API under Rider still runs the old build, so the row reads "—" until it is restarted; no migration is needed. The e2e test `the recurring-interval row states its interval` fails until then)
 - **Severity:** bug
 - **Where:** `/pripomienky/moje` → row 3 (`seed.reminderDefinitions.payRentRecurring`) → *Schedule type* cell;
   `MyRemindersView.vue:97-104`, `ReminderScheduleDisplay.vue` (`intervalLabel`)

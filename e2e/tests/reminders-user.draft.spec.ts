@@ -208,8 +208,21 @@ test.describe(`My reminders (${MY_REMINDERS})`, () => {
 	// B3 — a date-only "to" bound is sent as that day's local midnight, excluding the day itself.
 	test.fixme('"Next occurrence to" includes reminders due on the chosen day', async () => {})
 
-	// B4 — `my-upcoming` omits intervalPreset, so the interval row's schedule cell reads "—".
-	test.fixme('the recurring-interval row states its interval', async () => {})
+	// B1 (§S6) — the Dismiss confirmation names the reminder as well as the occurrence.
+	test('the Dismiss dialog names the reminder it dismisses', async ({ authenticatedPage }) => {
+		const title = TITLES[2]
+		await authenticatedPage.getByRole('button', { name: `Dismiss delivery of reminder ${title}`, exact: true }).click()
+		const dialog = authenticatedPage.getByRole('dialog', { name: 'Dismiss reminder' })
+		await expect(dialog.getByText('Reminder', { exact: true })).toBeVisible()
+		await expect(dialog.getByText(title, { exact: true })).toBeVisible()
+	})
+
+	// B4 (§S6) — `my-upcoming` omitted intervalPreset, so the interval row's schedule cell read "—".
+	// payRentRecurring is seeded `Monthly` (`E2eFixtureSeeder.cs`).
+	test('the recurring-interval row states its interval', async ({ authenticatedPage }) => {
+		const row = authenticatedPage.locator('main tbody tr').filter({ hasText: TITLES[2] })
+		await expect(row).toContainText('Monthly')
+	})
 
 	// A1 — the first Snooze dialog of a page load drops focus to <body> on close (_fix-queue S13).
 	test.fixme('closing the first Snooze dialog returns focus to its row button', async () => {})

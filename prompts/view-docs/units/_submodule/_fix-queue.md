@@ -122,7 +122,7 @@
 | §S2 | No catalog of reminder kinds, so the *Reminder types* card can never mute anything | `notifications/B3` | open — not yet written |
 | §S3 | The dispatcher writes the history row for channels the deployment cannot deliver on | `notifications/B4` | open — not yet written |
 | §S4 | The developer `Test` type is in the user-facing notification catalog | `notifications/P5` | open — not yet written |
-| §S6 | The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | open — not yet written |
+| §S6 | ✅ **FIXED 2026-10-05** (`Sydowwe.Reminders` `13b1bd6` + `a983eea`, framework `81b82c1` + `26e8693`) — The personal reminder row has no recipient-safe identity and no interval | `reminders-user/B1`, `B4` | closed |
 | §S7 | Acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence | `reminders-user/B6`, `B2` (server half) | open — not yet written |
 
 `§S5` is unused on purpose. The third pass reserved it for wall-clock (DST) recurrence, if the product ever asks for
@@ -159,7 +159,7 @@ string is then an app batch. Write to `prompts/_common/notifications/backend/` (
 `PersonalReminder` / `Portal`, and its *Kind* and *Owner module* filters are free text matched exactly server-side
 (`?kind=Personal` → 0 rows). With a catalog, both filters become selects and the cells take its labels. Without one,
 the interim is to drop the two filters from the personal view, which never holds more than a handful of rows. That is
-an owner call. If §S6 gives rows a title, the label half matters much less.
+an owner call. §S6 gave the rows a title on 2026-10-05, so the label half now matters much less.
 
 ### §S3 — the dispatcher counts undeliverable channels, so a muted type still reaches the inbox (`notifications/B4`)
 Server: `framework/Sydowwe.Notifications/infrastructure/NotificationService.cs:63-75`. `activeIds` is the union of
@@ -180,22 +180,8 @@ purpose: the one time it filtered, it hid `TimerBoundary` (notifications README)
 second in the matrix, and a *Test* option in the inbox's type filter. The ask: leave `Test` out of the catalog for
 accounts that cannot raise it (or entirely outside Development). Catalog decision only. No client change is needed.
 
-### §S6 — the personal reminder row has no recipient-safe identity and no interval (`reminders-user/B1`, `B4`)
-Server: `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs` returns `ownerModule, kind,
-templateKey, scheduleType, nextOccurrenceAt, id` and leaves out `PayloadJson` on purpose, as a non-admin
-data-exposure rule. So the three seed rows on `/pripomienky/moje` all read `PersonalReminder | Portal`, and six row
-buttons name two things (B1). The interval row reads "⟳ —" (B4). The ask has two parts. (a) A recipient-safe display
-title on the personal row. The server already renders one per recipient when the reminder fires (notification 22103:
-"File the tax return"), so serving the same render path in the caller's locale needs no new data. (b) `intervalPreset`
-and `cron`, neither of which is recipient-sensitive. **Client half after it lands** (a framework batch to append then):
-render the title as the row's primary text, in both `a11y.*For` labels and in the Dismiss dialog (S30's P5). Pass
-`intervalPreset` / `cronExpression` to `ReminderScheduleDisplay`. Correct `UpcomingReminderGridResponse.ts`'s header
-comment, which says `MyRemindersView` renders none of the missing fields except `cronExpression`. It renders
-`intervalPreset` too.
-> **(a) landed 2026-10-05 with `reminders-admin/O1`** (see the log's *Closed opportunities*). Not the notification
-> render path: an owner-registered `IReminderLabelResolver` (keyed by template key, pure, recipient-safe by contract)
-> fills `MyUpcomingReminderDto.DisplayLabel`; the payload still never crosses. Client half done for the row's primary
-> text and both `a11y.*For` labels (now `{label}`). **Still open:** the title in the Dismiss dialog, and all of (b).
+<!-- §S6 (The personal reminder row has no recipient-safe identity and no interval — reminders-user/B1, B4) fixed
+     2026-10-05 — body moved to _fix-queue-log.md → Closed escalations. Number retired, not reused; the table keeps its ✅ row. -->
 
 ### §S7 — acted-on occurrences are invisible and repeatable; a snooze may land before its occurrence (`reminders-user/B6`, `B2`)
 Server: `GetMyUpcomingRemindersEndpoint.cs:40-41` filters on recipient only and ignores `ReminderOccurrenceAction`.

@@ -880,6 +880,37 @@
 - **Risk:** the widest-reaching batch in this queue. It changes visible dates in the planner header, history timeline
   and routine list for every EN account, and those screens' e2e specs may assert the Slovak shape.
 
+## Closed escalations
+
+### §S6 — the personal reminder row has no recipient-safe identity and no interval (`reminders-user/B1`, `B4`)
+> ✅ **FIXED 2026-10-05.** (a) landed with `reminders-admin/O1` (*Closed opportunities* below): not the notification
+> render path but an owner-registered `IReminderLabelResolver` filling `MyUpcomingReminderDto.DisplayLabel`, with the
+> payload still never crossing. Row text and both `a11y.*For` labels came with it (framework `81b82c1`). The Dismiss
+> dialog's half: a *Reminder* `InfoRow` (`labelOf(activeReminderId)`, the same label-or-kind fallback the buttons
+> use) above the occurrence, new key `reminderDashboard.reminder` (sk + en), framework `26e8693`. (b) is server-only:
+> `MyUpcomingReminderDto` projects `IntervalPreset` and `Cron` (`Sydowwe.Reminders` `a983eea`, API `8b9581c`, pinned by
+> the new `MyUpcomingScheduleTests`; no migration). The client already passed both to `ReminderScheduleDisplay` and
+> `fromJson` already read `cron`, so the only client change was `UpcomingReminderGridResponse.ts`'s header comment.
+> **Verified:** server — `MyUpcomingScheduleTests` + `ReminderDisplayLabelTests`, 3/3 (built to a separate artifacts
+> path because the API under Rider locks `bin/`); client — `type-check` and e2e `typecheck` exit 0; live
+> (`playwright-cli`, primary user) the Dismiss dialog on "Pay the rent" reads "Reminder: Pay the rent / Occurrence
+> 10/17/2026 10:00:00 AM", Escape still closes it and focus returns to its button; e2e `the Dismiss dialog names the
+> reminder it dismisses` passes. **Not verified:** (b) in the browser. The running API is the old build, so the
+> interval row still reads "—" and the new e2e `the recurring-interval row states its interval` (it replaced B4's
+> `fixme`) fails until the API is restarted.
+
+Server: `Sydowwe.Reminders/application/dto/dashboard/MyUpcomingReminderDto.cs` returns `ownerModule, kind,
+templateKey, scheduleType, nextOccurrenceAt, id` and leaves out `PayloadJson` on purpose, as a non-admin
+data-exposure rule. So the three seed rows on `/pripomienky/moje` all read `PersonalReminder | Portal`, and six row
+buttons name two things (B1). The interval row reads "⟳ —" (B4). The ask has two parts. (a) A recipient-safe display
+title on the personal row. The server already renders one per recipient when the reminder fires (notification 22103:
+"File the tax return"), so serving the same render path in the caller's locale needs no new data. (b) `intervalPreset`
+and `cron`, neither of which is recipient-sensitive. **Client half after it lands** (a framework batch to append then):
+render the title as the row's primary text, in both `a11y.*For` labels and in the Dismiss dialog (S30's P5). Pass
+`intervalPreset` / `cronExpression` to `ReminderScheduleDisplay`. Correct `UpcomingReminderGridResponse.ts`'s header
+comment, which says `MyRemindersView` renders none of the missing fields except `cronExpression`. It renders
+`intervalPreset` too.
+
 ## Closed verification items
 
 ### `notifications` — closed 2026-10-04
