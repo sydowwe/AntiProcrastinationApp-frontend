@@ -130,6 +130,7 @@
 								v-for="list in lists"
 								:key="list.id"
 								:list
+								:showCategory="selectedCategoryId === null"
 								@openEdit="openListEditDialog(list)"
 								@confirmDelete="confirmDelete(list)"
 							/>

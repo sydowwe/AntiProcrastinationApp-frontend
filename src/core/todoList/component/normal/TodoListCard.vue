@@ -33,6 +33,17 @@
 					>
 						{{ list.description }}
 					</div>
+					<VChip
+						v-if="showCategory && list.category"
+						class="mt-2"
+						size="x-small"
+						variant="tonal"
+						:color="getTextColor(list.category.color)"
+						:prependIcon="list.category.icon ?? undefined"
+						:title="`${$t('toDoList.namedList.category')}: ${list.category.name}`"
+					>
+						{{ list.category.name }}
+					</VChip>
 				</div>
 				<div class="d-flex ga-2 flex-shrink-0">
 					<VIconBtn
@@ -87,11 +98,15 @@
 	import { computed } from 'vue'
 	import { useRouter } from 'vue-router'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
+	import { useColor } from '@/_common/composable/general/useColor.ts'
 
-	const { list } = defineProps<{ list: TodoListEntity }>()
+	// `showCategory` is off while the page is filtered to one category: every card would carry the
+	// same chip, and the panel already says which.
+	const { list, showCategory = true } = defineProps<{ list: TodoListEntity; showCategory?: boolean }>()
 	const emit = defineEmits<{ openEdit: [list: TodoListEntity]; confirmDelete: [list: TodoListEntity] }>()
 
 	const router = useRouter()
+	const { getTextColor } = useColor()
 
 	const progressPercent = computed(() =>
 		(list.itemCount ?? 0) > 0 ? Math.round(((list.completedCount ?? 0) / (list.itemCount ?? 1)) * 100) : 0,

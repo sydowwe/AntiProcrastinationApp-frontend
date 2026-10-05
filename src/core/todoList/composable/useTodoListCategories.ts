@@ -68,8 +68,8 @@ export function useTodoListCategories(reloadLists: () => Promise<void>) {
 	// cascade). So a category is a leaf delete and honours `askBeforeDelete` like the others; the
 	// copy below only reassures, it does not warn.
 	//
-	// Note the count rarely renders: the category response does not currently carry `listCount`, so
-	// it is null in practice. Left conditional so the line appears if the server ever sends it.
+	// The count is `listCount` from the category response (OP17), the same number as the panel's badge.
+	// It stays conditional so an API that predates the field just drops the line.
 	async function confirmDeleteCategory(category: TodoListCategoryEntity) {
 		if (shouldConfirm({ cascades: false, undoable: false })) {
 			const listCount = category.listCount ?? 0

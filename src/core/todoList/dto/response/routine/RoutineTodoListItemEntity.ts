@@ -29,14 +29,17 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 	}
 
 	static fromJson(json: any) {
+		const timePeriod = RoutineTimePeriodEntity.fromJson(json.routineTimePeriod)
 		return new RoutineTodoListItemEntity(
 			json.id,
 			Activity.fromJson(json.activity),
 			json.isDone,
 			json.doneCount,
 			json.totalCount,
-			RoutineTimePeriodEntity.fromJson(json.routineTimePeriod),
-			null,
+			timePeriod,
+			// The server sends no per-item colour; the row's accent bar takes its period's, the colour the
+			// period's timeline and stats already wear. A period with none parses to '' and gets no bar.
+			timePeriod.color || null,
 			json.streak ?? 0,
 			json.bestStreak ?? 0,
 			json.lastCompletedAt ?? null,

@@ -24,7 +24,7 @@
 | `name` | `string` | `/todo-list` → `TodoListForm` Name | `TodoListCard` title; `TodoListTitleBar` + breadcrumb on `/todo-list/:id`; delete confirm (`TodoListsView.vue:290`); `dayPlanner/component/PlannerActivitySourcePicker.vue` (list filter, row subtitle) | spent | — |
 | `icon` | `string \| null` | `TodoListForm` → `IconPicker` | `TodoListCard`; `TodoListTitleBar` | spent | — |
 | `description` | `string \| null` | `TodoListForm` → Description textarea | `TodoListCard.vue:28` reads it, but the value is always `null`. **Phantom**: the server sends the value as `text`, which `fromJson` drops, and binds the request's `Text`, never `description`. Nothing the user types is stored | write-only | — |
-| `category` | `TodoListCategoryEntity \| null` | `TodoListForm` → Category select (sent as `categoryId`) | only `TodoListForm.vue:62` (edit prefill). Category filtering is server-side, by `categoryId` in the filter request. The card does not show the category | echo | — |
+| `category` | `TodoListCategoryEntity \| null` | `TodoListForm` → Category select (sent as `categoryId`) | `TodoListForm.vue:62` (edit prefill); `TodoListCard` chip while the filter is "All" (OP17). Category filtering is server-side, by `categoryId` in the filter request | spent | — |
 | `itemCount` | `number \| null` | server (one grouped count per page) | `TodoListCard` "`x / y` done" + progress bar; `TodoListsView.vue:286` decides cascade-confirm and states the count | derived · spent | — |
 | `completedCount` | `number \| null` | server | `TodoListCard` "`x / y` done" + percentage | derived · spent | — |
 
@@ -34,7 +34,7 @@
 | `name` | `string` | `/todo-list` → `TodoListCategoryForm` Name | `TodoListCategoryPanel` rows; delete confirm (`useTodoListCategories.ts:78`) | spent | — |
 | `icon` | `string \| null` | `TodoListCategoryForm` → `IconPicker` | `TodoListCategoryPanel.vue:89` | spent | — |
 | `color` | `string \| null` | `TodoListCategoryForm` → colour swatches | `TodoListCategoryPanel.vue:85,97` (row background) | spent | — |
-| `listCount` | `number \| null` | — | `TodoListCategoryPanel.vue:102` (count badge), `useTodoListCategories.ts:75` (delete-confirm detail). **Phantom**: `TodoListCategoryResponse` has no such member, so the badge and the detail never render. The code comment at `useTodoListCategories.ts:71` admits this | unread | — |
+| `listCount` | `number \| null` | — | `TodoListCategoryPanel.vue:102` (count badge), `useTodoListCategories.ts:75` (delete-confirm detail). ~~**Phantom**~~: sent since OP17 (`TodoListCategoryResponse.ListCount`, also on the "Other" row; null on the copy nested in a list) | read | — |
 
 ### Task priority — `src/core/todoList/dto/response/TaskPriority.ts` · request: none (seeded lookup; `useTaskPriorityCrud` exposes `create`/`update` but no view calls them)
 | field | type | captured in | read in | status | time |
@@ -73,7 +73,7 @@ Both kinds render through `BaseTodoListItem.vue` and share `useUndoableListCrud`
 | `lastCompletedAt` | `string \| null` | server | `RoutineTodoListItem.vue:139-145` decides the grace-period warning colour. The server type is non-nullable `DateTime`, so a never-completed item arrives as `0001-01-01`, not `null` | derived · spent | yes |
 | `suggestedDays` | `DayOfWeek[]` | `RoutineToDoListForm` weekday picker (periods ≤ 14 days) | weekday chips (`RoutineTodoListItem.vue`); `isRoutineSuggestedOn` → "Today" marker (`RoutineGroupCard.vue:138`) and `home/component/RoutineTodoWidget.vue:161` (shows only today's items, "+N not due today") | spent | yes |
 | `suggestedDayOfMonth` | `number \| null` | `RoutineToDoListForm` day-of-month (periods > 14 days) | day-of-month chip; same `isRoutineSuggestedOn` decisions as above | spent | yes |
-| `color` | `string \| null` | — | `RoutineTodoListItem.vue` passes it as the row accent. **Phantom**: `fromJson` hard-codes `null` and the server sends no such member, so routine rows never get an accent bar | unread | — |
+| `color` | `string \| null` | — | `RoutineTodoListItem.vue` passes it as the row accent. Since OP17 `fromJson` copies `timePeriod.color` (the server sends no such member) | derived · spent | — |
 
 ### Step — `src/core/todoList/dto/response/TodoListItemStepEntity.ts` · request: `TodoListItemStepRequest.ts`
 | field | type | captured in | read in | status | time |
@@ -156,7 +156,7 @@ Note on `completionHistory`: when the server sends an empty history, `fromJson` 
 | response DTO | backend type | dropped members | note |
 | --- | --- | --- | --- |
 | `TodoListEntity` | `TodoListResponse` (`AdhdTimeOrganizer.TodoLists/…/TodoListResponse.cs`, base `NameTextIconResponse`) | `text` | `text` is the list description. The client reads `description`, which the server never sends, and `TodoListRequest` sends `description` where the server binds `Text` (`TodoListRequest.cs`). Lost both ways |
-| `TodoListCategoryEntity` | `TodoListCategoryResponse` (base `NameTextColorIconResponse`) | `text` | Nothing on the client writes `text` either, so it is always null in practice. The reverse gap: the client's `listCount` has no server member (phantom) |
+| `TodoListCategoryEntity` | `TodoListCategoryResponse` (base `NameTextColorIconResponse`) | `text` | Nothing on the client writes `text` either, so it is always null in practice. ~~The reverse gap: the client's `listCount` has no server member (phantom)~~ Closed by OP17 |
 | `TaskPriority` | `TaskPriorityResponse` | none | — |
 | `TodoListItemEntity` | `TodoListItemResponse` (base `BaseTodoListResponse`) | `displayOrder` | Items arrive already in `DisplayOrder` order, so dropping it is harmless today. The nested `activity` (`ActivityResponse`) belongs to the activity group |
 | `TodoListItemStepEntity` | `TodoListStepResponse` | none | the server's step `Id` is a `Guid`; the client types it `number` (an id, out of scope here) |
