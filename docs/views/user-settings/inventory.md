@@ -90,6 +90,17 @@ of the three password fields) — see Findings A1, `[framework]`.
   boot-time fetches). This is a testing-methodology artifact, not a duplicate-request bug — flagged
   here so a future pass doesn't re-discover the same false trail.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` (+ uncommitted working-tree edits: `src/core/user` adds `TrackersCard`; `src/_common` user module edits `SessionsSection`, not its subtitle)
+![mobile](screenshots/user-settings--mobile.png)
+- layout: the one column (`cols="12"`) fills the width at 4–386 px. The page is about four screens long in the inner scroller (`.v-main .v-container`, `scrollHeight` 3386 vs 780). Cards stack in this order: Appearance + Account info → Security (email row, 2FA switch, Google Calendar, the new **Activity trackers** card, Change password / Delete account as full-width stacked buttons) → Preferences → Per-module settings → Active sessions → Export my data → About → Danger zone. There's **no section navigation** (no tabs, no anchors). Reaching Danger zone means scrolling past the sessions list, which gets one row per sign-in (8 rows in this pass, ~58 px each). Further screens: `user-settings-scroll1--mobile.png` … `user-settings-scroll4--mobile.png`.
+- preference "save" actions: none of the preference cards has a Save button, so nothing can be stranded below the fold. Theme, Language, Ask-before-delete and First day of week save on change. The weather-town field saves on blur, Enter or clear (`WeatherLocationField.vue:13-15`), and the phone keyboard's Go/Done or a tap elsewhere triggers that. Nothing was changed in this pass.
+- mobile-only controls: none. No `useDisplay` or breakpoint classes in the framework view, its sections, or the app's cards.
+- replaced controls: none.
+- dialogs: **Email change** (24–366 × 251–593, Cancel/Confirm at y 537–573), **Password change** (24–366 × 204–640, Cancel/Confirm at y 584–620) and the **Delete account** intent confirmation (24–366 × 249–595, Cancel/Delete account at y 539–575; opened and cancelled, a first for this unit, see U3). All fit with no sideways scroll, and their footers show without scrolling. Every password field's show/hide toggle is 20×20 (see A2). The Language menu opens at 20–370 × 382–542 with 48 px rows. Open it by clicking `.v-select .v-field__input`: the combobox role times out on the `data-no-activator` div, as CLAUDE.md warns. `user-settings-email-dialog--mobile.png`, `user-settings-password-dialog--mobile.png`, `user-settings-delete-confirm--mobile.png`.
+- overflow: `docScroll` 390. The inner scroller pans **4 px** sideways (`scrollWidth` 394 vs 390): the view's `VRow` (−12 px gutters) inside `App.vue`'s `px-2` container. Same root cause as auth P4 and tracking-dashboards P2. Not filed again here.
+- visual sweep: each Active-sessions row cuts its metadata line at "Last…", so the last-used time never shows (P2). The Danger zone bullet list has `padding-left: 0`, so its bullets hang at x≈11, outside the text column. That's the same at any width, so it isn't filed here. The bell badge and the Google Calendar row load a beat after the first paint. Nothing else is wrong.
+- console: no errors and no info-level Vue warnings at this width. One mid-run `[vite] server connection lost` plus a SignalR 1006 came from a dev-server restart, not from the view. The page went blank and a reload restored it.
+
 ### TermsView (`/legal/terms`)
 ![default](screenshots/legal-terms--default.png)
 
@@ -117,6 +128,14 @@ of the three password fields) — see Findings A1, `[framework]`.
 
 **Console & network:** clean — 0 errors, 0 non-2xx.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c`
+![mobile](screenshots/legal-terms--mobile.png)
+- layout: one card at 24–366 px holding the prose (`scrollHeight` 2170). Headings and paragraphs wrap cleanly. The footer links (Privacy Policy, Contact support) sit on one row at the bottom, 107×24 each.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none. `docScroll` 390, inner scroller 390/390.
+- visual sweep: nothing wrong. The top bar's breadcrumb reads "Home" on this route, which isn't width-specific.
+
 ### PrivacyPolicyView (`/legal/privacy`)
 ![default](screenshots/legal-privacy--default.png)
 
@@ -136,6 +155,14 @@ of the three password fields) — see Findings A1, `[framework]`.
 **States / URL / Dialogs / Keyboard:** same as TermsView — static, no dynamic state.
 
 **Console & network:** clean — 0 errors, 0 non-2xx.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c`
+![mobile](screenshots/legal-privacy--mobile.png)
+- layout: same card as TermsView (`scrollHeight` 3313). The long §4 heading ("Activity tracking on desktop and mobile — the most sensitive data in this app") wraps to two lines, which reads fine. "Last updated" now says 3 October 2026.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none. `docScroll` 390, inner scroller 390/390.
+- visual sweep: nothing wrong.
 
 ### GoogleCalendarCallbackView (`/google-calendar/callback`)
 

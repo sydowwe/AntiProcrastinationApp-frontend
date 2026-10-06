@@ -78,6 +78,17 @@ not in the nav (signed-out shell has no nav)
 - a stray `console.log(valid)` (`LoginView.vue:142`) fires on every submit attempt — harmless but a dev
   leftover; not filed as its own finding, noted here for completeness.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` · signed-out session
+![mobile](screenshots/login--mobile.png)
+- layout: one stacked column. At `xs` the inner row (`LoginView.vue:31`, `cols="12" sm="6"`) puts "Stay logged in?" and "Forgot password?" on separate lines, and they share a line again at `sm` (600 px), see `login--768.png`. **The whole form fits without scrolling:** Email 200–248, Password 282–330, Stay logged in 354–390, Forgot password? 404–428, Log in 444–480, Register 494–514, Continue with google 560–596, all inside 844.
+- on-screen keyboard: Email is autofocused, so on a phone the keyboard opens on landing and covers roughly y ≥ 460. That leaves Email and Password above it, and Log in at 444–480 right on its top edge. Enter in the password field submits, so the keyboard's Go key does the job. Not filed.
+- mobile-only controls: none (only the `sm` column split above).
+- replaced controls: none
+- overflow: `docScroll` 390, but the inner scroller pans **8 px** sideways (`scrollWidth` 398, offenders `div.v-row.justify-center.mt-16 → 394` and the nested `div.v-row.justify-center → 398`). The fields run from x 4, and the "Stay logged in?" checkbox's hit area starts at **x 0**. See P4.
+- tap targets: the password show/hide toggle is 20×20, flush against the field (`user-settings` A2). The rest are ≥ 36 px tall, or inline text links.
+- visual sweep: nothing else wrong. Log in (34–356) and Continue with google (4–386) differ in width, which reads as intended.
+- console: no errors. The only info entry is Chrome's verbose "Input elements should have autocomplete attributes", which isn't width-specific.
+
 ---
 
 ### RegistrationView (`/registration`)
@@ -144,6 +155,18 @@ not in the nav (signed-out shell has no nav)
 - duplicate requests: none observed across the three round-3 submits (one `/auth/register` request per
   click).
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` · signed-out session
+![mobile](screenshots/registration--mobile.png)
+- layout: one stacked column. Email 200–248, New password 282–330, Confirm 360–408, both checkboxes, then Register at 549–585, so the form fits without scrolling. The "I agree to the Terms and conditions and Privacy Policy" line fits on one line, ending at 379.
+- validation at this width: the password rules message ("Password must contain at least 2 lowercase letters, 2 uppercase letters, 3 numbers and 1 special character") wraps to two lines under each field. The details row grows to fit (330–360, next field at 368; 416–446, 2FA checkbox at 446), so nothing overlaps, and Register moves down to 565. Fields were filled to trigger it, and nothing was submitted. `registration-validation--mobile.png`.
+- on-screen keyboard: once the keyboard is up (≈ y ≥ 460) the two checkboxes and Register sit behind it, which is normal for a form this length. The page scrolls (inner `scrollHeight` 792), so they're reachable after closing the keyboard. Not filed.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: inner scroller pans **8 px** (`scrollWidth` 398), from the nested `VRow` at `RegistrationView.vue:62`. Fields start at x 4. See P4.
+- tap targets: both show/hide toggles are 20×20 (`user-settings` A2).
+- visual sweep: nothing else wrong.
+- console: no errors, no Vue warnings.
+
 ---
 
 ### ForgottenPasswordView (`/forgotten-password`)
@@ -196,6 +219,16 @@ not in the nav (signed-out shell has no nav)
 - non-2xx: **round 3:** none observed — `POST /auth/forgotten-password` → 204 for both a real seeded e-mail
   and a nonexistent one (see X1's round 3 note). No `/auth/refresh` follow-up either (see B7's round 3 note).
 - duplicate requests: none observed (one attempt = one request)
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` · signed-out session
+![mobile](screenshots/forgotten-password--mobile.png)
+- layout: the heading, instructions, Email (21–378 × 431–479) and Reset password (121–269 × 513–549) are vertically centred in the 780 px content area. Everything fits.
+- on-screen keyboard: because the form is centred, the Email field sits right where the keyboard's top edge would be (≈ y 460), and Reset password sits below it. On Android the layout viewport shrinks and the centring follows it up. On iOS it doesn't, so the field depends on the browser scrolling it into view. Not reproducible without a device. Not filed separately, since it's the same class of risk as `_shell` U3.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: inner scroller pans **4 px** (`scrollWidth` 394), see P4.
+- visual sweep: nothing wrong. There's still no link back to Login, which isn't width-specific.
+- console: no errors.
 
 ---
 
@@ -250,6 +283,16 @@ reproduced signed-in)
   representative test of the happy path)
 - duplicate requests: none observed
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` · signed-out session, no query params
+![mobile](screenshots/confirm-email--mobile.png)
+- layout: the error state is centred and fits. It shows "There was an error confirming your email, please try again" (persistent page text now, not only a toast), then "The link may have expired. Log in with your address to get a new one.", then **Go to login page** (116–274 × 496–532). **The desktop section above is stale:** the "Resend confirmation email" button is gone at every width, and this state now offers only Go to login page. Not a mobile replacement.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none (`docScroll` 390, inner scroller 390/390, pan 0).
+- snackbar: none was on screen when measured, so `_shell` P3 (toast over the error state's only action) didn't reproduce here.
+- visual sweep: nothing wrong.
+- console: no errors.
+
 ---
 
 ### ConfirmEmailChangeView (`/confirm-email-change`)
@@ -296,6 +339,16 @@ excluded from `SIGNED_OUT_ONLY_ROUTES` for the same reason as `/confirm-email`
   anyway)
 - non-2xx: `POST /api/user/change-email/confirm` → 400
 - duplicate requests: none observed
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `dd9ded6c` · signed-out session, no query params
+![mobile](screenshots/confirm-email-change--mobile.png)
+- layout: the error state is centred: "There was an error confirming your email change, please try again" as persistent text (B4's fix), then **Go to login page** (116–274 × 466–502). The text runs to about 8 px from each screen edge, closer than ConfirmEmailView's ~15 px, but it's readable.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none (`docScroll` 390, inner scroller 390/390, pan 0).
+- snackbar: none on screen when measured, so `_shell` P3 didn't reproduce.
+- visual sweep: nothing wrong.
+- console: no errors, no info-level warnings.
 
 ## Transitions out of this unit
 

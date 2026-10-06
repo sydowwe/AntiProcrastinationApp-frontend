@@ -251,7 +251,7 @@ opportunity 0 · unverified 1 (U1 verified) — 11 entries, 6 open
 - **Repro:** 1. `resize 390 844`, open `/activity-tracking?date=<seedDate>`. 2. Swipe the content left.
 - **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on each of the four routes. 2. **Pass condition:**
   `document.querySelector('.v-main .v-container')` has `scrollWidth <= clientWidth`.
-- **Root cause guess:** `VRow`'s −12 px gutters overrun the container's narrow-screen padding.
+- **Root cause guess:** `VRow`'s −12 px gutters overrun the container's narrow-screen padding. **Added by x4 `account` (2026-10-06):** the padding is `App.vue:29`'s `px-2`, shared by every route. The same 4 px pan shows on `/user/settings` and `/forgotten-password`, and 8 px on `/login` and `/registration` (nested rows). Filed with all routes as `auth` P4, so fix them together.
 
 ### B6. The All sources view squashes its Sources card to 26 px, so the Browser/Desktop/Phone chips render under the timeline and can't be clicked
 - **Status:** open

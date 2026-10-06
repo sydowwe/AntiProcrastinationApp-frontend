@@ -2,7 +2,7 @@
 
 > Pass: inventory + mutation · captured 2026-09-14 · commit `adc9c67f`
 
-**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 4
+**Tally (2026-10-06, every entry counted):** blocker 0 · bug 4 (B1–B4 fixed; B1's retest is blocked on ops) · a11y 2 (A1 fixed; A2 open) · polish 2 (P1 fixed; P2 open) · opportunity 0 · unverified 5 (U1 resolved; U2–U5 open). 13 entries, **6 open**.
 
 ## Round history
 | round | date | commit | what changed |
@@ -11,6 +11,7 @@
 | 2 | 2026-09-14 | `adc9c67f` | mutation pass — confirmed `askBeforeDelete`/`firstDayOfWeek` save+persist+snackbar live (reverted after), confirmed theme toggle syncs and reverted it, found P1, and hit the harness's own safety classifier on password-field fill, the language switch, and (again) Delete account — all left untouched, see U3-U5 |
 | 3 | 2026-09-24 | `1fb9de9e` | status sweep — all four bug/a11y/polish findings confirmed closed against current source and `_fix-queue.md`: B1+B2 landed together in `fc3c4547` (`B14` frontend half, §9), B3+B4 in `FW25`, A1 in `FW7` (`5397675`), P1 folded into `FW12`'s commit (`549ae02`). U1 was already resolved; U2-U5 remain open, blocked by the harness's own safety classifiers or needing a dedicated throwaway account — nothing actionable from this repo alone |
 | 4 | 2026-09-24 | `d423edcc` | **retest round** — 6 retested live: B2, B3, B4, A1, P1 pass; none reopened; B1 blocked (reaches Google with `client_id`, but `redirect_uri_mismatch` — callback URI unregistered, ops). F90 (MyBtnToggle) SK labels: `group "Téma"`, `group "Prvý deň týždňa"` pass, no raw keys. Account(s): `primaryUser` (B1, B2, A1, P1, F90), `secondaryUser` form sign-ins (B3, B4). Mutations made and reverted: theme Light→Dark→Light, locale EN→SK→EN (two `PUT /user/preferences` 204); 2FA enabled on `secondaryUser` by B4 and by B3, each undone by a reseed (three reseeds in all: before B3 for the UTC precondition, after B4, after B3). The unit brief's "cancel at the QR, confirm 2FA off" cannot work: a 200 from `/user/2fa/toggle` has already enabled 2FA, the QR dialog has no close button, and disabling needs a TOTP — a reseed is the only revert. Also: a reseed killed a live access token too (`GET /user/data` 401 → `POST /auth/refresh` 401), contrary to `e2e/fixtures/seed.ts`'s "survives while the access token lives". Regressions: none. U2–U5 left `open` here, though `_fix-queue.md` closes them 2026-09-24 (status drift, untouched) |
+| 5 | 2026-10-06 | `dd9ded6c` (+ uncommitted `TrackersCard` and `src/_common` user-module edits) | **x4 narrow viewport (390×844)** — 3 views checked; new: A2, P2. The Delete account intent dialog was opened at 390 px and cancelled. This is the first time it has been seen, so U3's "dialog never reached" part is now answered, but U3 itself was left as filed. The 4 px sideways pan of the content scroller is filed once, as auth P4. |
 
 ---
 
@@ -261,3 +262,26 @@
   dependency on this staying English, backing off here was the safer call even though the brief
   technically allowed it. Needs a session where that classifier is deliberately allowed, run with
   extra care to revert immediately afterward.
+
+### A2. The password show/hide toggle is a 20×20 tap target pressed against its field — [framework] (390 px)
+- **Status:** open
+- **Severity:** a11y — **[framework]**
+- **Where:** @390×844 · `src/_common/modules/user/component/MyPasswordInput.vue:11-19` (`VIconBtn` with `size="small" density="compact"` in `#append-inner`). Every password field built on it: `/user/settings` → Password change dialog (×3) and Email change dialog (×1), `/login` (×1), `/registration` (×2).
+- **Expected:** a tap target is at least 24×24 CSS px, or has 24 px clear of other targets (WCAG 2.5.8; template §3). Login is the view most likely to be used on a phone.
+- **Actual:** every toggle measures **20×20**. On `/login` it sits at 354–374 × 296–316, directly against the password input's own hit area (4–354). A 24 px circle centred on it (352–376) overlaps the input, so the spacing exception doesn't apply either. The same 20×20 shows in the Password change dialog (318–338 at y 336, 418, 508) and on `/registration` (354–374 at y 296, 374). The accessible name is fine ("Show password", fixed by A1/FW7). This is about size only.
+- **Evidence:** `getBoundingClientRect` on `button[aria-label="Show password"]` in each place. `docs/views/user-settings/screenshots/user-settings-password-dialog--mobile.png`, `docs/views/auth/screenshots/login--mobile.png`.
+- **Repro:** 1. `resize 390 844`, open `/login` signed out. 2. Measure the eye button in the Password field.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/login` (signed out). 2. `eval` `[...document.querySelectorAll('button[aria-label="Show password"]')].map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height] })`. 3. **Pass condition:** every entry is ≥ 24 in both dimensions. Repeat inside `/user/settings` → Change password (signed in), then Cancel.
+- **Root cause guess:** `size="small"` plus `density="compact"` on the `VIconBtn` shrink it below the `VIconBtn` alias default. The size is the same at desktop width, but a mouse doesn't need the room a thumb does.
+- **Suggested fix:** framework: drop `density="compact"` (or set `size="default"`) on the append button. The 56 px field has room for a 36–40 px button.
+
+### P2. Active-session rows cut off their "Last used" time — the subtitle is clamped to one line — [framework] (390 px)
+- **Status:** open
+- **Severity:** polish — **[framework]**
+- **Where:** @390×844 · `/user/settings` → Active sessions · `src/_common/modules/user/component/settings/SessionsSection.vue:51-58` (working-tree line numbers; the uncommitted edit to this file adds a chip and doesn't touch the subtitle). The `#subtitle` slot of `VListItem` gets Vuetify's default one-line clamp.
+- **Expected:** the session row shows when each session was last used. That's the field a user reads to decide which row to Revoke, especially when every row has the same device string, as all eight did here ("Windows · Chrome 154").
+- **Actual:** the subtitle is 246 px wide (the Revoke button takes the rest), `-webkit-line-clamp: 1`, `text-overflow: ellipsis`. The text needs two lines (`scrollHeight` 35 vs `clientHeight` 17), so every row reads "::1 · Signed in: 10/06/2026 9:26 PM · Last…" and the last-used time never shows. Nothing offers a `title` or tooltip with the full text. At desktop width the column is wide enough for one line.
+- **Evidence:** `docs/views/user-settings/screenshots/user-settings-scroll2--mobile.png`, `user-settings-scroll3--mobile.png`. `eval` on the first `.v-list-item-subtitle` containing "Last used": `{ w: 246, clamp: "1", to: "ellipsis", sh: 35, ch: 17 }`.
+- **Repro:** 1. `resize 390 844`, sign in, open `/user/settings`. 2. Scroll to Active sessions.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/user/settings`. 2. `eval` over `.v-list-item-subtitle` in the Active sessions card. 3. **Pass condition:** for every row, `scrollHeight <= clientHeight + 1`, and the row's visible text includes "Last used:".
+- **Suggested fix:** framework: set `lines="two"` on the `VList` (or `class="text-wrap"` on the subtitle), or split the metadata into two spans so "Last used" gets its own line below `sm`.
