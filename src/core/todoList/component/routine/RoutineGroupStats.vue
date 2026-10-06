@@ -125,7 +125,8 @@
 	const consistencyColor = computed(() => (consistencyPct.value >= 80 ? 'text-success' : 'text-medium-emphasis'))
 
 	function completionRate(periods: PeriodCompletion[]): number | null {
-		const scheduled = periods.filter(p => p.totalCount > 0)
+		// An away period (vacation, sick) doesn't count against the user, so it can't drag the trend down either.
+		const scheduled = periods.filter(p => p.totalCount > 0 && !p.isExcused)
 		if (scheduled.length === 0) return null
 		const sum = scheduled.reduce((total, p) => total + p.completedCount / p.totalCount, 0)
 		return Math.round((sum / scheduled.length) * 100)

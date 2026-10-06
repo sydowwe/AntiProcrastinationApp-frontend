@@ -46,17 +46,23 @@
 		return map
 	})
 
-	// Frozen days are a third state, not a ratio — they get their own series so the visual map can't
-	// paint them as a shade of "done".
+	// Frozen and away days are states of their own, not ratios — each gets its own series so the visual
+	// map can't paint them as a shade of "done", or an away day as a miss.
 	const expandedDays = computed<[string, number][]>(() =>
 		Array.from(periodByDay.value.entries())
-			.filter(([, p]) => !p.isFrozen)
+			.filter(([, p]) => !p.isFrozen && !p.isExcused)
 			.map(([dateStr, p]) => [dateStr, p.totalCount === 0 ? 0 : p.completedCount / p.totalCount]),
 	)
 
 	const frozenDays = computed<[string, number][]>(() =>
 		Array.from(periodByDay.value.entries())
 			.filter(([, p]) => p.isFrozen)
+			.map(([dateStr]) => [dateStr, 1]),
+	)
+
+	const awayDays = computed<[string, number][]>(() =>
+		Array.from(periodByDay.value.entries())
+			.filter(([, p]) => p.isExcused)
 			.map(([dateStr]) => [dateStr, 1]),
 	)
 
@@ -92,6 +98,7 @@
 					if (!p) return dateStr
 					const label = periodLabel(p.periodStart, p.periodEnd, timePeriod.lengthInDays)
 					if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
+					if (p.isExcused) return t('routineTodoList.heatmapAway', { label })
 					if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 					if (p.completedCount / p.totalCount >= 1) return t('routineTodoList.heatmapAllDone', { label })
 					return t('routineTodoList.heatmapPartial', {
@@ -121,6 +128,15 @@
 					seriesIndex: 1,
 					inRange: {
 						color: [infoColor, infoColor],
+					},
+				},
+				{
+					show: false,
+					min: 0,
+					max: 1,
+					seriesIndex: 2,
+					inRange: {
+						color: [neutralColor, neutralColor],
 					},
 				},
 			],
@@ -162,6 +178,19 @@
 						opacity: 0.45,
 						borderWidth: 1.5,
 						borderColor: infoColor,
+					},
+				},
+				// Away (vacation or sick): a faint fill and a dashed outline — neutral, never the miss grey.
+				{
+					type: 'heatmap',
+					coordinateSystem: 'calendar',
+					data: awayDays.value,
+					itemStyle: {
+						color: neutralColor,
+						opacity: 0.12,
+						borderWidth: 1,
+						borderType: 'dashed',
+						borderColor: neutralColor,
 					},
 				},
 			],

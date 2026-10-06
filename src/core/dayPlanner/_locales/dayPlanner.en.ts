@@ -127,6 +127,8 @@ const dayPlanner = {
 			dayLabelLabel: `Day Label`,
 			dayLabelPlaceholder: `e.g., Project Deadline, Birthday...`,
 			dayTypeLabel: `Day Type`,
+			// Under the day-type select when Vacation or Sick day is chosen (FO1).
+			awayDayHint: `Routines stay quiet today, and a routine period you spend mostly away won't count against you.`,
 			locationLabel: `Location`,
 			weatherLabel: `Weather`,
 			weatherPlaceholder: `e.g., Sunny, Rainy...`,

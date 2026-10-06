@@ -217,6 +217,8 @@ const todoList = {
 		heatmapAllDone: `{label} · všetko hotové`,
 		heatmapPartial: `{label} · {done} z {total} hotových`,
 		heatmapFrozen: `{label} · pokryté vynechaním`,
+		// Obdobie, počas ktorého bol používateľ väčšinou preč (dovolenka alebo PN v plánovači). Nastavuje server.
+		heatmapAway: `{label} · preč, nepočíta sa proti tebe`,
 		progressCount: `{done} / {total}`,
 		// Vedľa dátumu resetu na časovej osi obdobia: kedy príde pripomienka pred koncom.
 		nudgeOn: `pripomienka {date}`,

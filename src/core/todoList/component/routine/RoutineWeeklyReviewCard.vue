@@ -104,8 +104,10 @@
 		groups
 			.filter(group => !handledIds.value.has(group.timePeriod.id))
 			.map(group => {
-				const history = group.timePeriod.completionHistory
-				const latest = history.length > 0 ? history[history.length - 1] : null
+				// The latest period the user was actually around for: a week away is no reason to suggest
+				// reducing or pausing a routine, so an excused period never ranks one as struggling.
+				const counted = group.timePeriod.completionHistory.filter(p => !p.isExcused)
+				const latest = counted.length > 0 ? counted[counted.length - 1] : null
 				return {
 					group,
 					completed: latest ? latest.completedCount : group.timePeriod.totalPeriodsCompleted,

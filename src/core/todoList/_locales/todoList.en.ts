@@ -203,6 +203,8 @@ const todoList = {
 		heatmapAllDone: `{label} · all done`,
 		heatmapPartial: `{label} · {done} of {total} done`,
 		heatmapFrozen: `{label} · covered by a skip`,
+		// A period the user was mostly away for (vacation or sick days in the planner). Set by the server.
+		heatmapAway: `{label} · away, doesn't count against you`,
 		progressCount: `{done} / {total}`,
 		// Beside the reset date on the period timeline: when the lead-time nudge goes out.
 		nudgeOn: `nudge {date}`,

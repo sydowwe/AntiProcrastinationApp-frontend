@@ -27,10 +27,11 @@ export function useStreakFreeze() {
 
 	/**
 	 * A period counts as missed when it fell short of the group's completion threshold.
-	 * Frozen periods are excluded — they are already covered.
+	 * Frozen periods are excluded — they are already covered — and so are excused ones: the user was
+	 * away, the run already carried across it, and the server refuses a freeze on it (`NotAMiss`).
 	 */
 	function isMissedPeriod(period: PeriodCompletion, streakThreshold: number): boolean {
-		if (period.isFrozen) return false
+		if (period.isFrozen || period.isExcused) return false
 		if (period.totalCount === 0) return false
 		return (period.completedCount / period.totalCount) * 100 < streakThreshold
 	}

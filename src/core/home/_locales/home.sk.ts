@@ -2,6 +2,8 @@ const home = {
 	home: {
 		dayPlanner: `Plánovač dňa`,
 		dayContext: `O dnešku`,
+		// V deň označený v plánovači ako Dovolenka alebo PN (FO1).
+		awayToday: `Dnes si preč. Rutiny ťa nebudú rušiť a obdobie rutiny, ktoré stráviš väčšinou preč, sa ti nebude počítať.`,
 		routineTodoList: `Rutinné úlohy`,
 		todoList: `Nadchádzajúce úlohy`,
 		activityHistory: `Dnešná aktivita`,

@@ -2,6 +2,8 @@ const home = {
 	home: {
 		dayPlanner: `Day planner`,
 		dayContext: `About today`,
+		// On a day marked Vacation or Sick day in the planner (FO1).
+		awayToday: `You're away today. Routines stay quiet, and a routine period you spend mostly away won't count against you.`,
 		routineTodoList: `Routine tasks`,
 		todoList: `Upcoming tasks`,
 		activityHistory: `Today's activity`,

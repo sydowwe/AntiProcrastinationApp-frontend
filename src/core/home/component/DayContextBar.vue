@@ -62,6 +62,18 @@
 				{{ calendar!.weather }}
 			</VChip>
 		</div>
+		<!-- FO1: a vacation or sick day is said out loud, with what it means — the user should not have to
+			 wonder whether today's empty routine list is about to cost them a streak. -->
+		<div
+			v-if="isAway"
+			class="d-flex align-start ga-2 text-body-2 text-medium-emphasis"
+		>
+			<VIconSmall
+				icon="umbrella-beach"
+				class="mt-1"
+			/>
+			<span>{{ $t('home.awayToday') }}</span>
+		</div>
 		<!-- Clamped, with the whole note in the tooltip: a long note must not push the task list
 			 off a dashboard that is built not to scroll. -->
 		<div
@@ -85,6 +97,7 @@
 	import { computed } from 'vue'
 	import { DayType, getDayTypeColor, getDayTypeIcon } from '@/_common/dto/enum/DayType.ts'
 	import { useHolidayLabel } from '@/_common/composable/general/useHolidayLabel.ts'
+	import { isAwayDayType } from '@/core/dayPlanner/dto/enum/awayDayType.ts'
 	import { LOCATION_ICONS } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 
@@ -95,6 +108,8 @@
 	const { holidayLabel } = useHolidayLabel()
 
 	const holiday = computed(() => (calendar ? holidayLabel(calendar) : null))
+
+	const isAway = computed(() => isAwayDayType(calendar?.dayType))
 
 	const showDayType = computed(() => {
 		if (!calendar) return false

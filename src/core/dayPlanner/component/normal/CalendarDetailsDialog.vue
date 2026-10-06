@@ -51,6 +51,16 @@
 						hideDetails
 					/>
 				</div>
+				<div
+					v-if="isAwayDayType(data.dayType)"
+					class="d-flex align-start ga-2 text-caption text-medium-emphasis"
+				>
+					<VIconSmall
+						icon="umbrella-beach"
+						class="mt-1"
+					/>
+					<span>{{ $t('planner.calendar.awayDayHint') }}</span>
+				</div>
 				<VTextField
 					v-model="data.weather"
 					:label="$t('planner.calendar.weatherLabel')"
@@ -80,6 +90,7 @@
 	import type { VForm } from 'vuetify/components'
 	import { CalendarRequest } from '@/core/dayPlanner/dto/request/CalendarRequest.ts'
 	import { DayType } from '@/_common/dto/enum/DayType.ts'
+	import { isAwayDayType } from '@/core/dayPlanner/dto/enum/awayDayType.ts'
 	import { Location } from '@/core/dayPlanner/dto/enum/Location.ts'
 	import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'

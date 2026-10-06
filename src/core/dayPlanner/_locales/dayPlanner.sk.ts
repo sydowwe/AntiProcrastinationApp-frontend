@@ -137,6 +137,8 @@ const dayPlanner = {
 			dayLabelLabel: `Popis dňa`,
 			dayLabelPlaceholder: `napr. Termín projektu, Narodeniny...`,
 			dayTypeLabel: `Typ dňa`,
+			// Pod výberom typu dňa, keď je zvolená Dovolenka alebo PN (FO1).
+			awayDayHint: `Rutiny ťa v tento deň nebudú rušiť a obdobie rutiny, ktoré stráviš väčšinou preč, sa ti nebude počítať.`,
 			locationLabel: `Miesto`,
 			weatherLabel: `Počasie`,
 			weatherPlaceholder: `napr. Slnečno, Dážď...`,

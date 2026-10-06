@@ -9,6 +9,12 @@ export interface PeriodCompletion {
 	 * frontend never sets it locally, because a streak that lies is worse than a strict one.
 	 */
 	isFrozen: boolean
+	/**
+	 * The user was away (vacation or sick) for at least half of this period, so it doesn't count against
+	 * them: the run carried across it like a freeze, for free. The heatmap's fourth state — neutral, never
+	 * the miss colour, never offered a freeze. Server-owned, set automatically from the calendar's day types.
+	 */
+	isExcused: boolean
 }
 
 export class RoutineTimePeriodEntity {
@@ -74,7 +80,13 @@ export class RoutineTimePeriodEntity {
 		} = object
 
 		const completionHistory: PeriodCompletion[] = object.completionHistory?.length
-			? object.completionHistory.map((p: any): PeriodCompletion => ({ ...p, isFrozen: p.isFrozen ?? false }))
+			? object.completionHistory.map(
+					(p: any): PeriodCompletion => ({
+						...p,
+						isFrozen: p.isFrozen ?? false,
+						isExcused: p.isExcused ?? false,
+					}),
+				)
 			: RoutineTimePeriodEntity.mockHistory(
 					totalPeriodsElapsed,
 					streak,
@@ -143,8 +155,9 @@ export class RoutineTimePeriodEntity {
 				periodEnd: periodEnd.toISOString(),
 				completedCount: completed ? 1 : 0,
 				totalCount: 1,
-				// Mock history never invents a freeze — a frozen cell must always come from the server.
+				// Mock history never invents a freeze or an away period — those cells must always come from the server.
 				isFrozen: false,
+				isExcused: false,
 			})
 		}
 		return history

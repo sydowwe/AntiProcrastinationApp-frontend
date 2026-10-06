@@ -15,7 +15,14 @@
 					v-bind="tp"
 					class="heatmap-cell"
 					:class="cellClass(p)"
-				/>
+				>
+					<VIcon
+						v-if="p.isExcused"
+						icon="umbrella-beach"
+						size="7"
+						class="text-medium-emphasis"
+					/>
+				</div>
 			</template>
 			<span>{{ tooltipText(p) }}</span>
 		</VTooltip>
@@ -67,6 +74,7 @@
 					completedCount: 0,
 					totalCount: 0,
 					isFrozen: false,
+					isExcused: false,
 				})
 			}
 		}
@@ -87,6 +95,7 @@
 				completedCount: 0,
 				totalCount: 0,
 				isFrozen: false,
+				isExcused: false,
 			}
 		})
 
@@ -107,8 +116,9 @@
 	onBeforeUnmount(() => observer?.disconnect())
 
 	function cellClass(p: PeriodCompletion): string {
-		// Frozen outranks everything: it is a third state, not a shade of done.
+		// Frozen and away outrank everything: they are states of their own, not shades of done or missed.
 		if (p.isFrozen) return 'cell-frozen'
+		if (p.isExcused) return 'cell-away'
 		if (p.totalCount === 0) return 'cell-empty'
 		const ratio = p.completedCount / p.totalCount
 		if (ratio === 0) return 'cell-level-0'
@@ -121,6 +131,7 @@
 	function tooltipText(p: PeriodCompletion): string {
 		const label = periodLabel(p.periodStart, p.periodEnd, lengthInDays)
 		if (p.isFrozen) return t('routineTodoList.heatmapFrozen', { label })
+		if (p.isExcused) return t('routineTodoList.heatmapAway', { label })
 		if (p.totalCount === 0) return t('routineTodoList.heatmapNothingScheduled', { label })
 		const ratio = p.completedCount / p.totalCount
 		if (ratio >= 1) return t('routineTodoList.heatmapAllDone', { label })
@@ -170,6 +181,18 @@
 			transparent 4px
 		);
 		border: 1px solid rgba(var(--v-theme-info), 0.6);
+	}
+
+	/*
+	 * The user was away (vacation or sick) — doesn't count. Neutral, never the missed grey: a faint fill, a
+	 * dashed outline and a tiny umbrella, so it reads as "not applicable" rather than as a quiet failure.
+	 */
+	.cell-away {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(var(--v-theme-neutral-700), 0.06);
+		border: 1px dashed rgba(var(--v-theme-neutral-700), 0.45);
 	}
 
 	/* Tasks exist but none completed */
