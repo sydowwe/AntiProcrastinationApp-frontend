@@ -121,13 +121,14 @@
 			const actualEndTime = Time.fromMinutes((actualStartTime.getInMinutes + length.getInMinutes) % 1440)
 			// A task planned from a to-do item is that item's time, so the recap credits the item with it.
 			const todoListItemId = store.tasks.find(t => t.id === plannerTaskId)?.todoListItemId ?? null
-			await Promise.all([
-				patchStatus(
-					plannerTaskId,
-					new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
-				),
-				createTracked(tracked, currentActivityId.value!, { todoListItemId }),
-			])
+			// In this order, not in parallel. Saving the session now ticks off the plan on the server (FO2): with
+			// this block already completed, its time is claimed and nothing else moves. Run concurrently, the
+			// session could land first and be credited to whichever same-activity block the server picked.
+			await patchStatus(
+				plannerTaskId,
+				new PatchPlannerTaskStatusRequest(PlannerTaskStatus.Completed, actualStartTime, actualEndTime),
+			)
+			await createTracked(tracked, currentActivityId.value!, { todoListItemId })
 			const updated = await fetchById(plannerTaskId)
 			const idx = store.tasks.findIndex(t => t.id === plannerTaskId)
 			if (idx >= 0) {

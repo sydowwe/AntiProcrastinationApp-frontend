@@ -77,7 +77,10 @@
 		const itemId = currentItemId.value ?? undefined
 		let itemWasCompleted = false
 		if (currentItemId.value !== null) {
-			await API.patch(`/${url}/toggle-is-done`, { ids: [currentItemId.value] })
+			// `forceValue: true`, never a bare toggle: the write above may already have ticked the item off on
+			// the server (logged time completes an item whose suggested time it reaches — FO2), and a toggle
+			// would then un-complete it. Forced, a done item stays done; a counted one steps up by one as before.
+			await API.patch(`/${url}/toggle-is-done`, { ids: [currentItemId.value], forceValue: true })
 			itemWasCompleted = true
 			emit('itemsChanged', [currentItemId.value])
 		}
