@@ -3,7 +3,7 @@
 > Pass: inventory + mutation · captured 2026-09-14, 2026-09-15 · commit `041d9b2d`
 > Re-verified against current tree 2026-09-24 (commit `222f0051`) — **all 12 findings confirmed fixed in code.**
 
-**Tally:** blocker 0 (was 1) · bug 0 (was 8) · a11y 0 (was 1) · polish 0 (was 2) · opportunity 0 · unverified 0
+**Tally:** blocker 1 · bug 9 · a11y 2 · polish 7 · opportunity 0 · unverified 1 (20 entries) — **open:** bug 1 (B9) · a11y 1 (A2) · polish 5 (P3–P7) · unverified 1 (U1); every pre-x4 entry is fixed
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@
 | 2 | 2026-09-15 | `041d9b2d` | mutation pass — full create/edit/delete lifecycle for `PlannerTask`, `RepeatingPlannerTask` and a skip reason; found X1, B7, B8, P1, P2 |
 | 3 | 2026-09-24 | `222f0051` | verification-only pass (source read, no browser drive) — every open finding checked against current code; all fixed, see per-finding notes below |
 | 4 | 2026-09-24 | `d423edcc` | **retest round** — 11 retested live: X1, B1, B2, B3, B5, B6, B7, B8, A1, P1, P2 pass; none reopened; none blocked. B7's past-day half used a throwaway task on `23-09-2026` because the seed has no tasks before today. Account(s): primaryUser (form sign-in, since the cached `auth-10001.json` refresh token was dead: `POST /auth/refresh` 401). Mutations made and reverted: activity 12003 renamed "Code Review RETEST" and back; throwaway tasks on `23-09-2026` and `24-09-2026` created and deleted; calendar Days/Duration URL state reset to defaults. Regressions seen outside the Verify blocks: none. |
+| 5 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 4 views checked; new: B9, A2, P3, P4, P5, P6, P7, U1. SelectionActionBar / bulk-select / apply-template bar overflow added to `_shell` B2 rather than re-filed. |
 
 ---
 
@@ -390,3 +391,88 @@
 - **Suggested fix:** Add the `*` prefix to the Importance label in the repeating-task form (or, if Importance
   is genuinely meant to be optional here the way it is in the plain task dialog, relax the validator instead —
   whichever matches the intended design).
+
+### B9. The day view's card clips its own content: the last 40 minutes of the day can't be scrolled to, and a focus scroll hides the header for good (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/day-planner/05-10-2026` → `DayPlanner.vue:4` (`VCard class="h-100"`, Vuetify's `overflow: hidden`) + `DayPlanner.vue:162-166` (`.calendar-grid { height: 500px }` below 600 px) + `DayPlannerHeader.vue` (wraps to ~470 px). `TemplateDayPlannerView` mounts the same `DayPlanner` and is presumably affected; not checked in this half of the pass.
+- **Expected:** every time slot in the grid can be scrolled into view, and the date heading and day arrows stay reachable (plain sense, WCAG 1.4.10 reflow).
+- **Actual:** the header wraps to ~470 px, so the card's content is 992 px tall inside a 748 px card (top 80, bottom 828) with `overflow-y: hidden`. The grid (560–1060) is its own scroller, but its bottom 232 px sit below the card's clip. Scrolled to the end, the last visible label is `23:10`. `23:20`–`00:00` never appear. Separately, `/day-planner/task/16002` focuses the task, and the browser scrolls the clipped card to do it (`scrollTop` 244). The date title (`top -133`), the prev/next arrows and the panel toggle leave the screen. A mouse wheel over the header leaves `scrollTop` at 244, and touch can't scroll an `overflow: hidden` box, so only a reload brings them back.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner-date--mobile-grid-bottom.png`, `day-planner-task--mobile-redirect.png`. `eval` ancestor chain of `.calendar-grid`: `v-card` `t80 b828 oy=hidden sh=992 ch=748`. At 768×1024 the card fits (`sh 928 = ch 928`), so this is phone-only.
+- **Repro:** 1. `resize 390 844`, open `/day-planner/05-10-2026`. 2. Scroll the time grid to its end. 3. The last label is 23:10. 4. Open `/day-planner/task/16002`. 5. The date heading is gone and nothing scrolls it back.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner/05-10-2026`. 2. `eval` `(() => { const g=document.querySelector('.calendar-grid'); g.scrollTop=g.scrollHeight; const c=g.closest('.v-card'); return [g.getBoundingClientRect().bottom <= c.getBoundingClientRect().bottom, c.scrollHeight <= c.clientHeight] })()`. **Pass:** `[true, true]`. 3. Open `/day-planner/task/16002`. **Pass:** `.date-title` has `top >= 64`, or the page itself scrolls (document `scrollHeight > innerHeight`) so the user can reach it.
+- **Root cause guess:** a fixed-height grid inside a height-capped, overflow-hidden card. That works on desktop, where the header is one ~80 px row, and breaks once the header wraps.
+- **Suggested fix:** below `md`, drop `h-100` from the card and let the page scroll, or size the grid as `flex: 1 1 0; min-height: 0` so it shrinks to the space the header leaves.
+
+### A2. The compact side panel acts like a modal but doesn't manage focus: focus stays on the toggle it covers, Escape doesn't close it, and closing drops focus to `<body>` (390 px)
+- **Status:** open
+- **Severity:** a11y
+- **Where:** @390×844 · `/day-planner/05-10-2026` → `PlannerSidePanelShell.vue:5-25` (absolute overlay, `z-index: 30`, when `compact`) and `DayPlannerHeader.vue:8-14` (the toggle). `TemplateDayPlannerView` uses the same shell; not checked in this half.
+- **Expected:** an overlay panel that covers the controls under it moves focus into itself, closes on Escape, and returns focus to its opener (WAI-ARIA disclosure/dialog practice; same expectation as `_shell` A4 for the nav drawer).
+- **Actual:** after "Open panel", `document.activeElement` is still the header toggle (now named "Close panel"), and it sits under the panel: `elementFromPoint(48,128)` hits the panel's card. Escape leaves the panel `display: flex`. Closing with the panel's X leaves focus on `<body>`. While the panel is open, the DOM holds two "Close panel" buttons: the panel's X (first in DOM, visible) and the covered header toggle.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner-date--mobile-panel-open.png`. `eval` on `document.activeElement` after each step.
+- **Repro:** 1. `resize 390 844`, open `/day-planner/05-10-2026`. 2. Click "Open panel". 3. Check focus; press Escape. 4. Click the panel's X; check focus.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload`. 2. Click `getByRole('button', { name: 'Open panel' })`. **Pass:** `document.activeElement` is inside the panel card. 3. Press Escape. **Pass:** the panel is `display: none` and focus is on `getByRole('button', { name: 'Open panel' })`.
+- **Suggested fix:** when `compact`, focus the panel's X on open, add `@keydown.esc` on the card, and refocus the header toggle on close (the view owns both, through `panelOpen`).
+
+### P3. Month grid at phone width: day headers misalign and clip, the "Days to show" select stretches and clips, and the grid gets a 263 px window — [framework] (390 px)
+- **Status:** open
+- **Severity:** polish — **[framework]**
+- **Where:** @390×844 · `/day-planner` → `src/_common/component/calendar/CalendarGrid.vue:15-31` (toolbar `d-flex ga-3` with no wrap, `VSelect minWidth="210px"`), `:46-55,363-370` (headers use `day.name`, never the `shortName` that `allDays` already computes; `padding-right: 16px`).
+- **Expected:** the column headers line up with the day columns and fit, every toolbar control is fully visible, and the grid shows a useful slice of the month (plain sense).
+- **Actual:** full weekday names push the header grid to 400 px in a 372 px card. "Wednesday" spans 115–193 over a 115–168 column, and "Sunday" (358–409) is cut to "Sun". The DateRangePicker (168 px) and the 210 px select share a non-wrapping row, so the select stretches to 242 px tall, ends at 415 and loses its chevron under the card title's `overflow: hidden`. The toolbar ends at y≈430, so `.calendar-body` is 263 px tall for 1100 px of weeks: about one week at a time.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner--mobile.png`, `day-planner--mobile-week2.png`. Overflow script: `div.d-flex.ga-3 → 415`, `div.day-header.weekend → 409`. At 768×1024 the select is still 148 px tall (`day-planner--768.png`).
+- **Repro:** 1. `resize 390 844`, open `/day-planner`. 2. Look at the header row and the "Days to show" field.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner`. 2. Run the overflow script. **Pass:** no `day-header` and no toolbar element ends past 390, and each `.day-header`'s left/right matches the column below it within 2 px. 3. **Pass:** the "Days to show" `.v-field` is ≤ 56 px tall.
+- **Suggested fix:** render `shortName` below `sm`, give the toolbar row `flex-wrap`, and drop the select's fixed `minWidth` below `sm`.
+
+### P4. Month-grid day cells cut off their own summary: "0/2 task", no percentage, and a clipped today badge (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/day-planner` → `src/core/dayPlanner/component/calendar/CellTaskProgress.vue:65-95` (the below-`sm` branch) inside `CalendarGrid`'s 53 px `.day-cell` (`overflow: hidden`).
+- **Expected:** a day cell shows the planned/done figure in a form that fits the cell (plain sense; at desktop width the cell carries `N/M tasks` + `%`).
+- **Actual:** the today cell's content is 71 px wide in a 52 px cell. It reads "06.10" with the badge cut, "0/2 task", and the percentage is invisible. Below 600 px the tooltip with the day's task names is dropped (`v-if="smAndUp"`), so the cell has no other way to show them. Time ranges wrap to three lines ("08:00 / - / 00:00").
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner--mobile-week2.png`. `eval` on `.day-cell.today`: `scrollWidth 71 / clientWidth 52`, `innerText "06.10. | 08:00 - 00:00 | 0/2 tasks0%"`.
+- **Repro:** 1. `resize 390 844`, open `/day-planner`. 2. Scroll the grid to the current week.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner`. 2. `eval` every `.day-cell:not(.empty)`. **Pass:** `scrollWidth <= clientWidth` for each.
+- **Suggested fix:** below `sm`, show a compact `N/M` (or just the progress bar) and drop the clock row.
+
+### P5. Day Details dialog: the Location field is squeezed to 76 px and shows "L…" (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/day-planner?mode=editDetails` → click a day (also the panel's EDIT on `/day-planner/:date`) → Day Details dialog, Day Type / Location row.
+- **Expected:** a field's label and value are readable (plain sense).
+- **Actual:** Day Type takes 77–220 and Location's field 273–349. The label renders "L…", and a picked location would be truncated the same way. The dialog itself fits (24–366), and Cancel/Confirm are visible.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner--mobile-day-details-dialog.png`. The Location input box is 114 px including its icon.
+- **Repro:** 1. `resize 390 844`, open `/day-planner`. 2. "Edit Details", click any day.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner?mode=editDetails`, click a day. **Pass:** the Location field's `.v-field` is ≥ 150 px wide, or sits on its own row.
+- **Suggested fix:** stack Day Type and Location below `sm` (`cols="12" sm="6"`).
+
+### P6. Planner settings hide controls in horizontal scrollers with no cue: the Repeating Tasks "Add" button and the "30 MIN" slot size (390 px)
+- **Status:** open
+- **Severity:** polish (both are reachable by scrolling sideways)
+- **Where:** @390×844 · `/day-planner/settings` → Repeating Tasks table header (`v-table__wrapper`, `scrollWidth 458 / clientWidth 372`); `?tab=viewDefaults` → "Time slot size" `MyBtnToggle` (`overflow-x: auto`, ends at 365).
+- **Expected:** a tab's primary action is visible on landing, above all on an empty table whose only next step is that action (plain sense).
+- **Actual:** the "Add" icon button sits at x 411–451, past the right edge, in an empty table that says "No data available". Nothing hints that the table scrolls. In View Defaults, "30 MIN" (334–413) is cut to "30". The tab strip itself also overflows (to 691), but that's Vuetify's swipeable tab bar, and every tab is reachable.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner-settings--mobile.png`, `day-planner-settings--mobile-viewdefaults.png`.
+- **Repro:** 1. `resize 390 844`, open `/day-planner/settings`. 2. Look for the Add button. 3. Open View Defaults.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner/settings`. 2. **Pass:** `getByRole('button', { name: 'Add', exact: true })` has `right <= 390` without scrolling. 3. On `?tab=viewDefaults`, **pass:** every button in the "Time slot size" group has `right <= 390`.
+- **Suggested fix:** move "Add" out of the table header into the tab's own toolbar. Let the slot-size group wrap, or use shorter labels ("30m") below `sm`.
+
+### P7. "Task not found" squeezes its message into an 82 px column inside a 684 px-tall alert (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/day-planner/task/999999` → `PlannerTaskLinkView`'s `VAlert` with the "Open the calendar" link in `#append`.
+- **Expected:** the error message reads as a paragraph across the alert (plain sense).
+- **Actual:** the append slot (179–350) keeps its row, leaving `.v-alert__content` 81–163. "This task no longer exists — it was most likely deleted in the meantime." wraps one or two words per line, and the alert grows to 112–796. The link itself works and is hit-testable.
+- **Evidence:** `docs/views/planner-day/screenshots/day-planner-task--mobile.png`. Console: only the interceptor's handled 404 (known, see B5).
+- **Repro:** 1. `resize 390 844`. 2. Open `/day-planner/task/999999`.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner/task/999999`. **Pass:** `.v-alert__content` is ≥ 250 px wide and the alert is under 250 px tall.
+- **Suggested fix:** put the link under the text (default slot, or an actions row) instead of `#append` below `sm`.
+
+### U1. A swipe on the task column probably can't scroll the day grid, and may create or move a task instead (390 px)
+- **Status:** open
+- **Severity:** unverified
+- **Where:** @390×844 · `/day-planner/:date` (and every `DayPlanner` mount) → `PlannerTasksColumn.vue:181-188` (`.tasks-column { touch-action: none }`), `usePlannerPointerInteractions.ts:74-113`.
+- **What would verify it:** live: `.tasks-column` has computed `touch-action: none` and spans x 102–368 of the 20–370 grid. Only the 80 px time column (`touch-action: auto`) lets the browser scroll. Source: a `pointerdown` on an empty slot starts a creation preview (and `pointerup` opens the create dialog, line 353), and one on a task block starts a drag that moves the task once past `MOVEMENT_THRESHOLD`. So a vertical swipe over 76 % of the grid would either open "Add New Task" or reschedule the task under the finger. This pass's browser has `maxTouchPoints 0`, and the read-only rule forbids the drag, so neither was reproduced. Needs a touch-enabled context (`hasTouch: true`, `page.touchscreen`) on a throwaway day: swipe up over an empty slot and over a task, and record whether the grid scrolls, a dialog opens, or a `PUT /api/planner-task/*` fires.
+- **Suggested fix (if confirmed):** `touch-action: pan-y` on the column, and start drag/create only after a long-press for `pointerType === 'touch'`.

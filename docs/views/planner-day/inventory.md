@@ -78,6 +78,14 @@
   `plan-vs-actual-trend` POST per navigation, confirmed across five rapid month changes (Sep→Jan 2027). This
   is the P5 fix landed and holding: no per-day fan-out, no request-count growth with a populated month.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner--mobile.png)
+- layout: the toolbar stacks (Mode over Month/Year with the prev arrow on its own line, next arrow beside Year; "Days to show" stretched to 242 px tall beside them), then Select Days / Edit Details / Apply Template on two rows. The 7-column grid keeps all columns (53 px each) inside a 263 px inner scroller. The footer stats bar stays at the card bottom.
+- mobile-only controls: none new. Below `sm` (600 px), `CellTaskProgress` drops the hover tooltip that lists the day's tasks and shows a plain `N/M tasks` + bar instead (P4).
+- replaced controls: day-cell hover tooltip (task list) → nothing. The count is the only per-day summary on a phone.
+- overflow: `docScroll 390`. Offenders: the toolbar row (→ 415) and the Sunday header (→ 409), both clipped by the card's `overflow: hidden`, not scrollable (P3). Bulk-select / apply-template bars: see `_shell` B2.
+- visual sweep: headers misaligned with columns and "Sunday" cut, the select's chevron hidden, cells cut "0/2 task" and the %, today's badge clipped (P3, P4). Day Details dialog fits (24–366 × 126–718) but Location is "L…" (P5). Tapping a cell in default mode navigates (`/day-planner/05-10-2026`). 768×1024 (`day-planner--768.png`): all headers fit, the select is still 148 px tall, cell percentages still clipped to one digit.
+
 ### DayPlannerView (`/day-planner/:date`)
 ![default day](screenshots/day-planner-date--default.png)
 
@@ -152,6 +160,14 @@ day arrows within this same view
 - duplicate requests: none found; adjacent-day prefetch requests that get superseded by fast navigation show
   up as `net::ERR_ABORTED`, which is proper cancellation, not a duplicate
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-date--mobile.png)
+- layout: the header wraps to ~470 px (toggle + arrows + title, progress, Start/duration steppers, Undo + Add Task, Details/Routine, Calendar + Connect), which leaves the grid ~270 px on screen. The grid is fixed at 500 px below 600 px, and its bottom is clipped by the card (B9). The side panel starts **closed** even with "Show details panel by default" on (`useRoutinePlacement.initialOpen`, by design for compact). It opens as an absolute overlay over the header (8–382 × 64–492).
+- mobile-only controls (all `v-if="compact"`, i.e. planner root < 900 px, not the `md` breakpoint): **panel toggle**, `getByRole('button', { name: 'Open panel' })` (48×48 at 24,104). Opens the side panel; its name flips to "Close panel" while open. Closed state: panel card `display: none`, toggle named "Open panel". Open state: panel card `display: flex; position: absolute`, and **two** buttons named "Close panel" exist: the panel's X (first in DOM, visible, 36×36 at 326,80) and the covered header toggle. To close, use `getByRole('button', { name: 'Close panel' }).first()`. Escape does not close it (A2). These are the locators the two `dayPlanner.spec.ts` "toggle button hides/restores the Day Details panel" fixmes need, run at a ≤ 900 px viewport. That spec's comment about `v-show="panelOpen || mdAndUp"` and `d-md-none` is stale: the shell is now `v-show="panelOpen"` and the toggle is always rendered. **Header Details / Routine toggle**, `getByRole('group', { name: 'Panel section' }).last()`, opens the panel on that tab.
+- replaced controls: none. Task blocks get no hover-only actions (the hover rules only change background). Tapping a block selects it without moving it (Bug Fixing stayed at `top 369`, gained `.selected`), and the selection bar then runs off both edges (`_shell` B2).
+- overflow: none at page level (`docScroll 390`). In the Add Task dialog, the All activities / To-do list / Routine group is a 9 px `overflow-x: auto` scroller ("Routine" partly cut, still tappable).
+- visual sweep: task blocks are readable (266 px wide, title, time and status chip visible). The card clips the grid's last 40 min and hides the header after a focus scroll (B9). Add Task dialog fits 24–366 × 24–820, and its body scrolls inside (`sh 896 / ch 673`) with Cancel/Confirm visible. 768×1024 (`day-planner-date--768.png`): the card fits. Desktop-wide, so out of this pass's scope: the prev/next **day** arrows (`DayPlannerHeader.vue:22,37`) and the h/min stepper buttons have no accessible name.
+
 ### PlannerTaskLinkView (`/day-planner/task/:id`)
 ![invalid id](screenshots/day-planner-task--invalid-id.png)
 
@@ -182,6 +198,14 @@ day arrows within this same view
 - valid id: no errors, one `GET /api/planner-task/16002` (implied by the successful redirect)
 - invalid id: one `GET /api/planner-task/999999` → 404, one uncaught `AxiosError` logged despite the graceful
   UI — see B4
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-task--mobile.png)
+- layout: valid id `16002` redirects to `/day-planner/05-10-2026` and focuses Bug Fixing (visible, 369–763), but the focus scroll moves the clipped card and the date header leaves the screen for good (B9, `day-planner-task--mobile-redirect.png`). Invalid id: the not-found `VAlert` keeps "Open the calendar" in `#append`, and the message wraps in an 82 px column (P7).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none (`docScroll 390`)
+- visual sweep: the alert grows to 684 px tall around a one-word-per-line message (P7). The link is hit-testable once the 404 toast is gone (toast placement is `_shell` P3). Console: only the known handled 404.
 
 ### DayPlannerSettingsView (`/day-planner/settings`)
 ![repeating tasks tab](screenshots/day-planner-settings--default.png)
@@ -219,6 +243,14 @@ only" surfaces beyond the controls themselves)
 **Console & network:** no errors on any tab visited
 
 **Dialogs opened from here:** not opened in this pass (Add-repeating-task dialog) — noted for a future pass
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-settings--mobile.png)
+- layout: title and "Back to account settings" share one row. The five tabs are a swipeable `v-slide-group` (content → 691, no arrows shown, every tab reachable). Each tab's body is one card; none is taller than the viewport.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `docScroll 390`. The Repeating Tasks table scrolls sideways in `v-table__wrapper` (458/372), which is fine for a table, but it carries the "Add" button (P6). In View Defaults, the "Time slot size" group is an `overflow-x: auto` scroller with "30 MIN" cut (P6).
+- visual sweep: the New Repeating Task dialog fits (24–366 × 24–820) with Cancel/Confirm visible and the body scrolling inside. In-App Nudges, Skip Reasons and Calendar View fit with nothing clipped. The "Reminder preferences" link is 14 px tall, but it's inline text, so it's exempt from 2.5.8. Console clean on every tab.
 
 ## Transitions out of this unit
 | from | control | goes to |
