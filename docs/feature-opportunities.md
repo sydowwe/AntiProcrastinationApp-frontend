@@ -193,6 +193,23 @@ never ships a call to a route or field that the running API does not have yet.
   subtly wrong.
 
 ### FO3. A task that keeps slipping is offered a smaller first step, and carrying it over stops counting against you
+- **Status (2026-10-06): phase 1 built and checked live, no migration. Phase 2 not started** (it is
+  wave C's batched `planner_task` migration, shared with FO6).
+  - **Backend:** `ITodoListItemPlanSource.PlanHistoryAsync` sorts every linked block by outcome: completed,
+    carried over (the sum of `CarryOverCount`), missed (a foreground `NotStarted`/`OnHold` block on a day before
+    the user's today), and skipped per key. TodoLists' `TodoListItemPlanHelp` turns that into `planHelp`
+    (`smallerStep` / `shorterBlock` / `reconsider`) on get-all, get-by-id and the dashboard widget.
+  - **The rule:** stuck = 3+ failed attempts and none completed, and the item is open. The kind is the dominant
+    reason: not-relevant → `reconsider`, no-time → `shorterBlock`, everything else → `smallerStep`. Ties go to the
+    gentler offer. No count reaches the wire.
+  - **Tests:** `TodoListItemPlanHelpTests` (5, over HTTP, one built from three real carry-overs and asserting the
+    raw JSON has no count field) and `TodoListItemPlanHelpRuleTests` (7, pure).
+  - **Frontend:** `StuckItemOffer.vue` under a stuck row in `NormalTodoListItem`, on the list and in home's
+    `TodoListWidget`. It offers *Start 10 min*, *Split into steps* and *Pair a reward* (each of those opens the
+    edit dialog on its field), plus *Let it go* (the ordinary delete). The kind picks the lead option.
+  - **Dismissal:** *Not now*, or acting on the offer, puts it away for 7 days, device-local and user-scoped
+    (`usePlanHelpDismissal.ts`). On home, everything except *Start 10 min* goes to the lists page, as the
+    widget's own edit and delete already do. Spec: `e2e/tests/todo-stuck-item-offer.spec.ts`.
 - **Source:** F3-05 + the remainder of F1-03 (its carry-over half is built).
 - **Moment:** the list shows "Call the insurer" again, after four planner attempts that were skipped or carried over.
 - **Today:**

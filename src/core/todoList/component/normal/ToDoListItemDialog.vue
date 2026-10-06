@@ -5,6 +5,7 @@
 		:title="isEdit ? $t('general.edit') : $t('toDoList.addItemTitle')"
 		:confirmBtnLabel="isEdit ? $t('general.edit') : $t('general.add')"
 		@confirmed="save"
+		@afterEnter="focusPendingSection"
 	>
 		<VForm
 			ref="form"
@@ -77,6 +78,7 @@
 			<!-- Temptation bundling. Offered, never required — an empty leisure backlog just means an
 				 empty select, and the hint says what the pairing is for rather than nagging for one. -->
 			<VIdSelect
+				ref="pairingField"
 				v-model="toDoListItem.pairedLeisureActivityId"
 				class="mt-3"
 				:label="$t('toDoList.pairing.label')"
@@ -95,6 +97,7 @@
 				class="mt-3"
 			/>
 			<TodoListStepsFormField
+				ref="stepsField"
 				class="mt-3"
 				v-model="dialogSteps"
 			/>
@@ -114,7 +117,8 @@
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
 	import { useGeneralRules } from '@/_common/composable/general/rules/RulesComposition.ts'
-	import { VForm } from 'vuetify/components'
+	import { VForm, type VSelect } from 'vuetify/components'
+	import type { ToDoListItemDialogSection } from '@/core/todoList/dto/enum/ToDoListItemDialogSection.ts'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
 	import { SystemActivityRole } from '@/core/activity/dto/enum/SystemActivityRole.ts'
 	import type { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'
@@ -260,7 +264,32 @@
 		activityFormField.value?.reset()
 	}
 
-	const openEdit = (entityToEdit: TodoListItemEntity) => {
+	const pairingField = ref<InstanceType<typeof VSelect>>()
+	const stepsField = ref<InstanceType<typeof TodoListStepsFormField>>()
+	/** Where `openEdit` was asked to land, applied once the dialog has finished opening. */
+	let pendingSection: ToDoListItemDialogSection | null = null
+
+	/**
+	 * On VDialog's `afterEnter`, which it emits *before* its own focus check, so focus placed here stays —
+	 * earlier, the open transition would take it back to the dialog's first field.
+	 */
+	function focusPendingSection() {
+		const section = pendingSection
+		pendingSection = null
+		if (section === 'steps') {
+			stepsField.value?.focusNewStep()
+		} else if (section === 'pairing') {
+			pairingField.value?.$el.scrollIntoView({ block: 'center' })
+			pairingField.value?.focus()
+		}
+	}
+
+	/**
+	 * `section` opens the dialog on one field — a stuck item's "Split into steps" and "Pair a reward" (FO3)
+	 * are this same edit, started where the help is.
+	 */
+	const openEdit = (entityToEdit: TodoListItemEntity, section: ToDoListItemDialogSection | null = null) => {
+		pendingSection = section
 		isEdit.value = true
 		oldItem.value = entityToEdit
 

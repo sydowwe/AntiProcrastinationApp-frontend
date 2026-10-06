@@ -131,6 +131,23 @@ const todoList = {
 			notToday: `Dnes nie`,
 			notTodayLabel: `Dnes nie: {name}`,
 		},
+		// FO3: ponuka pri úlohe, ktorá sa v plánovači stále odsúva. Hovorí o úlohe, nikdy o človeku, a nikdy
+		// nepovie, koľkokrát sa odsunula.
+		planHelp: {
+			groupLabel: `Pomoc so začiatkom`,
+			lead: {
+				smallerStep: `Do tejto sa ťažko púšťa. Menší prvý krok to môže uľahčiť.`,
+				shorterBlock: `Nájsť na toto celý blok je ťažké. Na začiatok stačí pár minút.`,
+				reconsider: `Oplatí sa to ešte? Je v poriadku to pustiť.`,
+			},
+			action: {
+				startShort: `Začať na {minutes} min`,
+				split: `Rozdeliť na kroky`,
+				pairReward: `Pridať odmenu`,
+				letGo: `Pustiť z hlavy`,
+			},
+			notNow: `Teraz nie`,
+		},
 		focus: {
 			toggle: `Fokus`,
 			mark: `Označiť ako dnešný fokus`,

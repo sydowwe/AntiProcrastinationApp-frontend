@@ -47,6 +47,8 @@
 				@edit="router.push({ name: 'toDoList' })"
 				@delete="router.push({ name: 'toDoList' })"
 				@addToPlanner="router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })"
+				@startShort="startShortSession"
+				@editSection="router.push({ name: 'toDoList' })"
 			/>
 		</VList>
 	</WidgetCard>
@@ -84,6 +86,8 @@
 	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
 	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
+	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { SHORT_START_MINUTES } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
 
 	// Two roots — the card and the reward timer's controller — so HomeView's `class="h-100"` is
 	// forwarded to the card by hand.
@@ -177,6 +181,22 @@
 	function refreshAfterStep() {
 		refreshNow()
 		notifyTodoItemsChanged({ except: TODO_LIST_REFRESH_KEY })
+	}
+
+	/**
+	 * A stuck item's "Start 10 minutes" (FO3), in place. The offer's other options are edits and a delete,
+	 * which this widget sends to the lists page, the same way its own edit and delete do.
+	 */
+	function startShortSession(item: TodoListItemEntity) {
+		logTimeController.value?.open(
+			item.activity.id,
+			item.activity.name,
+			false,
+			undefined,
+			Time.fromMinutes(SHORT_START_MINUTES),
+			item.id,
+			true,
+		)
 	}
 
 	function startReward(paired: ActivityBacklogProfile) {

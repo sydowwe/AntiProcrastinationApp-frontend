@@ -79,6 +79,15 @@
 				{{ pairedLeisure.activity.name }}
 			</ChipWithIcon>
 		</template>
+		<template #below>
+			<StuckItemOffer
+				v-if="showPlanHelp"
+				:kind="toDoListItem.planHelp!"
+				:canPairReward="toDoListItem.pairedLeisureActivityId === null"
+				@choose="planHelpChosen"
+				@dismiss="dismissPlanHelp(toDoListItem.id)"
+			/>
+		</template>
 	</BaseTodoListItem>
 </template>
 
@@ -94,6 +103,10 @@
 	import { MenuItem } from '@/_common/dto/dto/MenuAction.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import { startOfUserDayPlus } from '@/core/todoList/composable/todayBoundary.ts'
+	import StuckItemOffer from '@/core/todoList/component/normal/StuckItemOffer.vue'
+	import type { PlanHelpAction } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
+	import { usePlanHelpDismissal } from '@/core/todoList/composable/usePlanHelpDismissal.ts'
+	import type { ToDoListItemDialogSection } from '@/core/todoList/dto/enum/ToDoListItemDialogSection.ts'
 
 	const {
 		toDoListItem,
@@ -119,9 +132,33 @@
 		itemClicked: [toDoListItem: TodoListItemEntity]
 		moveToList: [toDoListItem: TodoListItemEntity]
 		toggleFocus: [toDoListItem: TodoListItemEntity]
+		startShort: [toDoListItem: TodoListItemEntity]
+		editSection: [toDoListItem: TodoListItemEntity, section: ToDoListItemDialogSection]
 	}>()
 
 	const i18n = useI18n()
+
+	// FO3. The server decides the item is stuck; this device decides whether the offer is on screen now.
+	const { isPlanHelpDismissed, dismissPlanHelp } = usePlanHelpDismissal()
+	const showPlanHelp = computed(
+		() =>
+			!!toDoListItem.planHelp &&
+			!toDoListItem.isDone &&
+			!isInChangeOrderMode &&
+			!isPlanHelpDismissed(toDoListItem.id),
+	)
+
+	/**
+	 * Acting on the offer puts it away for the same week a dismissal does. The help was taken, and an item
+	 * still stuck a week later is offered it again. Letting go is the delete, so it has nothing to put away.
+	 */
+	function planHelpChosen(action: PlanHelpAction) {
+		if (action !== 'letGo') dismissPlanHelp(toDoListItem.id)
+		if (action === 'startShort') emits('startShort', toDoListItem)
+		else if (action === 'split') emits('editSection', toDoListItem, 'steps')
+		else if (action === 'pairReward') emits('editSection', toDoListItem, 'pairing')
+		else emits('delete', toDoListItem.id)
+	}
 
 	// Every item asks, but the composable shares one in-flight request across the whole list.
 	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()

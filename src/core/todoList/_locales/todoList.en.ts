@@ -122,6 +122,23 @@ const todoList = {
 			notToday: `Not today`,
 			notTodayLabel: `Not today: {name}`,
 		},
+		// FO3: the offer on a task that keeps slipping in the planner. It talks about the task, never about
+		// the person, and never says how many times it slipped.
+		planHelp: {
+			groupLabel: `Help getting started`,
+			lead: {
+				smallerStep: `This one is hard to start. A smaller first step might make it easier.`,
+				shorterBlock: `Finding a whole block for this is hard. A few minutes is enough to begin.`,
+				reconsider: `Still worth doing? It's fine to let it go.`,
+			},
+			action: {
+				startShort: `Start {minutes} min`,
+				split: `Split into steps`,
+				pairReward: `Pair a reward`,
+				letGo: `Let it go`,
+			},
+			notNow: `Not now`,
+		},
 		focus: {
 			toggle: `Focus`,
 			mark: `Mark as today's focus`,

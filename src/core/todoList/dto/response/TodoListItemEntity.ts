@@ -3,6 +3,7 @@ import type { IBaseToDoListItem } from '@/core/todoList/dto/response/interface/I
 import { Time } from '@/_common/dto/dto/Time.ts'
 import { TaskPriority } from '@/core/todoList/dto/response/TaskPriority.ts'
 import { TodoListItemStepEntity } from '@/core/todoList/dto/response/TodoListItemStepEntity.ts'
+import { type PlanHelpKind, parsePlanHelpKind } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
 
 /** A planner block's day (`YYYY-MM-DD`, the user's calendar day) and its start on that day. */
 export interface PlannedSlot {
@@ -35,6 +36,12 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 		 * Read-only: derived by the server from linked planner tasks.
 		 */
 		public nextPlannedSlot: PlannedSlot | null = null,
+		/**
+		 * FO3: set when the item keeps slipping in the planner and none of its attempts completed — the
+		 * kind of help to offer first. Read-only, derived by the server; null on a done item. Carries no
+		 * count by design (see `PlanHelpKind`).
+		 */
+		public planHelp: PlanHelpKind | null = null,
 	) {}
 
 	/** Scheduled means a deadline was set or a block is planned — either answers "when". */
@@ -63,6 +70,7 @@ export class TodoListItemEntity implements IBaseToDoListItem {
 			json.nextPlannedSlot
 				? { date: json.nextPlannedSlot.date, startTime: Time.fromJson(json.nextPlannedSlot.startTime) }
 				: null,
+			parsePlanHelpKind(json.planHelp),
 		)
 	}
 

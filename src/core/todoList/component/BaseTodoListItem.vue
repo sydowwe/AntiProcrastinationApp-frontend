@@ -167,6 +167,12 @@
 			@mousedown.stop
 			@stepToggled="emits('stepToggled', toDoListItem.id)"
 		/>
+		<!-- Full width under the row, like the steps: inside the title column it was squeezed between the
+		     checkbox and the action buttons. -->
+		<slot
+			name="below"
+			:isInChangeOrderMode
+		/>
 		<div
 			v-if="itemProgress !== null"
 			class="item-progress-track"

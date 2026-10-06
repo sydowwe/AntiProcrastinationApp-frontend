@@ -109,6 +109,8 @@
 							@quickStartTimer="openLogTime($event, false, true)"
 							@itemClicked="openLogTime($event, true)"
 							@toggleFocus="handleToggleFocus"
+							@startShort="startShortSession"
+							@editSection="(entity, section) => toDoListDialog?.openEdit(entity, section)"
 						/>
 					</template>
 				</BaseToDoList>
@@ -175,6 +177,7 @@
 	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
 	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
+	import { SHORT_START_MINUTES } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
 
 	const props = defineProps<{
 		id: string
@@ -407,6 +410,22 @@
 			autoStart && !item.suggestedTime?.isNotZero() ? Time.fromMinutes(10) : (item.suggestedTime ?? undefined),
 			item.id,
 			autoStart,
+		)
+	}
+
+	/**
+	 * A stuck item's "Start 10 minutes" (FO3). Ten minutes whatever the estimate says: the estimate is the
+	 * block that kept not happening, so the quick-start's "use the estimate" rule would offer it again.
+	 */
+	function startShortSession(item: TodoListItemEntity) {
+		logTimeController.value?.open(
+			item.activity.id,
+			item.activity.name,
+			false,
+			undefined,
+			Time.fromMinutes(SHORT_START_MINUTES),
+			item.id,
+			true,
 		)
 	}
 

@@ -71,6 +71,7 @@
 		</div>
 		<div class="d-flex ga-2 mt-2">
 			<VTextField
+				ref="newStepField"
 				v-model="newStepName"
 				:label="$t('toDoList.addStep')"
 				density="compact"
@@ -92,10 +93,20 @@
 
 <script setup lang="ts">
 	import { ref } from 'vue'
+	import type { VTextField } from 'vuetify/components'
 	import { TodoListItemStepRequest } from '@/core/todoList/dto/request/TodoListItemStepRequest.ts'
 
 	const model = defineModel<TodoListItemStepRequest[]>({ default: [] })
 	const newStepName = ref('')
+	const newStepField = ref<InstanceType<typeof VTextField>>()
+
+	/** Puts the cursor in "Add step" — the dialog opened from a stuck item's "Split into steps" (FO3). */
+	function focusNewStep() {
+		newStepField.value?.$el.scrollIntoView({ block: 'center' })
+		newStepField.value?.focus()
+	}
+
+	defineExpose({ focusNewStep })
 
 	// The server's limit (`StepRequest` validators). A native `maxlength` rather than a rule: the
 	// framework has no length rule, and a cap cannot be failed.
