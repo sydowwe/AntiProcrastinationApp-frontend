@@ -201,6 +201,13 @@ One structural finding runs under all six: **the server has no concept of a miss
     - A solution-wide grep for
       `Postpone|Reschedul|CarriedFrom|CarryOver|OriginalStart|OriginalDue|TimesMoved|MoveCount|SnoozeCount` finds only
       scheduler and timer-alarm internals.
+  - **Partly built since (checked 2026-10-06, backend `0409fa0`, during F3): the carry-over half.**
+    `POST /planner-task/{id}/carry-over` *moves* an open task and records `OriginalDate` (set once) and `CarryOverCount`
+    (`PlannerTask.cs:36-42`; Planning `domain-map.md` § *Carrying a task over (F1-03)*), and the trend reports
+    `carriedOverCount`. The banner now calls it instead of copying (`OverdueTasksBanner.vue:156`), so yesterday is no
+    longer left holding a `NotStarted` original. **Still open:** home's *Move later*, the day view's reschedule and the
+    to-do renegotiation still overwrite without a trace, and there is no `OriginalStartTime`, no planner `PostponeCount`
+    and nothing on `TodoListItem`.
   - **This distorts two numbers.**
     - *Drift is understated.* `DriftMinutes` compares the actual start with `StartTime`, and a snoozed task's `StartTime`
       is already the snoozed time.
@@ -357,9 +364,12 @@ One structural finding runs under all six: **the server has no concept of a miss
 - **Size:** backend M; frontend M.
 - **Risks / open questions:**
   - **The data is thinner than it looks.** Ticking a block done from home sends `task.actualStartTime`, which is null
-    unless *Start* was pressed (`useTodayPlan.ts:296-301`). Tracker-driven completions set no actual times at all
-    (`ActivityTimeRecordedEventHandler.cs:78`). So the measurable samples are mostly blocks the user explicitly started.
-    Check the real distribution before building.
+    unless *Start* was pressed (`useTodayPlan.ts:296-301`). So the measurable samples are mostly blocks the user
+    explicitly started. Check the real distribution before building.
+  - **Corrected 2026-10-06 (backend `0409fa0`, found during F3):** this used to say tracker-driven completions set no
+    actual times. They now do (`ActivityTimeRecordedEventHandler.cs:125-129`), which cuts the other way: for any mapped
+    activity the "actual" times may be the tracker's, not the user's, and nothing on the row says which. A fit computed
+    from them is partly the tracker measuring itself (F3, *Join quality* #4).
   - **Suggestions describe the template, never the person.**
   - **Never edit a template automatically.**
   - **Overlaps F3 in spirit** (planner × history). The per-activity half could also join history sittings; that is F3's
@@ -461,6 +471,8 @@ confirm it and a direction for the fix.
    `importanceId` (`useLeisureCommitment.ts:82-89`). Only the optional marker (666) or `Cancelled` keeps a task out of the
    streak (`PlannerStreakReader.cs:44-45,51`), so a rest block left unticked breaks the next day's streak. Sending the
    user's optional-importance id at commit time fixes it.
+   **Fixed since (checked 2026-10-06):** the commit now sends `importanceId = await optionalImportanceId()`
+   (`useLeisureCommitment.ts:102`).
 4. **Frontend-only: suggest the picker when the day is done.** `NowBar` in `allDone` mode ("You're done for today!",
    `home.en.ts:35`) could link to `/leisure/pick`.
 5. **Bug-ish (backend): tracker-driven status changes skip the status rules.** `ActivityTimeRecordedEventHandler.cs:78`
@@ -469,6 +481,9 @@ confirm it and a direction for the fix.
    tracker-completed task therefore keeps its reminder registered. That is harmless today, because no client creates
    reminders (audit R1), but it matters once N1 lands. Separately, `:61-67` picks the day's task for an activity with an
    unordered `FirstOrDefault`.
+   **Fixed since (checked 2026-10-06, backend `0409fa0`):** the handler goes through `ApplyStatus`
+   (`ActivityTimeRecordedEventHandler.cs:121`), records actual times (`:125-129`), re-syncs the task's reminders
+   (`:133`), and orders its candidates by start time then id (`:97-98`).
 6. **Bug (backend): the heartbeat's day is the UTC day.** Verified at code level in a follow-up on 2026-10-04.
    - `DesktopActivityHeartbeatEndpoint.cs:171` takes `DateOnly.FromDateTime(windowStart)`.
    - `WindowStart` is a `timestamptz` value, so it is UTC (`DailyWindowMaskRequest.cs:57-62`).
@@ -477,10 +492,15 @@ confirm it and a direction for the fix.
 
    So for a Bratislava user, time tracked between local midnight and 01:00/02:00 completes or starts *yesterday's*
    planner task.
+   **Fixed since (checked 2026-10-06, backend `0409fa0`):** the heartbeat resolves the user's zone and publishes the
+   local day, summed between local midnights (`DesktopActivityHeartbeatEndpoint.cs:182-186`; Planning `domain-map.md`
+   § *Which "today"*).
 7. **Stale doc: `docs/views/planner-day/usecase.md` misdescribes the overdue banner.** It says the banner covers tasks on
    *this* day "whose window passed while still `NotStarted`". In the code it shows only *yesterday's* open tasks, and only
    while viewing today (`OverdueTasksBanner.vue:80-91`; title key `planner.calendar.notCompletedYesterday`,
    `dayPlanner.en.ts:124`). The comment at `usePlannerNowNext.ts:105-108` relies on the doc's wrong reading.
+   **Fixed since (checked 2026-10-06):** `usecase.md:69,82-84` now describes the "Still open from earlier days" banner,
+   which covers the last seven days.
 8. **Stale claim in F2: duplicate suggestions (corrected in F2 on 2026-10-04).** F2's *Out of scope* #4 marked as
    unverified whether the suggestions endpoint skips activities already planned that day. It does:
    `GetSuggestionsRepeatingPlannerTaskEndpoint.cs:57-65` seeds a covered-activity set from every task on the calendar,
@@ -489,6 +509,12 @@ confirm it and a direction for the fix.
    through `by-Date`, which 404s for a date with no row. `UpdatePlannerTaskEndpoint` already accepts `date` and creates the
    day lazily (Planning `domain-map.md` § *Lazy day creation*). In practice this only bites for dates beyond next year,
    because the seeder fills this year and next.
+   **Fixed since (checked 2026-10-06):** the reschedule sends `request.date` and lets the server create the day
+   (`DayPlannerView.vue:504`).
 10. **Design note: a planner task made from a to-do writes its date back into the item** (`TodoListView.vue:465-468`,
     `dueDate` and `dueTime`). A missed block therefore also makes the to-do overdue, and snoozing the block does not update
     the item's `dueTime`. F1-03's risks cover the consequence.
+    **Decided and fixed since (checked 2026-10-06):** the planner no longer writes the item's date. `dueDate` stays the
+    user's deadline, and "scheduled" is read from the planner as `nextPlannedSlot` through `ITodoListItemPlanSource`
+    (`TodoListView.vue:452-453`; `docs/bugs-to-investigate.md` #8). The double-count risk in F1-03's last bullet no
+    longer applies.

@@ -216,3 +216,7 @@ row — the same unseeded-day shape as #5.
   (`AdhdTimeOrganizer.History/application/dto/request/ActivityHistoryRequest.cs:52`).
 
 F2 has been corrected for all three (#1, #2, and the F2-06 / F2-02 lines that depended on #1).
+
+F1 was corrected on 2026-10-06, after the F3 pass found that its *Out of scope* list still described every bug above as
+open. Each of those items (F1's #3, #5, #6, #7, #9, #10) now carries a "Fixed since" note. So does F1-05's risk about tracker-driven actual times, and F1-03 notes
+that its carry-over half is built.
