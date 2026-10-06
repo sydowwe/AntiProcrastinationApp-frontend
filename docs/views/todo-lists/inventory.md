@@ -76,6 +76,14 @@
 - duplicate requests: none — `todo-list-category/filter-sort` and `todo-list/filter-sort` each fire once per
   load/filter change.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/todo-lists--mobile.png)
+- layout: the categories column (`d-none d-md-block`) is gone. The list panel takes the full width. Its toolbar stacks into two rows: Categories + New list, then Search + sort toggle. List cards are full-width, and Edit/Delete stay visible at 40×40.
+- mobile-only controls: **Categories** — `getByRole('button', { name: 'Categories' })` (`d-md-none`) — opens a `contained fullscreen` `VDialog` holding the same `TodoListCategoryPane` with `mobile` set ([screenshot](screenshots/todo-lists-categories--mobile.png)). Inside it: **Close** — `getByRole('button', { name: 'Close' })` (40×40); **New category** moves from the header to the end of the search row (`d-md-none`, 40×40). Selecting a category closes the dialog. Escape closes it too, but focus is lost on close (see Findings A4).
+- replaced controls: desktop category column → Categories button + full-screen dialog. Category-row Edit/Delete are hover-revealed (`opacity: 0`) on desktop, but `@media (hover: none)` forces them visible on touch screens.
+- overflow: the page doesn't scroll sideways. `div.v-row` ends at 394 (Vuetify's −4 px gutter, clipped by `main`), and so does the category dialog (its `margin: -12px` against 8 px of padding). Cosmetic only.
+- visual sweep: nothing wrong. The New list dialog (24–366, Cancel/Add at y 621) and the Delete list? confirm fit without scrolling. The icon picker fits, but its fixed 7-column grid clips every icon name to 2–3 letters (Findings P2, [screenshot](screenshots/todo-lists-icon-picker--mobile.png)).
+
 ### TodoListView (`/todo-list/:id`)
 ![default](screenshots/todo-list-id--default.png)
 ![add dialog](screenshots/todo-list-id--add-dialog.png)
@@ -189,6 +197,17 @@
   line-number mismatch is likely a stale/pre-refactor source map, not a second bug). Confirmed reproducible.
 - non-2xx: `GET /api/todo-list/999999` → 404 (the only non-2xx observed in this unit).
 - duplicate requests: none found on either a valid or invalid id.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/todo-list-id--mobile.png)
+- layout: one column (`cols="12"`). The toolbar (back, Add, Change order, Focus, Undo) stays on one non-wrapping row 468 px wide. That widens the whole column to 484 px, so `.v-main .v-container` (`overflow-x: auto`) pans sideways by 90 px (Findings B10). Item titles wrap onto their own line below the chips. Breadcrumbs wrap ("To-do / list", or three lines for "Errands"), which is `_shell` P4.
+- mobile-only controls: none. No `useDisplay` or `d-*-none` in this view's components. The column only narrows at `sm` (`sm="10"`); at 768 it fits ([screenshot](screenshots/todo-list-id--768.png)), and the pan only appears below ≈ 472 px.
+- replaced controls: none. The per-item drag handle in Change order mode is hover-only (`opacity: 0` until `.listItem:hover`), so on a touch screen it never shows (Findings P3, U4).
+- overflow: `div.v-row.justify-center` → 480 inside `.v-container` (scrollWidth 480 / clientWidth 390). Off-screen until panned: More actions ⋮ (411–451), Undo (408–472), Uncheck all (436–456), the right half of Quick start timer (363–403), the right edge of Focus (298–396), and the end of the overdue banner's sentence.
+- tap targets: Decrease on the multi-count counter is 20×20 (Increase is 35×35), and Uncheck all is 20×20. Both pass WCAG 2.5.8 through the spacing exception: Decrease's 24 px circle clears Increase by 2 px. Star 32×32, checkbox 40×40, stopwatch / ⋮ 40×40.
+- overdue banner (`/todo-list/13002`): Today 62×28, In a week 83×28, Review one by one 139×28. All three fit on one line inside the viewport (73–372) and are tappable without panning. Not clicked ([screenshot](screenshots/todo-list-id-overdue--mobile.png)).
+- dialogs: Add item, Move to list, Log time and the day-planner Add New Task all fit within 24–366, with the footer visible and the body scrolling internally. The due-date picker fits (40–368). In Add New Task, the All activities / To-do list / Routine toggle runs 9 px past its own `overflow-x: auto` group, so "Routine" is clipped until scrolled (dayPlanner's component, not filed here). The item ⋮ menu fits once panned ([screenshot](screenshots/todo-list-id-overflow-menu--mobile.png)).
+- visual sweep: the right edge of every row and of the toolbar is cut off (B10). Item titles render white on the light card (`v-list-item-title text-white`). That happens at desktop width too, so it isn't an x4 finding.
 
 ## Transitions out of this unit
 | from | control | goes to |

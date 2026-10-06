@@ -88,6 +88,16 @@
   reconnect observed in the console — the seeding evidently completed mid-session. Not a frontend defect;
   noted so a re-run isn't surprised by the same transient state.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/routine-todo-list--mobile.png)
+- layout: the sticky toolbar stacks into two rows: Settings + Groups, then Add (grows) + Reorder + Undo. The weekly review card stacks its rows; Keep / Reduce frequency / Pause fit at 28 px tall. One group card at a time (`cols="12"`). The card keeps the desktop fixed-height board layout, so its item list is a 159 px inner scroller, and its footer (Hide done + heatmap) is clipped out of the card (Findings B12).
+- mobile-only controls: **Groups** becomes single-select under `smAndDown` (`RoutineToDoListView.vue:17-20`, `useRoutineGroups.ts:70`). Same locator as desktop: click `main .v-select .v-field__input`. It opens a 4-item menu (Daily / Weekly / Monthly / Yearly, 223×48 each), and choosing one shows only that group's card. Default: Daily.
+- replaced controls: multi-select Groups (several cards side by side) → single-select (one card).
+- overflow: none. `docScroll` and `.v-container` are both 390.
+- tap targets: everything ≥ 24 px except Cover the miss (107×20) and the weekday chips (display-only). Cover the miss passes through the spacing exception. Item checkbox, Quick start and ⋮ are 40×40; the review card's close is 32×32.
+- dialogs: Add to routine to-do list fits (24–366, body scrolls, Cancel/Add at y 758) ([screenshot](screenshots/routine-todo-list-add-dialog--mobile.png)). History is unreachable (B12).
+- visual sweep: every-day items wrap their seven weekday chips onto two rows, and the title drops below them. That's the trade-off P2 already accepted. Item titles are white on the light card, the same as at desktop width.
+
 ### RoutineSettingsView (`/routine-settings`)
 ![default](screenshots/routine-settings--default.png)
 ![edit dialog](screenshots/routine-settings--edit-dialog.png)
@@ -143,6 +153,15 @@ finding had never been written up at all.
   component or comparing rendered text against a Slovak-locale pass.
 - non-2xx: none.
 - duplicate requests: none — `GET /api/routine-time-period` fires once per load.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/routine-settings--mobile.png)
+- layout: title + Add on one row. The "Your routines over time" cards wrap two per row. The table keeps all ten columns inside its own `v-table__wrapper` (`overflow-x: auto`, 877 / 372).
+- mobile-only controls: none.
+- replaced controls: none. The Is hidden switch (36×36 at x 701) and Edit/Delete (40×40 at x 790 / 838) are reached by scrolling the table sideways. The Name column isn't sticky, so the row's name scrolls out of view first.
+- overflow: `table → 886` inside the intentionally scrolling `v-table__wrapper`. The page doesn't scroll sideways.
+- dialogs: Add time period fits (24–366, body scrolls, Cancel/Create at y 764). Colour swatches are 28×28. The "Nudge me before the reset (days)" label ellipsises to "(da…" (212 vs 208 px, cosmetic) ([screenshot](screenshots/routine-settings-add-dialog--mobile.png)).
+- visual sweep: nothing wrong at this width. The breadcrumb shows only "Home" on this route (not compared at desktop width).
 
 ## Transitions out of this unit
 | from | control | goes to |

@@ -72,6 +72,11 @@ handling are still in `RoutineSettingsView.vue`; B8's `routineSettings` entry is
 clean. **No drift since round 8; nothing to re-open.** Not a substitute for a live pass — no browser was used
 this round, so this only rules out a source-level regression, not a runtime one.
 
+**Tally (after round 10 — x4 narrow viewport, 2026-10-06):** blocker 0 · bug 12 (B1–B11 fixed and verified;
+**B12 open**) · a11y 3 (A1–A3 fixed and verified) · polish 2 (P1, P2 fixed and verified) · opportunity 0 ·
+unverified 2 (U1, U2 verified round 6). 19 entries, **1 open**. The shared drag-handle defect seen on this
+unit's Reorder mode is filed once, in its owner: `docs/views/todo-lists/findings.md` P3 (and U4 for touch-drag).
+
 ## Round history
 | round | date | commit | what changed |
 | --- | --- | --- | --- |
@@ -89,6 +94,7 @@ this round, so this only rules out a source-level regression, not a runtime one.
 | 7b | 2026-09-14 | `6aac48bb` | **same-day B11 follow-ups**: the wire now requires a colour (`ColorPicker`'s new `required` prop drops the *None* swatch), and the create/edit form pre-checks name+length uniqueness client-side before sending the request, so the 409 path is now only reachable on a race. Every finding in this file is `fixed and verified`. |
 | 8 | 2026-09-15 | `97f1e414` | **light re-confirmation only, no new findings** — signed in fresh, re-screenshotted both views, diffed against round 6/7's recorded numbers (weekly-review rows, freeze-skip counts, milestone icon, personal bests, EN ordinals). Exact match, console clean on both views. No mutation pass repeated, since round 7 had already closed every open item with live evidence the day before. |
 | 9 | 2026-09-24 | `222f0051` | **source-only spot-check, no browser** — re-read the fix sites for B1, B5/B9, B8 and B10 against the working tree; all four still present as documented. `npx vue-tsc --build --force` exit 0. No new findings, no live re-verification performed. |
+| 10 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 2 views checked; new: B12. |
 
 ---
 
@@ -935,6 +941,18 @@ Screenshots: `screenshots/routine-todo-list--round6-v4-overview.png` (rows 1–5
 - **Suggested resolution:** let the chip row wrap (`flex-wrap`) or collapse to a compact weekday strip below
   the title on narrow columns; do not shrink the column. Verify with the four-group default and the `Groups`
   filter set to one group (where the row has room and should not change).
+
+### B12. On a phone the group card's footer — the "Hide done" switch and the heatmap that opens History — is clipped out of view (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/routine-todo-list` → `src/core/todoList/component/routine/RoutineGroupCard.vue:11` (the item area is `class="h-100"`, so it claims the card's full height) and `:66-83` (the footer row with `VSwitch` + `RoutineGroupHeatmap`), inside the card's `overflow: hidden` and `RoutineToDoListView.vue:67-72` (`VRow … overflow-hidden`, a viewport-height layout).
+- **Expected:** every control a group card has at desktop width is reachable on a phone. Both footer controls are listed in the inventory's Actions table: Hide done (per group), and the heatmap strip, which is the only way to open the history dialog (plain sense; template §3).
+- **Actual:** with the Daily group selected (the mobile single-select default) and the weekly review card present, the card spans y 448–820. Its footer row sits at y 826–866, entirely below the card's bottom edge, clipped by the card (`overflow: hidden`), the row (`overflow: hidden`) and the viewport. `document.elementFromPoint` at the heatmap's centre returns the view's outer `div.h-100…`, not the heatmap. Nothing scrolls to it: the page's `scrollHeight` is 844, and the only scroller is the item list. The same squeeze leaves that item list a 159 px window (y 659–818) over 495 px of content, about one and a half rows at a time. At 1440×900 the footer sits inside the card (heatmap 828–868 in a card ending 876) for three of the four groups, so this is a narrow-viewport defect.
+- **Evidence:** `docs/views/todo-routine/screenshots/routine-todo-list--mobile.png` (card ends with the item list, no footer). `eval` clip chain from `.heatmap-grid`: card `oy:hidden y448-820` → row `oy:hidden y440-828` → container `y64-844`. Desktop comparison by `eval` at `resize 1440 900`.
+- **Repro:** 1. `resize 390 844`, open `/routine-todo-list` (seed `e2e-v5`: the weekly review card shows). 2. Look for the Hide done switch and the heatmap below the Daily card's item list. 3. Try to scroll the page down.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/routine-todo-list`. 2. `eval "(() => { const g = document.querySelector('.heatmap-grid'); const c = g.closest('.v-card').getBoundingClientRect(); const r = g.getBoundingClientRect(); return [r.top, r.bottom, c.bottom] })()"`. 3. **Pass condition:** the heatmap's `bottom <= ` the card's `bottom`, or the page scrolls far enough to bring it into view, and a click on `.heatmap-grid` opens the history dialog (then Close it). 4. The Hide done switch of the same card is likewise visible.
+- **Root cause guess:** a desktop board layout (fixed-height cards with inner scrollers) kept on a phone, plus `h-100` on the item area where it should be `flex: 1 1 0; min-height: 0`. With `h-100`, the item area's height equals the card's, so the footer is pushed out whenever the card is short. On a phone it always is, because the toolbar and review card sit above it.
+- **Suggested fix:** below `md`, let the page scroll (drop `overflow-hidden`/`h-100` on the row and card so the item list grows to its content). Or at least make the item area `flex-grow-1` with `min-height: 0` instead of `h-100`, so the footer keeps its space.
 
 ## Environment note — round 5 shared a `playwright-cli` browser and a seeded account with another session
 

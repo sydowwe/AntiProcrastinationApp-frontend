@@ -131,6 +131,15 @@ single one is unnamed. This is a deliberate improvement over the shell's own ham
   set (activity options, day-plan, routine grouped-by-period, routine-time-period, todo dashboard
   widget, pie-chart, notifications, push key, backlog profiles).
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/home--mobile.png)
+- layout: **one column** at 390 px. Every `VCol` is `cols="12"` and splits only at `md`. Order: NowBar (y 80–241), Day planner (257–530), Routine tasks (546–1391), Record activity (1407–1648), Today's activity (1664–1827), Upcoming tasks (1843–3503). The focus task (NowBar: "Missed · Grocery Shopping", Start, ⋮) and the top of the day plan are visible without scrolling. The page is ≈ 3,500 px tall, and Upcoming tasks alone is ≈ 1,660 px (11 rows, no cap).
+- mobile-only controls: none. NowBar only shrinks its buttons below `md` (`buttonSize`, `NowBar.vue:299`: `large` → `default`).
+- replaced controls: none. **Keyboard shortcuts (S/F/T/M/P) all have a tap equivalent at this width:** S → Start (NowBar), F → Done (NowBar while running, also in the ⋮ menu), T → Track time (⋮ `Actions for "<task>"` menu, 216×40, and the NowBar button while running), M → "+15m" (same menu), P → `Open: Day planner` (WidgetCard header). Nothing is shortcut-only ([menu screenshot](screenshots/home-nowbar-menu--mobile.png)).
+- overflow: the routine widget's period sheets (Daily/Weekly/Monthly/Yearly, → 595) are inside `.routine-periods` (`overflow-x: auto`, 563 / 326, intentional). The page doesn't scroll sideways.
+- tap targets: of 80 visible controls, only the multi-count Decrease (20×20, `NormalTodoListItem` in Upcoming tasks) is under 24 px. It passes through the spacing exception (see `todo-lists` inventory). DayPlannerWidget's `:hover` rules are cosmetic (background, scale), with no hidden actions.
+- visual sweep: the routine widget's group chips clip to "Weekl" / "Monthl" (Findings P1, [screenshot](screenshots/home-routine-widget--mobile.png)). Routine and to-do rows (the item components owned by `todoList`) wrap their chips over two to three lines, as on the routine page; item titles are white on the light card at every width. `HistoryPieChart` (Today's activity) showed only its empty state, "No activity tracked today", so it had nothing to judge at this width. It belongs to the history group and isn't filed here ([screenshot](screenshots/home-bottom-widgets--mobile.png)). `TrackTimeDialog` (⋮ → Track time, cancelled) fits at 24–366, and Cancel is visible at y 619. Its Stopwatch / Timer / Pomodoro toggle (400 px in a 310 px `overflow-x: auto` group) shows "POMOD…" until scrolled, and Start/Stop touch the dialog's edges (23 / 367). The dialog is `activityHistory`'s component, so this is left for the history group ([screenshot](screenshots/home-track-dialog--mobile.png)).
+
 ## Transitions out of this unit
 | from | control | goes to |
 | --- | --- | --- |

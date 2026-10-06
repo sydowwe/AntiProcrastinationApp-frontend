@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally:** blocker 0 · bug 4 · a11y 1 · polish 0 · opportunity 0 · unverified 0 — **all five fixed and verified** (see round 3)
+**Tally:** blocker 0 · bug 4 · a11y 1 · polish 1 · opportunity 0 · unverified 0 — 6 entries; B1–B4 and A1 **fixed and verified** (see round 3), **P1 open** (x4, round 4)
 
 ## Round history
 | round | date | commit | what changed |
@@ -10,6 +10,7 @@
 | 1 | 2026-09-13 | `430e6f03` | initial inventory pass. All ten `H1`–`H10` prompts (`prompts/_done/home/`) had already landed — verified live, not assumed: real current date in the pie-chart request and the activity-history deep link (H1), route-name fix on "Add to planner" (H1), `resetTodayPlan()`/`effectScope`/day-rollover watcher present (H2), one shared `WidgetCard` shell (H4), due-date chips on to-do rows + persisted-store `hideDone` toggle *attempted* (H8 — see B3), one dashboard-wide refresh coordinator with visibility/day-change/online/interval triggers (H7), NowBar as sole owner of the focus task with `DayPlannerWidget`'s focus block removed (H9). The three bugs below are new, found by driving the browser against real seeded data — none are regressions of a listed H-prompt defect. |
 | 2 | 2026-09-15 | `04c405e9` | mutation pass. B1 re-confirmed open (same 218px header overflow, now measured against fixture `e2e-v4`). B2 **root-caused and widened**: what round 1 described as a narrow, hard-to-hit loading race is in fact a near-deterministic sign-in bug — reproduced on 3 of 4 fresh sign-ins in this pass regardless of network speed, traced to a specific line (`useTodayPlan.ts:512-521`), and shown to have a second, worse variant (a permanently stuck spinner, reproduced by forcing a 500 during sign-in) that also **answers round 1's U1** (H6's error/Retry UI is correct in isolation; this race is what makes it unreachable). B3 re-confirmed open, unchanged. Cross-account isolation (H2) re-verified clean — no leaked plan data switching to the secondary account, folded into B2's evidence rather than filed separately. One new bug found only by actually mutating state, **B4** (skipping a task renders it identically to completing it — the `row--done`/`aria-pressed` distinction the checkbox exists to convey is simply absent for `Cancelled`), and one new **a11y** finding, **A1**, from a masked-input edge case discovered while testing keyboard-shortcut suppression. Full task lifecycle exercised: start/finish/skip/snooze via NowBar, the day-planner-widget checkbox, the shared `TaskActionMenu`, and the **M**/**P**/**T** keyboard shortcuts, plus the hide/show-done toggle (B3). Database reseeded (`POST /api/test/seed`, fixture `e2e-v4`, `seedDateUtc` now `2026-09-15`) at the end to restore known-good state — **this invalidates `e2e/.state/auth-10001.json`; the next agent must sign in through the form rather than `state-load` it.** |
 | 3 | 2026-09-24 | `1fb9de9e` | status sync, no new pass. Every finding had already been fixed and verified through `_fix-queue.md`, but this file still read "open": B1 → `F7` (`e3271007`), B2 → `F8` (`dfd64a6a`), B3 → `F9` (`9e3a9c9e`), B4 → `F59` (`dfd64a6a`), A1 → `F58` (`f457aa0c`). Each finding's source was re-read against the current tree, and the fix is still in place. The verification record for each is in `_fix-queue-log.md` under its F-number. |
+| 4 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 1 view checked; new: P1. |
 
 ---
 
@@ -323,3 +324,14 @@
 - **Suggested fix:** Confirm whether Vuetify ships its own English default for `$vuetify.timePicker.*`
   and, if the app's i18n setup is overriding rather than merging Vuetify's message catalogue, fix the
   merge; otherwise add the missing key to this app's EN (and SK) locale under the `$vuetify` namespace.
+
+### P1. The routine widget's group chips are squeezed until their names clip — "Weekl", "Monthl" (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/` → `src/core/home/component/RoutineTodoWidget.vue:65-73`. The group row (`d-flex align-center ga-2 mb-1`) holds the period `VChip`, a `VProgressLinear`, the done/total count and "+N not due today".
+- **Expected:** the group's name stays readable. It's the only label telling the user which period's progress bar they're looking at (plain sense).
+- **Actual:** at 390 px the widget's group rows give the chip less than its text needs. The chip has `flex-shrink: 1`, `min-width: 0` and `overflow: hidden`, so "Weekly" (text 30–75) gets a 41 px chip (30–71) and "Monthly" (text 30–80) gets 44 px (30–74). They render as "Weekl" and "Monthl". "Daily" fits. The wrapping "+1 not due today" note on the same row takes the space. Not measured at desktop width in this pass. There the widget is `md="6"` (half the row), so the chip has several times the room.
+- **Evidence:** `docs/views/home/screenshots/home-routine-widget--mobile.png` (bottom: "Weekl", "Monthl"). A `Range` over each chip's text vs the chip's box, from `eval`.
+- **Repro:** 1. `resize 390 844`, open `/`. 2. Scroll the page to the bottom of the "Routine tasks" widget. 3. Read the Weekly and Monthly group chips.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/`. 2. `eval "[...document.querySelectorAll('main .v-chip')].filter(c => /^(Weekly|Monthly)$/.test(c.innerText.trim())).map(c => { const r = document.createRange(); r.selectNodeContents(c); return r.getBoundingClientRect().right - c.getBoundingClientRect().right })"`. 3. **Pass condition:** every value is `<= 0` (the text ends inside its chip).
+- **Suggested fix:** `class="flex-shrink-0"` on the chip, and let the "+N not due today" note wrap below the bar instead.

@@ -2,9 +2,10 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `97f1e414`
 
-**Tally:** blocker 1 (X1, fixed + verified live) · bug 9 (B1–B9 all fixed + verified) · a11y 3 (A1–A3 all fixed + verified)
-· polish 1 (fixed + verified) · opportunity 1 (resolved) · unverified 0 (U1 superseded by B4, U3
-verified) · settled 1 (U2 → see B3). **0 open items**, none owing a browser pass (retest 2026-09-25).
+**Tally:** blocker 1 (X1, fixed + verified live) · bug 10 (B1–B9 fixed + verified; B10 open) · a11y 4 (A1–A3
+fixed + verified; A4 open) · polish 3 (P1 fixed + verified; P2, P3 open) · opportunity 1 (resolved) · unverified 3
+(U4 open; U1 superseded by B4, U3 verified) · settled 1 (U2 → see B3). 23 entries. **5 open**, all from
+the x4 narrow-viewport pass (2026-10-06): B10, A4, P2, P3, U4.
 
 ## Round history
 | round | date | commit | what changed |
@@ -21,6 +22,7 @@ verified) · settled 1 (U2 → see B3). **0 open items**, none owing a browser p
 | 8 | 2026-09-24 | working tree | **X1 closed — the round-7 read was wrong about the contract, not the code.** The fix went the other way from X1's suggestion: the **API** now requires a palette *name* and rejects hex (`MustBePaletteColor`, `Sydowwe.Framework/application/validator/ColorRuleExtensions.cs`; the name list `ColorPalette.cs` is identical to `colorPalette.ts`'s 29 entries), and the client already sends names. The remaining `"default"` path is gone too — `TodoListCategoryForm` passes `required`, so the "None" swatch is not rendered, and `TodoListCategoryRequest` seeds `'blue'`. Pinned API-side by `NameTextColorIconValidationTests` (route `api/todo-list-category`: every palette name → 2xx; `#abcdef`, `#fff`, `default`, `""`, `Blue` → 400). No frontend change. Browser pass attempted and blocked: form sign-in got a **500** from `POST /api/auth/login`, and another `playwright-cli` session was live, so no shared state file was loaded. |
 | 9 | 2026-09-25 | `d423edcc` | **retest round** — 4 retested live: X1, B7, B8, A3 all pass. Account: `primaryUser`. Mutations made and reverted: created and deleted two categories ("Retest Category Default", "Retest Category Crimson") for X1; opened and cancelled a delete confirmation for B7 (no mutation); moved item 14003 ("Code Review") Focus → Someday → Focus for B8, confirmed back at 0/0 in Someday and present in Focus. `/user/settings` "Ask before deleting single items" was already checked — untouched. **New gap found while running B8's Verify**: moving item 14003 to the "Errands" list (13002) 409s with `DbUniqueViolationError` ("Unique constraint violation during HandleAsync") — the fixed route/body shape works (confirmed 204 to a different destination and back), and the refusal is the deliberate `(UserId, ActivityId, TodoListId)` unique index, since Errands already has a "Code Review"-activity item. Not filed as a finding per retest scope; flagging for triage (→ **B9**, round 10). F90 (routine weekday picker): pass — `group "Suggested days"` with 7 day buttons (Mon–Sun), toggling adds/removes `[pressed]` correctly, no console error or new `console info` entries. Dialog cancelled, nothing saved (no POST in the request log after Cancel). |
 | 10 | 2026-09-25 | working tree | **triage of round 9.** The round-9 row's "silent failure" was overstated — the interceptor did show a snackbar — but the snackbar was the generic `httpErrors.conflictUnique` ("A record with this value already exists. Choose another.") after the dialog had already closed, and the rejection escaped `openMoveToList` unhandled. Filed and fixed as **B9**, verified live. X1's retest Status corrected: the category form's `ColorPicker` is `required`, so the "default" category was created with the seeded `blue`, not a "None" swatch. Round 7's row had a stray empty cell; removed. |
+| 11 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 2 views checked; new: B10, A4, P2, P3, U4. |
 
 ---
 
@@ -659,3 +661,55 @@ verified) · settled 1 (U2 → see B3). **0 open items**, none owing a browser p
 - **Note:** the same seed gap as O1; fixing the seed resolves both.
 - **Round 3 update:** still not verifiable — see O1's round 3 update. The seed now names items for this
   (14001/14002) and counts 6, but the API returns no `suggestedTime` for them.
+
+### B10. The list view pans sideways by 90 px on a phone, and each row's ⋮ menu and the Undo button start off-screen (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/todo-list/:id` → `src/core/todoList/component/TodoListToolbar.vue:2` (`d-flex justify-center mb-3 ga-3`, no wrap), inside `TodoListView.vue:31-38` (`cols="12"`). Seen on `/todo-list/13001` and `/todo-list/13002`.
+- **Expected:** at 390 px the view fits the viewport, and every row action can be reached without a sideways swipe (template rule: a page that scrolls sideways is always a finding; plain sense, WCAG 1.4.10 reflow).
+- **Actual:** the toolbar's five controls (back 4–44, Add, Change order, Focus, Undo 408–472) sit on one row that never wraps. Its min-content width (≈ 468 px) stretches `VCol` and `VRow` to 484 px. `.v-main .v-container` has `overflow-x: auto`, so `scrollWidth` is 480 against `clientWidth` 390, and the whole view pans 90 px sideways. `document.documentElement.scrollWidth` stays 390, which is why a page-level check misses it. Before panning, these are off-screen or cut: every row's **More actions ⋮** (411–451, the only way to Edit, Delete, Move to list, Log time and Add to planner), **Undo** (408–472), **Uncheck all** (436–456), the right half of **Quick start timer** (363–403), the end of **Focus** (298–396), and the overdue banner's sentence ("Pick a new o…"). Panning brings them in (container `scrollLeft` 90 opened the menu fine), but nothing shows that the view scrolls sideways.
+- **Evidence:** `docs/views/todo-lists/screenshots/todo-list-id--mobile.png` (unpanned, row ends cut), `todo-list-id-overflow-menu--mobile.png` (panned 90 px). The ancestor walk from `[aria-label^="More actions"]` shows `v-col` w484 → `v-row` w484 → `v-container` sw480/cw390 `overflow-x: auto`. At 480 px and wider only the 4 px row gutter remains (`v-container` scrollWidth = innerWidth + 4); at 768 it fits (`todo-list-id--768.png`).
+- **Repro:** 1. `resize 390 844`. 2. Open `/todo-list/13001`. 3. Look at the right edge of the toolbar and of the first item row.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/todo-list/13001`. 2. `eval "(() => { const c = document.querySelector('.v-main .v-container'); const m = document.querySelector('[aria-label^=\"More actions\"]').getBoundingClientRect(); return [c.scrollWidth, c.clientWidth, Math.round(m.right)] })()"`. 3. **Pass condition:** `scrollWidth - clientWidth <= 4`, and the first More actions button's `right <= 390`. 4. The toolbar's Undo button is also within the viewport.
+- **Root cause guess:** a toolbar row with no `flex-wrap`, holding five buttons whose labels don't shrink (Vuetify `VBtn` is `white-space: nowrap`). "Finish reordering" is longer still, so reorder mode is wider. `RoutineToDoListView` avoids this by splitting the same buttons over two rows.
+- **Suggested fix:** let the toolbar wrap below `md` (`flex-wrap`, with Add `flex-grow-1` on its own row), or turn Change order and Focus into icon buttons with labels below `sm`. Don't shrink the item rows.
+
+### A4. Closing the mobile Categories dialog drops focus to `<body>` (390 px)
+- **Status:** open
+- **Severity:** a11y
+- **Where:** @390×844 · `/todo-list` → `src/core/todoList/view/TodoListsView.vue:4-27` (`VDialog v-model="categoryDrawerOpen"`, no `activator`) opened by the `d-md-none` Categories button at `:68-75`.
+- **Expected:** when a dialog closes, focus returns to the control that opened it (WAI-ARIA dialog pattern). The template counts focus lost around a drawer or dialog as `a11y`.
+- **Actual:** opening works: focus moves into `.v-overlay__content`. Closing it, by **Close** or by Escape, leaves `document.activeElement` on `<body>`. A keyboard or switch user lands at the top of the document, not on the Categories button. Selecting a category (`onMobileSelectCategory`) closes the same dialog the same way. Not directly checked, since selecting changes the list filter, but it's the same code path.
+- **Evidence:** `eval` of `document.activeElement` → `"BODY"` after Close, and again after Escape. Before closing it was `v-overlay__content`.
+- **Repro:** 1. `resize 390 844`, open `/todo-list`. 2. Click "Categories". 3. Click "Close". 4. Check `document.activeElement`.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/todo-list`. 2. Click `getByRole('button', { name: 'Categories' })`, then `getByRole('button', { name: 'Close' })`. 3. **Pass condition:** `document.activeElement` is the Categories button. 4. Repeat with Escape instead of Close; same pass condition.
+- **Root cause guess:** the dialog is driven by `v-model` with no `activator`, so Vuetify has no element to give focus back to. Same class as `_shell` A4 (the mobile nav drawer), but a different component.
+- **Suggested fix:** pass the Categories button as the dialog's `activator` (template ref or `activator="parent"`), or refocus it in a `@afterLeave` handler.
+
+### P2. The icon picker keeps 7 columns at any width, clipping every icon name to 2–3 letters — [framework] (390 px)
+- **Status:** open
+- **Severity:** polish — **[framework]**
+- **Where:** @390×844 · `src/_common/component/inputs/IconPickerDialog.vue:251-256` (`.icon-grid { grid-template-columns: repeat(7, 1fr) }`) and `:278-287` (`.icon-name`, 2-line clamp). Opened from `/todo-list` → New list → Icon (also New category → Icon, same component). Any app view using `IconPicker` will match.
+- **Expected:** the label under each icon is readable, or not shown when it can't be (plain sense: the label exists to tell look-alike icons apart).
+- **Actual:** the dialog is 342 px wide, so each tile is ≈ 37 px. Names wrap and clamp to fragments: "Do l…" (dollar-sign), "Tr u…" (truck), "Ro t…", "Ali g…", "Ca l…". The tiles are big enough to tap (≈ 37×75), so this is polish, not a target-size issue. No sideways overflow.
+- **Evidence:** `docs/views/todo-lists/screenshots/todo-lists-icon-picker--mobile.png`.
+- **Repro:** 1. `resize 390 844`, open `/todo-list`. 2. New list → click the Icon field. 3. Read the labels under the icons.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/todo-list`. 2. Open New list, click the Icon field. 3. **Pass condition:** every visible `.icon-name` has `scrollHeight <= clientHeight` and shows at least one whole word, or names are hidden below `sm` and exposed as `title`/`aria-label`. At 1440 the grid is unchanged.
+- **Suggested fix:** `grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))`, or 4 columns below `sm`.
+
+### P3. In Change order mode the drag handle never appears on a touch screen — it's hover-only (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `src/core/todoList/component/BaseTodoListItem.vue:429-447` (`.drag-handle { opacity: 0 }`, shown only by `.listItem:hover` / `.drag-handle:hover`). Shared by `NormalTodoListItem` and `RoutineTodoListItem`: `/todo-list/:id` → Change order, and `/routine-todo-list` → Reorder.
+- **Expected:** a mode whose whole purpose is dragging shows what to drag. A phone has no hover (template §3). `TodoListCategoryPanel.vue:265-269` already handles this with `@media (hover: none) { opacity: 1 }`.
+- **Actual:** after entering reorder mode, with the pointer away from the list, every `.drag-handle` has computed `opacity: 0` (`/todo-list/13001`: 19×40 at x 361; `/routine-todo-list`: 19×40 at x 330). The rows look exactly as they did before, except that the other controls are disabled. The handle is also `color="white"` on a light card, so even when hovered it's faint in the light theme. Dragging itself is wired to the whole row, not the handle (`useTodoItemDraggable`), so this is a missing cue, not a missing control. Whether touch-dragging works at all is U4.
+- **Evidence:** `docs/views/todo-lists/screenshots/todo-list-id-change-order--mobile.png`. `eval` on `.drag-handle` → `opacity 0` in both views.
+- **Repro:** 1. `resize 390 844`, open `/todo-list/13001`. 2. Click Change order (no save happens until a drop). 3. Look for handles; click Finish reordering.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/todo-list/13001`. 2. Click `getByRole('button', { name: 'Change order' })`, then move the mouse to (5, 830). 3. **Pass condition:** under `(hover: none)` emulation (or with a non-hover rule), `.drag-handle` computed opacity is > 0. 4. Same on `/routine-todo-list` → Reorder. Click Finish reordering both times.
+- **Suggested fix:** add `@media (hover: none) { .drag-handle { opacity: 1 } }`, as the category panel does, and pick a theme-aware colour instead of `white`.
+
+### U4. Whether drag-to-reorder works with touch at all is unverified (390 px)
+- **Status:** open
+- **Severity:** unverified
+- **Where:** @390×844 · `src/core/todoList/composable/dragAndDrop/useTodoItemDraggable.ts` (`@atlaskit/pragmatic-drag-and-drop` `draggable()`, which runs on the native HTML5 drag events). `/todo-list/:id` → Change order and `/routine-todo-list` → Reorder, including cross-group drops.
+- **What would verify it:** native HTML5 drag-and-drop on touch depends on the browser: recent Chrome on Android starts a drag on long-press, and iOS Safari supports it from 15. Desktop Chromium resized to 390 px doesn't emulate touch dragging, and this pass mustn't drag anything (read-only). It needs a real phone or an emulator with touch: long-press a row in Change order mode, drag it two rows down, and check that the drop indicator appears and `PATCH …/change-display-order` fires (`todoListItemApi.ts:88`, `routineTodoListApi.ts:56`). If it doesn't work, reordering has no other path on a phone (no move-up/down actions, no keyboard alternative, per the inventory's Keyboard section), and this becomes a `bug`.
