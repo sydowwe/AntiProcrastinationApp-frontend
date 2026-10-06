@@ -74,7 +74,7 @@ it.
   from the *unfiltered* `items` ref so filtering never distorts it).
 - Per-item thin progress bar along the row's bottom edge, for items with steps or a `doneCount`/`totalCount` —
   answers "how far into this specific task am I?" (derived client-side from local, optimistically-updated refs).
-- A calibration line in the header ("your estimates run about `N`x") once ≥5 comparable items exist, and a
+- A calibration line in the header ("tasks take about `N`x your estimate") once ≥5 comparable items exist, and a
   per-item "~30m / usually 50m" chip on items that have both a `suggestedTime` and prior logged history for the
   same activity — answers "do I estimate my own tasks accurately?" (derived: ratio of actual-logged-time to
   suggested-time, averaged per item; backed by a real endpoint,

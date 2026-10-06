@@ -216,6 +216,6 @@ test.describe('Estimate-vs-actual calibration (/todo-list/:id — "Focus")', () 
 		// entirely rather than showing a different number — assert the seed's own count so that failure
 		// says which of the two happened.
 		expect(seed.counts.calibrationTodoListItems).toBeGreaterThanOrEqual(5)
-		await expect(authenticatedPage.getByText(/Your estimates run about [\d.]+x actual time/)).toBeVisible()
+		await expect(authenticatedPage.getByText(/Tasks take about [\d.]+x your estimate/)).toBeVisible()
 	})
 })

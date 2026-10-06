@@ -121,7 +121,7 @@
 | --- | --- | --- | --- | --- |
 | Header progress bar + "`done / total`" | progress bar + text | e.g. "1 / 8", "27%" | raw count / derived percentage, computed from the *unfiltered* `items` ref | `GET /api/todo-list-item?todoListId=<id>` |
 | Per-item thin progress bar (bottom edge, 3px) | progress bar | fraction of steps done, or `doneCount`/`totalCount` | derived client-side from local refs (`itemProgress` in `BaseTodoListItem.vue`) | client-side |
-| Calibration header line ("your estimates run about `N`x") | text | only renders once ≥5 comparable items exist — **not reached with this seed** | derived (average of per-item actual/suggested ratios) | `POST /api/activity-history/aggregate-by-activity` |
+| Calibration header line ("tasks take about `N`x your estimate") | text | only renders once ≥5 comparable items exist — **not reached with this seed** | derived (average of per-item actual/suggested ratios) | `POST /api/activity-history/aggregate-by-activity` |
 | Per-item "~30m / usually 50m" chip | chip + tooltip | only renders when `suggestedTime` is set and non-zero — **no item in this seed had a non-zero `suggestedTime`**, so not visually confirmed | derived, same aggregate endpoint | same as above |
 | Daily recap card | card | "N thing(s) finished today — Nm logged", names the item(s) | raw | `GET /api/todo-list-item/daily-recap?date=<today>` |
 | Step list (expanded item) | list + progress bar | step names, strikethrough when done, "`x/y` steps", "`n%`" | raw (`isDone` per step) / derived (percentage) | included in the item fetch |

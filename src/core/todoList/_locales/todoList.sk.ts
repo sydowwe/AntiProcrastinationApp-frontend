@@ -141,7 +141,7 @@ const todoList = {
 		// & Tversky). Pozri prompts/todo-motivation/S3-estimate-vs-actual.md.
 		calibration: {
 			usuallyTooltip: `Toto ti zvyčajne trvá {time}`,
-			header: `Tvoje odhady sú približne {ratio}x oproti skutočnému času`,
+			header: `Úlohy trvajú približne {ratio}x tvojho odhadu`,
 		},
 		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
 		recap: {

@@ -130,7 +130,7 @@ const todoList = {
 		},
 		calibration: {
 			usuallyTooltip: `You usually spend {time} on this`,
-			header: `Your estimates run about {ratio}x actual time`,
+			header: `Tasks take about {ratio}x your estimate`,
 		},
 		recap: {
 			summary: `{count} thing finished today — {time} logged | {count} things finished today — {time} logged`,
