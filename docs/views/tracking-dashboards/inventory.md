@@ -77,6 +77,28 @@ screenshot below.
 - non-2xx: none observed
 - duplicate requests: none — confirmed on initial load, on a URL-seeded reload, and on a baseline change
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/activity-tracking--mobile.png)
+- layout: `activityTracking` has no display-breakpoint code, so nothing switches layout. Everything just wraps. The sticky
+  header (title, preset chips, Mode/Date from/Date to when Custom, Start + h/min, Stacked bars/Timeline) wraps to six rows,
+  269 px with a preset and 377 px with Custom, and stays pinned under the app bar (findings B4). Summary cards and pie stack to
+  one column (`lg="7"`/`lg="5"`). The pie card keeps its desktop chart-plus-panel row (B3). The timeline scrolls sideways
+  inside `.timeline-container` (600 px min width, 342 px visible), and the stacked bars inside `.stacked-bars-container`
+  (2008 px for 7 days). Both are intended.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none (`docScroll` 390). The inner scroller `.v-main .v-container` measures 394/390 (P2).
+  `.chart-column` → 494 and the panel `.flex-fill` → 626 are clipped by the pie card's `overflow: hidden` (B3).
+  `.timeline-segments` → 624 sits in an `overflow-x: auto` container, which is fine. Single/Split is clipped inside its own group (P1).
+- visual sweep: the timeline reads with 3 sessions per lane (39–47 px), but the axis labels overlap ("11:15"/"11:30",
+  "15:00"/"15:15"). The donut is cut in half at the card edge and Day Total isn't visible at all
+  (`activity-tracking-pie--mobile.png`). Scrolling slides every panel under the pinned header
+  (`activity-tracking-timeline-scrolled--mobile.png`). Stacked bars are fine (`activity-tracking-stacked--mobile.png`). The
+  baseline menu (151–321 px) and the Date from picker (12–340 px) fit. The timeline and stacked-bar tooltips open on
+  `mouseenter` only, but a tap still selects, and each session's time and duration are in its accessible name, so it's not filed.
+  The round ▼ button at the bottom of every screenshot is the Vue DevTools anchor (dev build only), not app UI. Console:
+  0 errors, 0 info.
+
 ### UnifiedActivityDashboard (`/activity-tracking/unified`)
 ![default state](screenshots/unified--default.png)
 
@@ -135,6 +157,20 @@ render as one colour or two.
 - non-2xx: none observed
 - duplicate requests: none — confirmed on initial load and on a source toggle (5 requests, one of each)
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/unified--mobile.png)
+- layout: same as `ActivityDashboard` above (sticky header B4, pie row B3, main scroller P2). This is the worst
+  timeline of the four. The seed day has 11 sessions across 12 gaps, so every bar is **6 px** wide and only the "No activity"
+  gap columns are visible (`unified-timeline--mobile.png`, B5). The three lane labels widen the legend, which pushes Single/Split
+  right: Single reads "SING" and Split (385–435) is beyond the group's clip at 366, hidden entirely (P1).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. Offenders: Split → 435 (P1), `.timeline-segments` → 624 (scroll container, fine), `.chart-column`
+  → 494 and `.flex-fill` → 648 (B3), `.v-row` → 394 (P2).
+- visual sweep: the Sources card is squashed to 26 px (its content is 204 px) and the Browser/Desktop/Phone chips render
+  underneath the timeline card, so `elementFromPoint` on a chip misses it. It reproduces identically at 1440×900
+  (card 26 px, content 128 px, chip unhittable), so it's filed as a desktop defect, findings **B6**. Console: 0 errors, 0 info.
+
 ### DesktopActivityDashboard (`/activity-tracking/desktop`)
 ![default state](screenshots/desktop--default.png)
 
@@ -176,6 +212,18 @@ render as one colour or two.
 - non-2xx: none observed
 - duplicate requests: none — the `process-details` fetch fires once per selection, not repeated
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/desktop--mobile.png)
+- layout: same as `ActivityDashboard` (B4, B3, P2, P1: Split shows as "SPLI"). Timeline: 7 sessions at 12–23 px, labels
+  truncated to "J…", "G…", "V…" (B5). Selecting a process card (`selected=rider64.exe`) renders the whole process-detail
+  panel, Total/Active/Background/Entries and the Window titles list, at x 517+, off the card. Its Close details button
+  is at x 633 (B3). Tapping the card again does deselect it. The breadcrumb wraps to "Desktop / tracking" (framework, `_shell` P4).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. Offenders `.timeline-segments` → 624 (fine), `.chart-column` → 494, `.flex-fill` → 648 (B3),
+  `.v-row` → 394 (P2).
+- visual sweep: as above. Nothing else. Console: 0 errors, 0 info.
+
 ### AndroidActivityDashboard (`/activity-tracking/android`)
 ![default state](screenshots/android--default.png)
 
@@ -214,6 +262,18 @@ render as one colour or two.
   a domain/process-style detail panel at all)
 - non-2xx: none observed
 - duplicate requests: none
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/android--mobile.png)
+- layout: same as `ActivityDashboard` (B4, B3, P2). Single/Split fits here, because the legend is one item. Timeline: 5
+  sessions at 6–7 px, so they show as coloured slivers (B5). Selecting Spotify puts the app-details panel (Share of period,
+  Sessions, …) at x 517 and Close details at x 650, both off the card (B3). Tapping the card again deselects it. The
+  breadcrumb wraps to "Android / tracking" (`_shell` P4).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. Offenders `.timeline-segments` → 624 (fine), `.chart-column` → 494, `.flex-fill` → 603 (B3),
+  `.v-row` → 394 (P2).
+- visual sweep: as above. Nothing else. Console: 0 errors, 0 info.
 
 ## Transitions out of this unit
 | from | control | goes to |

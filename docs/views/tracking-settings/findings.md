@@ -3,11 +3,8 @@
 > Pass: mutation · captured 2026-09-15 · commit `97f1e414`
 > Status re-verified against source 2026-09-24, no new browser pass — see round 3 below.
 
-**Tally (live, 2026-09-24):** blocker 0 (X1-X4 all fixed) · bug 0 open, 7 fixed (B1-B7, B2 confirmed live in
-the browser, the rest by source read) · a11y 0 · polish 0 open, 1 fixed (P1 — tracking settings now also
-linked from `/user/settings`, verified live) · opportunity 0 open, 1 built (O1 — inline *Is active* toggle,
-verified live 2026-09-24) · unverified 0 (U1 stays `stale`,
-superseded by X4)
+**Tally (2026-10-06, every entry counted):** blocker 5 (X1–X4 fixed; X5 open) · bug 7 (B1–B7 fixed) · a11y 0 ·
+polish 1 (P1 fixed) · opportunity 1 (O1 built) · unverified 1 (U1 `stale`, superseded by X4). That's 15 entries, 1 open.
 
 ## Round history
 | round | date | commit | what changed |
@@ -17,6 +14,7 @@ superseded by X4)
 | 3 | 2026-09-24 | `1fb9de9e` | **status-only re-check, source read not a browser pass.** `39a89462` ("Mappings tab paints, filters, deletes and saves", F12/F72/F13) closed X1, X2, X3, X4, B1, B3, B6, B7 in one commit; `41ebf026`/`B24` closed B5 (already marked fixed here); a framework commit (`a29135a`, filed as `F14` in `_fix-queue-log.md`, closed 2026-09-23) fixed the sidebar/breadcrumb longest-prefix bug B2 names. B4 was already fixed per round 2's own note. P1 and O1 are unchanged — still open. Each closed item's code was read directly (`DesktopMappingsTable.vue`, `useMappingSettings.ts`) to confirm the fix, not just inferred from commit messages; B2's breadcrumb fix was not independently re-verified live, so its row below is marked "believed fixed" rather than "verified" — flagging that for you rather than closing it silently. |
 | 4 | 2026-09-24 | `1ffdd747` (+ working tree) | O1 built: inline *Is active* switch on both Mappings tables. Verified live on desktop and Android. |
 | 5 | 2026-09-24 | `d423edcc` (+ working tree) | **retest round** — 8 retested live, both platforms: X1, X2, X3, X4, B1, B3, B6, B7 pass; none reopened; none blocked. Not driven: X1's >1-page scroll (one row per type in the seed), X3's inactive-row edit. Account: primaryUser (form sign-in, both cached state files were already revoked). Mutations made and reverted: created 21003 / 21103 (ignored `retest-x2*`), deleted via X4; 21001 / 21101 activity edited and restored. Regression seen outside the Verify blocks: at 1440×900 the desktop pattern-bar labels truncate again ("Proc…", "Prod…", "Wind…", `retest-2026-09-24-X1-desktop.png`), against B4's closing note; the info alert below it is clipped. |
+| 6 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 4 views checked (2 platforms × 2 tabs); new: X5. |
 
 ---
 
@@ -555,3 +553,41 @@ superseded by X4)
   built-in dialog + `emit('onDelete', ...)` on confirm with no forwarding requirement enforced by the component.
 - **What would verify it:** Fixing X1 first (so the button is reachable), then clicking `delete`, confirming
   the dialog, and checking whether a `DELETE`/equivalent request fires and the row disappears after reload.
+
+---
+
+### X5. On a phone the settings card clips its own content: Save, the distinct-entries table and every mapping row are unreachable (390 px)
+- **Status:** open
+- **Severity:** blocker
+- **Where:** @390×844 · `src/core/activityTracking/view/DesktopSettingsView.vue:2-6` and `AndroidSettingsView.vue:2-6` (a `h-100`
+  wrapper around `VCard class="h-100 d-flex flex-column"`, which Vuetify makes `overflow: hidden`), with `VCardText class="flex-fill"`
+  at `:48`. Affects `/activity-tracking/desktop/settings/distinctEntries`, `/activity-tracking/desktop/settings/mappings`,
+  `/activity-tracking/android/settings/distinctEntries` and `/activity-tracking/android/settings/mappings`.
+- **Expected:** the unit's main task works on a phone: see the entries, pick an activity or *To ignored*, Save, and see or
+  toggle or edit the rules. Plain sense. It is what X1 to X4 were fixed for.
+- **Actual:** below `md` the filter bar and the actions row stack (`flex-column flex-md-row`), so the content grows to
+  944–1051 px. The card is still pinned to the viewport (top 80, bottom 828) and clips everything below 828, and the page
+  scroller `.v-main .v-container` has nothing to scroll (`scrollHeight` 780 = `clientHeight` 780). A mouse-wheel scroll over the card
+  moved neither the card nor the page (`scrollTop` 0 / 0 after `mousewheel 0 800`). Per route:
+  - desktop distinctEntries: **Save** at y 836–872 and the table at 889–1015, both fully hidden.
+  - android distinctEntries: Save at 784–820 just fits, but the table (837+) and all 5 rows are hidden. You can save a rule
+    without seeing what it covers.
+  - desktop mappings: table at 805, and its only row at y 870, with the *Is active* switch and Edit/Delete, is hidden.
+  - android mappings: the only row starts at 809. 19 px of it shows, and its controls are below the edge.
+  - All four: the pagination footer is hidden. The flex column also squeezes the table wrapper to 126 px (471 px at
+    1440×900) and the hint alert to 32 of its 91 px. Round 5 noted the hint clipping at 1440, and this is the same shrink.
+  At 1440×900 the card's content fits (wrapper 471/471), so this is a narrow-viewport break, not a regression of X1.
+- **Evidence:** `docs/views/tracking-settings/screenshots/desktop-settings-distinctEntries--mobile.png`,
+  `android-settings-distinctEntries--mobile.png` and `desktop-settings-mappings--mobile.png`, each at rest and each ending at the card's edge.
+  `desktop-settings-distinctEntries-table--mobile.png` is the hidden region, reached **only by a programmatic `scrollIntoView`** on the
+  `overflow: hidden` card, which a user cannot do. `eval`: `card: [80, 828, 1051, "hidden"]`, `cont: [780, 780]`, `saveTop: 836`.
+- **Repro:** 1. `resize 390 844`, open `/activity-tracking/desktop/settings/distinctEntries`. 2. Try to scroll down to Save or the
+  table, by touch, wheel or scrollbar.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on each of the four routes. 2. `mousemove 195 600`, then
+  `mousewheel 0 2000`. 3. **Pass condition:** the Save button (distinctEntries tabs) and the first `tbody tr` (all tabs) have
+  `getBoundingClientRect().bottom <= innerHeight` and `elementFromPoint` at their centre lands on them. Equivalently,
+  `.v-main .v-card` has `scrollHeight <= clientHeight`. 4. At 1440×900 the layout is unchanged.
+- **Root cause guess:** an `h-100` card in an `overflow: hidden` flex column was a desktop full-height layout. It works
+  only while the content fits the viewport, and the `md` stacking guarantees it doesn't.
+- **Suggested fix:** below `md`, drop `h-100` from the card (or swap it for `min-height: 100%`) so the page scroller takes over, and
+  give the table its natural height there.

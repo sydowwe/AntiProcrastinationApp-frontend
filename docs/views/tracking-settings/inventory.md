@@ -100,6 +100,25 @@ their listbox).
 - non-2xx: none.
 - duplicate requests: none — the grid POST fires exactly once per load/filter/sort action.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/desktop-settings-distinctEntries--mobile.png)
+- layout: the only breakpoint switch is class-based and at `md`: `flex-column flex-md-row` on `*EntriesFilterBar`,
+  `*MappingsFilter` and `*DistinctEntriesActions` (both platforms). There's no `useDisplay`. So below 960 px the header stacks:
+  title, the Distinct entries/Mappings toggle, then the three pattern fields one per row, the All/Undecided/Covered toggle, and a full-width Filter. Below that come the hint, Role, Category, the Activity picker plus
+  "+", Clear, To activity/To ignored, Save, and the table. The card is pinned to the viewport (`h-100`, 80–828) and is
+  `overflow: hidden`, with **1051 px** of content and a page scroller that has nothing to scroll (780/780). So **Save (836–872)
+  and the whole table (889–1015) are below the card's edge and can't be reached**. A wheel scroll moved nothing (findings X5).
+  The flex column also squeezes the table wrapper to 126 px (471 px at 1440×900) and the hint alert to 32 of its 91 px.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. `table` → 448 inside `.v-table__wrapper` (`overflow-x: auto`, 425/344), which is fine.
+- visual sweep: the hint's text is cut off top and bottom (same shrink, also seen at 1440 in round 5). The Activity picker
+  (`core/activity`'s `ActivitySelectionForm`) shrinks to "* Activi…". It's not filed: it's another module's component and wasn't
+  measured. `desktop-settings-distinctEntries-table--mobile.png` shows the clipped region **only after a
+  programmatic `scrollIntoView`**: about 1.5 rows show in the 126 px wrapper, and a user can't get there. The Create new activity
+  dialog fits (24–366 × 128–716, Cancel/Create at y 660–696, `create-activity-dialog--mobile.png`). On-screen keyboard: see
+  `_shell` U3. Console: 0 errors, 0 info.
+
 ---
 
 ### DesktopSettingsView — Mappings tab (`/activity-tracking/desktop/settings/mappings`)
@@ -168,6 +187,19 @@ see above).
 - **confirmed no request fires** when any of the tab's filter controls change or when "Filter" is clicked —
   checked via `playwright-cli requests` before/after each interaction (see Findings B1).
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/desktop-settings-mappings--mobile.png)
+- layout: same header as distinctEntries, then Is active, Type, Role, Category, Activity and the table. Same clipped card
+  (80–828, 996 px of content). The table starts at 805, and its only row (Type = Activity, `rider64.exe`) is at y 870, so the
+  row, its *Is active* switch (36×36) and Edit/Delete (40×40, at x 837/885 inside the sideways-scrolling table) are all below
+  the edge. Pagination is clipped too (X5).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. `table` → 933 inside `.v-table__wrapper` (`overflow-x: auto`, 910/344), which is fine. Row actions would be
+  reachable by swiping the table if the row were on screen.
+- visual sweep: header columns peek out at the bottom edge, nothing else. No dialog opened, since the delete confirmation needs the
+  unreachable Delete. Console: 0 errors, 0 info.
+
 ---
 
 ### AndroidSettingsView — Distinct entries tab (`/activity-tracking/android/settings/distinctEntries`)
@@ -192,6 +224,16 @@ WhatsApp), matches `counts.distinctAndroidEntries: 5` in the seed.
 
 **Dialogs, keyboard, console/network:** same as desktop — "Create new activity" dialog opens correctly, Escape
 does not close it (framework default), no console errors, no duplicate requests.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/android-settings-distinctEntries--mobile.png)
+- layout: as desktop, with two pattern fields, so everything sits 52 px higher. Save (784–820) **just fits** above the card's
+  edge at 828, but the table (837–963) and all 5 rows (y 893+) are clipped. The user can save a rule without seeing the entries
+  it's meant to cover (X5).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none (no offenders at all).
+- visual sweep: hint clipped and Activity picker truncated, as desktop. Console: 0 errors, 0 info.
 
 ---
 
@@ -219,6 +261,15 @@ platform symmetry:
   request — tested on the same row (X4, B7).
 - Cleanup: reseeded via `POST /api/test/seed` at the end of the pass, which removed both this row and desktop's
   `vlc.exe` row; see the unit's closing report for the reseed caveats.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+(no separate screenshot; same layout as the desktop Mappings tab above)
+- layout: card 80–828 with 944 px of content. The table starts at 753, and its only row (Spotify, Type = Activity) starts at
+  y 809, so 19 px of it shows and its switch and Edit/Delete are below the edge (X5).
+- mobile-only controls: none
+- replaced controls: none
+- overflow: page none. `table` → 765 inside `.v-table__wrapper` (`overflow-x: auto`, 742/344), which is fine.
+- visual sweep: not screenshotted, geometry from `eval` only. Console: 0 errors, 0 info.
 
 ## Transitions out of this unit
 
