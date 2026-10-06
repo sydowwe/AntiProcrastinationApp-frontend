@@ -4,6 +4,10 @@
 - **Frontend:** `5944d9c8`. The working tree is dirty, but only in `activityTracking` and the `src/_common` pointer, none
   of it on the paths read here.
 - **Backend:** `cde16f8`, clean.
+- **Rechecked 2026-10-06** against backend `0409fa0` (clean, 22 commits later) and frontend `15330036`. Since `cde16f8`,
+  nothing has changed in `.Routines`, `Calendar.cs` or `CalendarDayFactory.cs`. Every backend claim here still holds. The
+  repeating-suggestion line numbers have moved (noted in place). On the frontend, **OP5 is built**: home now shows the
+  day's context (*The client* and *Out of scope* #6). *Out of scope* #1 and #2 are still open.
 - **Inputs read:** `_RULES.md`, the F4 prompt, `prompts/captured-data/README.md` and `C3-template-by-location.md`,
   `docs/opportunities.md` (OP5, OP18), `docs/notification-audit.md` (producers, N2–N4), `docs/data-map.md` and
   `docs/data-map/planner.md`, `docs/views/glossary.md`, `docs/feature-discovery/F2-half-built-backend.md` (Rejected
@@ -76,6 +80,9 @@ The repeating-task twin has the same blind spot. `GetSuggestionsRepeatingPlanner
 matches its planner-pattern and history-pattern tiers on **weekday and day-of-month only**. So a vacation Monday is
 offered the workday Monday's standup, commute and focus block from history. Tier 1 (user-set recurrences, `:82-90`) is
 fine: a recurrence the user scoped with `RecurrenceType.DayType` already respects the day.
+**Still true (checked 2026-10-06, backend `0409fa0`).** The lines have moved: the pattern tiers are at `:130-131,154-155`,
+and tier 1 is at `:86-90`. Since `07f7679`, tier 1 is also bounded by each task's `ActiveFromDate`/`ActiveToDate`
+(`:77-80`). Neither change affects day type.
 
 ### How this approaches C3 / OP18 / B27
 
@@ -126,6 +133,9 @@ no date-range concept anywhere in the Notifications module. These producers igno
   month) by the selection, so a vacation crossing a month boundary takes two operations.
 - **The Details dialog** offers the natural type plus `Vacation` / `SickDay` / `Special` (`CalendarDetailsDialog.vue:104-118`).
 - **Home** shows none of the day's context (OP5, unbuilt; no `dayType`/`label` reference under `src/core/home`).
+  **Built since (checked 2026-10-06, `d70e1d74`, 2026-10-04):** `DayContextBar.vue` on the planner widget shows today's
+  label, holiday, an unusual day type and the location. It is the natural surface for F4-01's "You're away today" line
+  and for unlock 8's re-entry copy.
 
 ---
 
@@ -610,10 +620,14 @@ must not ship a call to a route or a field that does not exist yet.
      fail enum binding and reject the whole batch. The runtime response is `unverified`: I did not call the API.
    - *Docs and the fix.* `docs/views/planner-day/inventory.md:31` documents *Holiday* as an option. The dialog's own list
      already excludes it (`dto/enum/dayTypeOptions.ts:7`), and the bar should reuse that list.
+   - **Still open (checked 2026-10-06):** the bar builds its options at `BulkSelectActionBar.vue:66`, and
+     `inventory.md:31` still lists *Holiday*.
 2. **Stale doc: the label *is* in the planner's month cell.** `docs/data-map/planner.md:130` ("not in the month cell")
    and `docs/data-map.md:445` ("the planner calendar shows only in the side panel") are both wrong.
    `CalendarGrid.vue:83` renders `CalendarDayCellHeader` for every grid, and that component prints `day.label`
    (`CalendarDayCellHeader.vue:23-28`). The planner calendar uses the same grid (`PlannerCalendarView.vue:2`).
+   **Still open (checked 2026-10-06):** the claim is at `planner.md:130`, and at `data-map.md:448` now that the file has
+   grown.
 3. **Stale comment and seed (backend):** `Calendar.cs:26` and `PlannerTaskSeeder.cs:91` model HomeOffice/Office as a
    label, which duplicates `Location`. This is folded into F4-01's backend step, and is harmless on its own.
 4. **`Calendar.AppliedTemplateId` has no FK** (model snapshot: a plain `bigint applied_template_id`, no relationship). A
@@ -625,3 +639,5 @@ must not ship a call to a route or a field that does not exist yet.
    change. Weigh it against other apps that might use it.
 6. **Frontend-only: home still shows none of the day's context** (OP5, unbuilt). F4-01 would make "Vacation" worth
    showing there: "You're away today. Routines are paused."
+   **Built since (checked 2026-10-06, `d70e1d74`):** OP5 is closed, and `DayContextBar.vue` shows the day type. What is
+   left is F4-01's copy for an away day, which depends on F4-01 itself.

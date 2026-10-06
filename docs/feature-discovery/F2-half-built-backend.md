@@ -7,6 +7,11 @@
 > for notifications, reminders and the scheduler), `docs/opportunities.md`, `prompts/captured-data/README.md`, the index of
 > every `prompts/_done/*/README.md`, `docs/data-map.md` § *Endpoints with no client caller*, `docs/data-map/leisure.md`, and
 > targeted greps of `docs/views/_fix-queue{,-log}.md`.
+>
+> **Rechecked 2026-10-06** against backend `0409fa0` (clean, 30 commits after `ec4d018`) and frontend `15330036`. Every
+> candidate's claims were re-opened, along with *Out of scope*. Results: F2-01, F2-03, F2-04, F2-05, F2-06, F2-08 and F2-10
+> still hold, with some line numbers moved. F2-02 and F2-07 shifted, and F2-09 is partly built. *Out of scope* #3 and #7
+> are fixed. Each change carries a dated note in place.
 
 ## Method
 
@@ -81,6 +86,11 @@ and its sibling never got it.
   - **Late batches.** Phones sync late, so attribution lands hours after the fact. F2-02's automation then fires on a past
     day; it should be limited to "today".
   - Mapping rules edited after the fact are not re-applied, the same as desktop today.
+  - **Still open (checked 2026-10-06, backend `0409fa0`).** `AndroidSyncEndpoint` still takes no attribution sink, and
+    the `AndroidMappingRuleSet.cs:10` warning stands. The heartbeat's references have moved: `rules.Resolve` is at `:88`,
+    `AttributeAsync` at `:114`, and the event at `:196-202`. **New constraint:** the event now requires the user's local
+    `Day`, `WindowStart` and `WindowEnd`, and its remarks name the Android sync as a future publisher that must resolve
+    the zone first (`ActivityTimeRecordedEvent.cs:25-28`). Skipping that step reintroduces the heartbeat's UTC-day bug, which has since been fixed.
 - **Dedupe:** new. B24 (`prompts/view-docs/backend/_done/B24-…`) found the gap and explicitly deferred it. The tracking
   set (`_done/activity-tracking` R4, U4) never applied rules at ingest.
 - **Pattern:** 7 (also 1: the rules table is written, and nothing on the ingest side reads it)
@@ -119,6 +129,20 @@ and its sibling never got it.
     that share an activity. It is acceptable for desktop's ambient time; it is more visible for deliberate timers.
   - **Recommendation:** key the automation on the item link when the row carries one. The client has sent
     `todoListItemId` / `routineTodoListId` since `f522b0c9` (see *Out of scope* #1).
+- **Still open, but the handler changed (checked 2026-10-06, backend `0409fa0`, mostly `c96d678`).**
+  - *Still true:* the heartbeat is the only publisher (`DesktopActivityHeartbeatEndpoint.cs:196`). There is no
+    `new ActivityTimeRecordedEvent` anywhere else in production code. The client's toggle still sends no `forceValue`
+    (`BaseTodoListLogTimeController.vue:80`).
+  - *Changed:* the event now carries `WindowStart`/`WindowEnd` on the user's clock (`ActivityTimeRecordedEvent.cs:42-47`),
+    so a History publisher must resolve the user's zone and send the logged span, not only day totals. The remarks name
+    timers as a future publisher bound by that rule (`:25-28`). The handler now
+    picks the planner task whose span contains the window, ordered by start time then id (`ActivityTimeRecordedEventHandler.cs:90-109`).
+    It goes through `ApplyStatus`, records actual times and re-syncs reminders (see F1 *Out of scope* #5). That narrows
+    the wrong-item risk above for planner tasks.
+  - *Still keyed on activity alone:* the no-planner-task fallback for to-do and routine items now sits at `:196-215` and
+    uses an unordered `FirstOrDefaultAsync`. The recommendation to key it on the item link stands.
+  - *Not an overlap:* the new `CompleteFinishedPlannerTasksJobHandler` closes only `InProgress` tasks flagged
+    `AutoCompleteAtEnd` (leisure rest booked with "do it now"). It does not react to logged time.
 - **Dedupe:** new. C5 (`captured-data`) changed what a session row is, not what it triggers.
 - **Pattern:** 7
 
@@ -150,6 +174,8 @@ and its sibling never got it.
 - **Risks / open questions:**
   - The gate may be deliberate, as a beta or entitlement switch. The owner should say so. If it is not, the cheapest fix
     is to delete the override and let the framework default (`=> true`) apply.
+  - **Still open (checked 2026-10-06, backend `0409fa0`).** The writers are unchanged: `DefaultUsersSeeder.cs:55,70`
+    only. The framework default is now at `BaseExtensionLoginEndpoint.cs:58`, and the denial at `:83`.
   - **This is the onboarding cliff for every tracking feature, F2-01 included.** Nothing else in tracking matters until
     a user can sign a tracker in.
 - **Dedupe:** new. No doc in `docs/` or `prompts/` mentions `HasExtensionAccess`.
@@ -187,7 +213,10 @@ and its sibling never got it.
   - Two rankers exist today, and their rules may have drifted. The adoption must diff them, not assume.
   - `/seen` only on commit or reroll, never on render: the outcome enum's doc forbids recording a rendered draw
     (`LeisureSuggestionOutcome.cs`).
-  - Weather depends on OP4 (the user's location) to do anything at all.
+  - Weather depends on OP4 (the user's location) to do anything at all. **OP4 is done** (`docs/opportunities.md`
+    → *Closed*), so the weather input now exists.
+  - **Still open (checked 2026-10-06).** `src/` has no `leisure-suggestion` caller, and `LeisureDrawConstraints.cs:12`
+    still carries only minutes, energy and people.
 - **Dedupe:** extends `_done/leisure` D1, whose backend half (`D1-backend.md` §1–2) shipped and whose frontend never
   adopted it. Also extends D2: this adds weather to the server ranker, which D2 put client-side.
 - **Pattern:** 3
@@ -218,6 +247,8 @@ and its sibling never got it.
 - **Risks / open questions:** partial shopping (some steps unticked when the item is ticked done). Moving on item-done
   rather than all-steps-done matches how the user closes it. The status change must be idempotent and must not fire for
   projects in `Planning`.
+  **Still open (checked 2026-10-06, backend `0409fa0`).** The only `TodoListItemIsDoneChangedEvent` handler is still
+  Planning's, the `ReadinessStatus` writers are unchanged, and `ShoppingToTodoDialog.vue` sends no project id.
 - **Dedupe:** extends leisure-projects **O1** (closed 2026-09-24, `_fix-queue-log.md:7130`) and `_done/leisure` P1
   (readiness board). Both built the outbound half; this closes the loop back.
 - **Pattern:** 6
@@ -250,6 +281,9 @@ and its sibling never got it.
 - **Risks / open questions:**
   - Show the number as information, never as "you were slow".
   - Never overwrite `SuggestedTime` silently: it gates auto-completion, so changing it changes behaviour.
+  - **Still open (checked 2026-10-06, backend `0409fa0`).** Nothing reads the column yet. The session endpoint now writes
+    the link and ownership-checks it (`CreateActivityHistorySessionEndpoint.cs:71-79,106-116`), so timer sessions carry
+    it as well as single rows.
 - **Dedupe:** extends `_done/todo-motivation` **S3** (estimate vs actual, to-dos only) to routines, and OP13 (per-item time
   in the recap, to-dos only).
 - **Pattern:** 7 (and 1: written by nobody, read by nothing)
@@ -281,6 +315,12 @@ and its sibling never got it.
   - The precise measure needs OP6's planned length. Until then the server can only infer "stopped early at X", not "out
     of Y".
   - Below about 5 sessions, show nothing.
+  - **Corrected 2026-10-06 (backend `0409fa0`): the planned length exists now.** OP6 is done. `ActivityHistorySession.PlannedLength`
+    (`ActivityHistorySession.cs:52`, `79c429d`) stores what the timer was set to, so "stopped at X out of Y" is measurable.
+    It covers only sessions since 2026-10-03, so the sample threshold matters even more at first.
+  - Still no aggregate. `Outcome`, the focus-period counts and `PlannedLength` are now **echoed** on every history row
+    (`ActivityHistoryResponse.cs:56-59`) as well as in the export (`GetUserDataExportEndpoint.cs:104-107`). Both are
+    projections. No query reads them.
 - **Dedupe:** extends OP6 (which adds the planned length; this spends it) and C5 / `captured-data/backend/B3` (which stored
   the outcome with no reader).
 - **Pattern:** 1
@@ -309,6 +349,13 @@ and its sibling never got it.
 - **Size:** backend M; frontend S.
 - **Risks / open questions:** decay changes which suggestions existing users see on the first refresh after deploy. The
   window length is the owner's call. Do not show a dismissal count: that would be a guilt pile.
+- **Still open, and cheaper than stated (checked 2026-10-06, backend `0409fa0`).** Both views were rewritten (see *Out of
+  scope* #3), but they still have no time window: `HAVING COUNT(*) >= 3` over all history (`mv_activity_history_pattern.sql:57,73`,
+  `mv_planner_task_pattern.sql:33,49`). There is no dismissal entity. The endpoint's pattern tiers are now at
+  `GetSuggestionsRepeatingPlannerTaskEndpoint.cs:130-131,154-155`. **Correction to step (1):** it is not a migration.
+  `SuggestionPatternViewInstaller` stamps each view with its script's hash and rebuilds it at boot when the script
+  changes. Its remarks say "Changing a script is the whole deploy … none should be written". So the window is a SQL edit
+  plus a restart, and the dismissal entity is the only migration.
 - **Dedupe:** new. B27 (template suggestions) addressed *template* ranking, not activity patterns. OP10 shows a rule's
   schedule; this changes which patterns qualify.
 - **Pattern:** 7
@@ -341,6 +388,11 @@ and its sibling never got it.
   - Two-way sync (reading busy times from Google) is a different, larger feature and is not proposed here.
   - Overlaps N1 in effect: native calendar alerts would reach a closed-app user. The owner should pick one channel per
     user so reminders do not arrive twice.
+- **Partly built since (checked 2026-10-06, backend `0409fa0`, `77b09db`):** the manual sync now skips `Cancelled` and
+  background tasks, and deletes the Google event of one that became so since the last sync (`SyncCalendarToGoogleEndpoint.cs:79-82,138`,
+  `RemovedCount` at `:20`). **Still open:** it is still a manual, per-day button. `GoogleEventId` is still read only
+  inside that endpoint, so deleting a task or moving it off the day leaves its event behind, and nothing re-syncs on
+  edit. The mirror seam and the switch are unchanged in scope.
 - **Dedupe:** new. B14 (`view-docs/backend/_done`) fixed the OAuth connect and left sync "unchanged" (`_fix-queue-log.md:5650`).
 - **Pattern:** 6
 
@@ -370,6 +422,8 @@ and its sibling never got it.
 - **Size:** backend M (the backfill marker is the cost); frontend S.
 - **Risks / open questions:** day rows are pre-seeded, so this is a data migration, not a default change. Weekday vs
   weekend wake times are where F4's day-type work comes in.
+  **Still open (checked 2026-10-06, backend `0409fa0`).** `CalendarDayFactory.cs:20-26,42-43` is unchanged. The template
+  override has moved to `PlannerTemplateApplier.cs:122`.
 - **Dedupe:** new. It is the prerequisite the audit's N2/N4 sweeps assume ("wait for the user's local
   `Calendar.WakeUpTime`").
 - **Pattern:** 5
@@ -381,13 +435,14 @@ and its sibling never got it.
 - **`DayType.Vacation/SickDay/Special` never produced server-side**: user-chosen by design (`CalendarDayFactory.cs:47` only ever yields `Weekend` or `Workday`).
   It belongs to F4.
 - **`Calendar.Location` vs `TaskPlannerDayTemplate.SuggestedLocation`**: no server comparison (`Location.Home|Office|Travel`
-  has zero references), but this is OP18 / C3.
+  has zero references), but this is OP18 / C3. (OP18 was built app-side on 2026-10-05.)
 - **`TaskPlannerDayTemplate.Tags`**: written and echoed, never queried (only `TaskPlannerDayTemplateConfiguration.cs:30`).
   Spending it would add a form field.
 - **`Activity.IsUnavoidable`**: only a grid filter (`GridActivityEndpoint.cs:114`). A "free time left today" computation
   over it is a cross-module join, so it is F3.
 - **Planner streak grace days**: deliberately absent (`PlannerStreakService.cs:76-78`).
 - **Carry over unfinished tasks**: exists client-side (`OverdueTasksBanner.vue`, "Not completed yesterday" + reschedule).
+  Since 2026-10-04 it is also a server move, `POST /planner-task/{id}/carry-over` (F1-03's *Partly built since* note).
 - **Standalone or recurring `Reminder`, `ReminderRecurrence`, `DigestKey`, `DeadlineApproaching`**: notification-audit N1,
   N2 and *Coverage gaps*.
 - **`RoutineTimePeriod.ReminderLeadDays` / `FreezeBudget`**: N3 / OP1.
@@ -426,6 +481,11 @@ and its sibling never got it.
    same), averaging hours and minutes separately. Two sittings at 09:50 and 10:10 average to 10:30, not 10:00.
    `EXTRACT(ISODOW FROM ah.start_timestamp)` is evaluated in the DB session's zone, not the user's (unverified for this
    deployment).
+   **Fixed since (checked 2026-10-06, backend `fed1999` + `1725174`, both 2026-10-03):** both views now take a circular
+   mean on the clock (`mv_activity_history_pattern.sql:11,49-54,89-90`, `mv_planner_task_pattern.sql:1,25-30,67-68`).
+   The history view converts to the user's zone before taking the weekday (`mv_activity_history_pattern.sql:24-25,40`).
+   The planner view takes it from the local `c.date` (`mv_planner_task_pattern.sql:14`). Changing zone refreshes the
+   history view.
 4. **Settled 2026-10-04 (checked during F1): no duplicate suggestions.** This item used to say, unverified, that the
    endpoint does not exclude activities already planned on that calendar. It does.
    `GetSuggestionsRepeatingPlannerTaskEndpoint.cs:57-65` seeds a covered-activity set from every `PlannerTask` on the
@@ -443,3 +503,5 @@ and its sibling never got it.
    It also names the draw as `/leisure/suggestion/draw`; the route is `POST /leisure-suggestion`.
 7. **Google sync pushes too much.** It pushes `Cancelled` and background tasks (`SyncCalendarToGoogleEndpoint.cs:63`, no
    status filter). This is folded into F2-09, but it is a defect on its own if F2-09 is not built.
+   **Fixed since (checked 2026-10-06, backend `77b09db`, 2026-10-03):** they are filtered out at `:138`, and an event
+   already pushed for one is deleted (`:79-82`).
