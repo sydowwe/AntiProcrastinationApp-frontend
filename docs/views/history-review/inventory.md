@@ -64,6 +64,14 @@
 - duplicate requests: none — the four dashboard POSTs (`stacked-bars`, `pie-chart`, `summary-cards`,
   `time-of-day`) each fire exactly once per relevant state change
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/activity-history--mobile.png)
+- layout: one column. Range length + ‹ From › on one row, the Activity/Role/Category toggle (92/66/102 × 40), Export, the stacked-bar card, Insights, then Top Activities with "Compared to" beside the heading and "Show" below it. The four summary cards sit in a 2×2 grid with names ellipsised ("Feature Developme…"). The pie section is still side by side with "Period Totals" (`activity-history-lower--mobile.png`, `activity-history-pie--mobile.png`).
+- mobile-only controls: none. `HistorySummaryCards.vue:122` reads `lgAndUp`/`xlAndUp` only to pick a column count. No control appears or disappears.
+- replaced controls: none
+- overflow: `main .v-container` scrolls 420/390. Offenders: the period banner (→ 420, finding P4), the chart header row (`div.d-flex.ga-2.align-center.flex-wrap → 628`) and `div.legend → 781` inside the chart card (`overflow: hidden`, finding B5). The `guide-line`s (→ 1448) sit inside `.stacked-bars-container` (`overflow-x: auto`), which is intentional.
+- visual sweep: **the stacked-bar chart shows no bars**. The plot is 4 px tall, the legend sits outside the card, and the Day-from steppers are cut off (B5). Pie legend names are cut to one letter (B7), and the banner chip is cut (P4). Prev/Next day arrows are 28×28, which passes. Summary-card `:hover` is a lift and shadow only, with nothing hidden behind it. Console: clean.
+
 ---
 
 ### HistoryCalendarView (`/activity-history/calendar`)
@@ -114,6 +122,14 @@
 - errors/warnings: none
 - non-2xx: none
 - duplicate requests: none — one `POST /activity-history/dashboard/calendar` per month/range change
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/activity-history-calendar--mobile.png)
+- layout: the framework `CalendarGrid` toolbar doesn't wrap. Mode, Month and Year stack in a narrow column, with ‹ above Month and › beside Year, while "Days to show" stretches to 210×242 and runs to x 423. The body grid shows seven 51 px day columns (17–373), with each cell's wake/bed row, duration chip and top role crushed into 51 px ("1h 20…", "4h 35"). At 768 px (`activity-history-calendar--768.png`) the grid reads fine, but the select is still 135 px tall.
+- mobile-only controls: none. `HistoryDayCellContent.vue:157,172` has `@media (max-width: 960px / 600px)` rules that only shrink type and padding.
+- replaced controls: none
+- overflow: `div.d-flex.ga-3 → 423` (toolbar), `div.day-header.weekend → 417` (header grid wider than the body), both under the card's `overflow: hidden`. The page itself is 390/390. Filed as the framework finding `planner-day` P3, to which this route was added. Not refiled.
+- visual sweep: weekday headers don't line up with their columns ("01.10.", a Thursday, sits under "Wed"; "Sun" is clipped), as P3 describes. Day cells are 51×~220 tap targets, which pass. Their `:hover` scale is cosmetic. Console: clean.
 
 ---
 
@@ -180,6 +196,14 @@ every param has a safe default.
   `AxiosError` console line and no *additional* unhandled errors
 - non-2xx: none except the one deliberately-injected 500 (cleaned up via `unroute` + reload before moving on)
 - duplicate requests: none
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b` · judged on `?date=2026-10-02` (populated; the seed date is empty)
+![mobile](screenshots/activity-history-detail--mobile.png)
+- layout: one column. Calendar and summary icon buttons beside the heading, the Stacked bars/Timeline toggle, ‹ Date ›, Start + range toggle, h/min steppers, the groupBy toggle, Export. The timeline is a 324 px-tall inner scroller with the time column at the left and the cards at x 88+. Below it come Top Activities, the banner, cards and the pie section, as on Summary.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: the page is 390/390, but the timeline panel (`flex-fill mx-3`, `overflow-x: auto` by way of `overflow-y-auto`) scrolls 397/342 because long-titled cards overflow it (→ 413/421/414/397, finding B6). The banner overflows (→ 420, P4).
+- visual sweep: the ⋮ "More actions" button is hidden on long-titled cards (B6). In Stacked bars mode (`activity-history-detail-bars--mobile.png`) the plot is 4 px tall and shows no bars (B5). Pie legend labels like "(17.6%)" carry no name (B7). The breadcrumb's current crumb is clipped to "His / Det" (added to `_shell` P4). The row ⋮ menu (Edit/Delete) fits at 191–310 when opened. Console: clean.
 
 ## Transitions out of this unit
 | from | control | goes to |

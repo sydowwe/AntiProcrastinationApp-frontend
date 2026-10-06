@@ -2,8 +2,8 @@
 
 > Pass: inventory · captured 2026-09-14 · commit `adc9c67f`
 
-**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (everything closed — all of
-B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
+**Tally:** blocker 0 · bug 3 · a11y 0 · polish 1 · opportunity 0 · unverified 0 (open entries only: B5, B6, B7, P4.
+Everything earlier is closed: B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
 | 2 | 2026-09-24 | (code check, no commit) | B1-B3, A2, P2-P3 confirmed fixed in code; U2 confirmed resolved by backend B2 nullability audit |
 | 3 | 2026-09-24 | (browser check, no commit) | U1 closed — both the plain-empty and genuine first-run branches confirmed live on Calendar and Summary |
 | 4 | 2026-09-25 | `d423edcc` | **retest round** — 6 retested live: B1, B2, B3, A2, P2, P3 pass; none reopened; none blocked. Account(s): primaryUser (`e2e/.state/auth-10001.json`). Mutations made and reverted: B2's `**/api/activity-history/dashboard/detail/pie-chart` route (500), unrouted and reload confirmed recovery — no residue. No regressions seen outside the Verify blocks. |
+| 5 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 3 views checked; new: B5, B6, B7, P4. Calendar's header/toolbar defect is the framework `CalendarGrid` one already filed as `planner-day` P3; `/activity-history/calendar` was added to its **Where** rather than filed again. |
 
 ---
 
@@ -297,3 +298,51 @@ B1-B4, A1-A2, P1-P3 fixed and verified in code; U1 and U2 verified/resolved)
   this pass's seed data carried a non-null `08:00 - 00:00` wake/bed row, so the null-safe path (`Time | null`,
   independent rendering per H1's fix) was read in code but never exercised live. A seed row with a missing
   sleep record would be needed to confirm the fix on screen rather than by source inspection alone.
+
+### B5. The stacked-bar chart collapses to a 4 px strip on Summary and Detail: no bars, the legend pushed out of the card, time-range controls clipped (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/activity-history` and `/activity-history/detail?view=stackedBars` → `src/core/activityTracking/component/stackedBars/StackedBarsChart.vue:3-30` (header row `d-flex align-center ga-5`, no `flex-wrap`). The component belongs to `activityTracking` and is imported by both history views, which size it as `flex-fill` with `min-height: 200px` (`HistorySummaryView.vue:45-46`, `HistoryDetailView.vue:103-104`). The four activity-tracking dashboards mount the same component without that cap, and `tracking-dashboards` B4 measured their columns at 422 px tall, so the collapse is history-side. Their header and legend layout is the same code, though. Also broken at 768×1024.
+- **Expected:** at phone width the chart still shows its bars, which are the view's main visual and the only way to drill from Summary into a day (plain sense; `inventory.md` → "Stacked-bar columns … drills into a day").
+- **Actual:** the header puts the Window select, the `#header-right` slot (Summary's "Day from" `TimeRangePicker`) and the legend on one non-wrapping line that's 773 px wide. The 8-item legend wraps into a 133×229 column at x 648–781, entirely outside the card (8–382, `overflow: hidden`). The header's 229 px height fills the 200 px card, so `.stacked-bars-container` gets **4 px** (y 597–601): no bars render. On Summary the TimeRangePicker's steppers at x 422–628 are clipped and can't be reached. On Detail (no header slot) the legend fits inside the card but still takes its height, and the plot is again 4 px. At 768 px: plot 4 px tall, legend 648–781 past a card ending at 760.
+- **Evidence:** `docs/views/history-review/screenshots/activity-history--mobile.png` (blank card, "h —" stepper cut off), `activity-history-detail-bars--mobile.png` (legend, no bars). `eval`: `.stacked-bars-container` → `8-382 y597-601 374x4`, `div.legend` → `648-781 y356-585`, header slot buttons at `422-470`, `478-526`, `580-628`.
+- **Repro:** 1. `resize 390 844`, open `/activity-history`. 2. Look at the card under Export: a blank area and the Window/Day-from row, no bars. 3. `eval` `document.querySelector('.stacked-bars-container').getBoundingClientRect().height` → 4.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-history`. 2. `eval` `[...document.querySelectorAll('.stacked-bars-container, div.legend')].map(e => e.getBoundingClientRect())`. 3. **Pass condition:** the container is at least 150 px tall, the legend's `right` is ≤ the card's `right`, and every `button` inside the chart card has `right <= 390`. 4. Repeat on `/activity-history/detail?date=2026-10-02&view=stackedBars`: same container check.
+- **Root cause guess:** two things together. The header row can't wrap, so the legend grows taller rather than dropping to its own line. And the history views give the card `flex-fill` + `min-height: 200px`: on a phone the column is taller than the screen, so `flex-fill` adds nothing, and the card stays at its 200 px minimum, which the 229 px header fills.
+- **Suggested fix:** give the header `flex-wrap`, and below `md` move the legend into its own full-width row under the plot (or behind a toggle). Also give the plot a `min-height` so the header can't squeeze it to zero.
+
+### B6. Long-titled timeline cards on Detail push their "More actions" menu past the panel edge — reachable only by an unmarked sideways swipe (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/activity-history/detail` (timeline view) → `src/core/activityHistory/component/HistoryRecordItem.vue:34-37` (`VCard class="flex-1-0"` and a title row `d-flex align-center` holding `VCardTitle` + role `VChip`, no wrap). Clipping container: `src/core/historyDashboard/component/HistoryTimeline.vue:3` (`flex-fill mx-3 overflow-y-auto`, which makes `overflow-x` `auto` as well).
+- **Expected:** each record's ⋮ (Edit/Delete) is on screen in the list as rendered. It's the only entry point for editing or deleting a record from this view (plain sense; `inventory.md` → Timeline "overflow menu").
+- **Actual:** on 2026-10-02, four of seven cards are wider than their column. "Morning Exercise" + "Health & Fitness" is 88–413, "Grocery Shopping" 88–421, "Meal Preparation" 88–414, "Feature Development" 88–397. The panel clips at x 366, so their ⋮ buttons (365–405, 373–413, 366–406, 349–389) are fully or mostly hidden, and the role chip runs into the cut edge. The panel scrolls sideways (`scrollWidth` 397 vs 342), which reveals the ⋮ but cuts off the time column on the left. Nothing hints that the list scrolls sideways, and short-titled cards (e.g. "Desk Research", 88–358) look complete. The menu itself fits once open (191–310).
+- **Evidence:** `docs/views/history-review/screenshots/activity-history-detail--mobile.png` (Morning Exercise card cut at the edge), `activity-history-detail-cards--mobile.png` (after the sideways scroll: ⋮ visible, time column cut). `eval` per card: `menu 365-405 … clip flex-fill.mx-3 24-366`.
+- **Repro:** 1. `resize 390 844`, open `/activity-history/detail?date=2026-10-02&view=timeline`. 2. Scroll the timeline panel down to "Morning Exercise". 3. Its ⋮ isn't visible, and the "Health & Fitness" chip is cut at the right edge.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-history/detail?date=2026-10-02&view=timeline`. 2. `eval` `(p => [p.scrollWidth, p.clientWidth])(document.querySelector('main .flex-fill.mx-3'))`. 3. **Pass condition:** the two are equal, and every `button[aria-label^="More actions"]` has `right <=` the panel's `right` (366).
+- **Root cause guess:** `flex-1-0` is `flex: 1 0 auto`, so the card can't shrink below its content, and a nowrap `VCardTitle` next to a chip sets that content width. Vertical-only scrolling was intended, and `overflow-y-auto` brings `overflow-x: auto` with it.
+- **Suggested fix:** use `flex-1-1` with `min-width: 0` on the card, let the title row wrap (chip under the title below `sm`), and set `overflow-x: hidden` on the timeline panel.
+
+### B7. The pie chart is squeezed to 134 px beside "Period Totals", and its legend names are cut to 0–2 letters (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/activity-history` and `/activity-history/detail` → `src/core/historyDashboard/component/pieChart/HistoryPieChartSection.vue:28-41` (`d-flex ga-2` with the pie `flex-fill`/`min-width: 0` beside a details card with `min-width: 200px; max-width: 250px`, no breakpoint). The Home widget mounts `HistoryPieChart` without this section and rendered no canvas on 2026-10-06, so `/` isn't affected as far as this pass could see.
+- **Expected:** the legend is the only key from slice colour to activity name on a touch screen, so its names have to be readable (plain sense). The desktop fix for legend overlap (P2) kept the legend readable at desktop width.
+- **Actual:** the section is 342 px wide, the details card takes 200, and the pie canvas gets 134×330. `HistoryPieChart` therefore uses its stacked layout and truncates each legend label to the remaining text width. On Summary the labels read "F… (26.6%)", "D… (18.3%)", "M… (15.3%)", paged "1/2" behind ~14 px canvas arrows. On Detail some read "F (33.2%)" and some just "(17.6%)", with no name at all. Meanwhile "Period Totals" shows three short rows in a 200×330 card that's mostly empty.
+- **Evidence:** `docs/views/history-review/screenshots/activity-history-pie--mobile.png` (Summary), `activity-history-detail-cards--mobile.png` (Detail, bottom). `eval`: `flex-fill 24-158 … 134x330`, details card `166-366 … 200x330`.
+- **Repro:** 1. `resize 390 844`, open `/activity-history`. 2. Scroll to the bottom card. 3. Read the legend.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-history`. 2. `eval` `document.querySelector('main canvas').getBoundingClientRect().width`. 3. **Pass condition:** the canvas is ≥ 300 px wide (the pie and the details card stack below `sm`), and in the read-back screenshot every visible legend entry shows at least the first word of its activity name. 4. Same on `/activity-history/detail?date=2026-10-02`.
+- **Root cause guess:** a side-by-side row with a fixed-width sibling and no breakpoint. Related to P2 (the legend/donut overlap fixed for desktop) in the same component pair, but a different mechanism. `tracking-dashboards` B3 is the same shape (a pie card that keeps its desktop row on a phone) in `activityTracking`'s own pie component.
+- **Suggested fix:** `flex-column flex-sm-row` on the row in `HistoryPieChartSection.vue:28`, and drop the details card's `min-width` when stacked.
+
+### P4. The period-total banner is wider than the screen, cutting off its %-change chip and making the page pan sideways (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/activity-history` and `/activity-history/detail` (Top Activities panel) → `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue:11` (inner `d-flex align-center ga-1`, no wrap) together with `:72-74` (`.myAlert { flex: 0 0 auto }`, the B1 fix). Fine at 768×1024, where the 416 px banner fits.
+- **Expected:** the banner fits the panel width and wraps its text, so the change chip stays readable (plain sense; B1's own Verify asked for the banner to be legible).
+- **Actual:** the banner measures 4–420 on both views. The "+163.1%" chip (Summary, `344-404`) is cut at the screen edge, and `main .v-container` scrolls 420/390, so the whole Summary page pans 30 px sideways. B1 fixed the desktop case, where the alert was squeezed to two characters, by sizing the alert to its content. At 390 px that content (label, two totals, "vs previous:", chip) is ~416 px on one line.
+- **Evidence:** `docs/views/history-review/screenshots/activity-history-lower--mobile.png`. `eval`: `.v-alert … 4-420 … chip 344-404`, container `420/390`. On Detail the overflow script lists `div.v-alert … text-success → 420`.
+- **Repro:** 1. `resize 390 844`, open `/activity-history`. 2. Scroll to "Top Activities". 3. The banner's chip runs off the right edge.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-history`. 2. `eval` `document.querySelector('main .v-alert').getBoundingClientRect().right` and `(c => [c.scrollWidth, c.clientWidth])(document.querySelector('main .v-container'))`. 3. **Pass condition:** the alert's `right` ≤ 386 and the container numbers are equal. Then check at 1280 px that the banner is still not clipped (B1 must not regress).
+- **Root cause guess:** B1's fix (content-width basis) is correct for the wrapping parent row, but the alert's inner row can't wrap, so its content width is fixed at one line.
+- **Suggested fix:** add `flex-wrap` to the inner row (and `max-width: 100%` on `.myAlert`), so the comparison and chip drop to a second line below ~420 px.

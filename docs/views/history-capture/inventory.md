@@ -68,6 +68,14 @@ a stopwatch
   401 burst per CLAUDE.md, not view-specific)
 - duplicate requests: none observed for this view specifically
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/stopwatch--mobile.png)
+- layout: single column at 12–378. Clock boxes side by side, Start/Pause/Stop in one row (each ≥ 102×44), form fields full width, Activity + `+` (48×48) on one row. The form sits under ~120 px of empty space (`my-auto` centring), so the Activity field ends at y 703.
+- mobile-only controls: none. No `useDisplay` or `d-*-` classes in the view, `TimeDisplay` or `ActivitySelectionForm`.
+- replaced controls: none
+- overflow: none (`main .v-container` 390/390)
+- visual sweep: nothing wrong. "Create new activity" dialog (`create-activity-dialog--mobile.png`) fits at 24–366 with Cancel/Create at y 660, no sideways scroll. That footer position is the keyboard case `_shell` U3 already covers. The Activity menu opens upward at 12–326, within the screen. Hover-only actions: none. Console: no errors or Vue warnings.
+
 ### TimerView (`/activity-history/timer`)
 ![default](screenshots/timer--default.png)
 
@@ -130,6 +138,14 @@ countdown
 - alarm lifecycle, confirmed via `requests`/`request-body`: Start → `POST timer-alarm/schedule` with one
   boundary at the absolute UTC `endsAt`; Pause → `POST timer-alarm/cancel` (204); Resume → `schedule` again with
   the shifted boundary; reload while running → no request (memoized via `scheduledAlarms`)
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/timer--mobile.png)
+- layout: same column as Stopwatch but **edge to edge**: fields span x 0–390 (finding P2). The seven Quick Time chips fit one row (4–383, 32 px tall). In edit mode (`timer-edit--mobile.png`) the chips wrap to two rows, and the section `+` buttons are 32×32.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `main .v-container` scrolls 398/390, from `div.v-row.justify-center.py-4 → 394` and `div.v-row.my-0 → 398`. See P2.
+- visual sweep: the edge-to-edge fields are the only defect. Chip pencils are 16×16, but the whole 32 px chip is the target (`@click` on the `VChip`), so they pass. The Length `TimePicker` (`timer-length-picker--mobile.png`) fits at 50–378 × 146–591. The "Edit timer preset" dialog (`timer-preset-dialog--mobile.png`) fits at 24–366 with Cancel/Delete/Update in one row. The record dialog needs a running session, so it wasn't opened. Console: clean.
 
 ### PomodoroTimerView (`/activity-history/pomodoro`)
 ![default](screenshots/pomodoro--default.png)
@@ -198,6 +214,14 @@ finding.
   run") — confirmed live here via the actual request payload rather than a source read; not re-logged as a new
   finding, see O1.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/pomodoro--mobile.png)
+- layout: one card (16–384). Presets/Defaults buttons, then four inline preset chips (Classic Pomodoro, Extended Focus, Short Sprint, Deep Work: newer than the desktop table above) wrapping to two rows. Focus/Short rest side by side, Long rest below them, the two count selects stacked, then Start/Pause/Stop. `PomodoroActivityPanel` (`sm="6"`) stacks Focus activity above Rest activity (`pomodoro-activities--mobile.png`). At 768 px they sit side by side, which looked right (`pomodoro--768.png`).
+- mobile-only controls: none (the `sm` switch above is a layout change, not a control)
+- replaced controls: none
+- overflow: `main .v-container` scrolls 400/390 (`div.v-row.v-row--no-gutters.align-center → 392`). See P2. Clean at 768.
+- visual sweep: an **empty chip with a bullseye icon** renders at the bottom of the idle card. `PomodoroActivityPanel.vue:49-51` puts `v-show="!timeInputVisible"` on a `class="d-flex"` div, and Vuetify's `d-flex` is `display: flex !important`, which beats `v-show`'s inline `display: none`. The running-session chip row therefore always shows, with an empty `focusActivityName`. That's not width-specific, so it isn't filed as an x4 finding, but nothing in `findings.md` covers it yet. The Presets dialog (`pomodoro-presets-dialog--mobile.png`) fits at 24–366 × 24–820, scrolls its cards inside, and keeps Close visible at y 764. Its `:hover` elevation is cosmetic only. Console: clean.
+
 ### AddActivityManuallyView (`/activity-history/manual`)
 ![default](screenshots/manual--default.png)
 
@@ -241,6 +265,14 @@ finding.
   the `dateTime.secondsShort` warning does not appear here
 - non-2xx: none
 - duplicate requests: none observed at mount
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/manual--mobile.png)
+- layout: the view now mounts the Timer Presets section above the form (newer than the desktop table above). Fields are edge to edge like Timer's (P2). When (date 12–162 + time 162–262) and Length (278–378) share one row. "Record activity to history" is centred at 80–310 × 765–801, on screen without scrolling.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `main .v-container` scrolls 398/390 (`div.v-row.align-center.justify-center.py-4 → 394`, `div.v-row.my-0 → 398`). See P2.
+- visual sweep: only the P2 edge-to-edge fields. The When date picker (`manual-date-picker--mobile.png`) fits at 12–340 × 341–685, and the time picker at 50–378 × 240–685. Console: clean.
 
 ## Transitions out of this unit
 | from | control | goes to |

@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `63e851ff`
 
-**Tally:** blocker 0 · bug 0 · a11y 0 · polish 0 · opportunity 0 · unverified 0 (all closed — verified live 2026-09-25)
+**Tally:** blocker 0 · bug 0 · a11y 0 · polish 1 · opportunity 0 · unverified 1 (open entries only: P2, U2. The seven earlier entries are all closed, verified live 2026-09-25)
 
 ## Round history
 | round | date | commit | what changed |
@@ -10,6 +10,7 @@
 | 1 | 2026-09-14 | `5e42b813` | initial inventory pass |
 | 2 | 2026-09-15 | `63e851ff` | mutation pass. No code touching this unit landed between rounds ( `git log 5e42b813..63e851ff` on the four views, the store, `TimePicker.vue`, `TimeDisplay.vue` and both `common.*.ts` locale files is empty), so B1/B2 are re-confirmed live rather than re-discovered; B3/P1 were not re-walked (no code change, low risk of drift, time better spent on the entity lifecycle this pass exists to test). U1 is now reproduced live and **renumbered to B6** with a corrected description — the frontend does fire a second request, but the backend rejects it with `409` rather than writing a duplicate, which the inventory pass could not have known without submitting for real. Two new bugs found doing the create lifecycle: **B4** (Pomodoro writes a zero-length history row behind a malformed confirmation prompt) and **B5** (Timer silently discards a sub-minute session with no feedback at all). Both are the same root shape as the already-open `H11-timer-end-notifications.md` note about the untagged final pomodoro boundary: nobody wrote down what should happen when a session ends before it produces a whole minute. |
 | 3 | 2026-09-25 | `d423edcc` | **retest round** — 5 retested live: B1, B2, B3, B6, P1 pass; none reopened; none blocked. Account: primaryUser. Mutations made and reverted: one manual-entry history row (activity "Journal", `00:07`, id `15502`) created for B6's double-click check, deleted via History Detail → More actions → Delete → Confirm and confirmed gone after reload; no clock left running (both a sub-minute timer and sub-minute pomodoro session were started for B1/B2 checks and discarded with no history row, per the already-verified B4/B5 fixes). No regressions seen outside the Verify blocks. |
+| 4 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 4 views checked; new: P2, U2. |
 
 ---
 
@@ -245,3 +246,22 @@
 - **Verify:** 1. Load `/activity-history/timer`. 2. **Pass condition:** `playwright-cli console` shows no `[LOG]`
   entry from `TimerPresetsSection.vue`.
 - **Suggested fix:** delete the `console.log(allPresets.value)` line.
+
+### P2. Timer, Pomodoro and Manual scroll sideways by 8–10 px, and their fields run to the screen edge (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/activity-history/timer`, `/activity-history/manual`, `/activity-history/pomodoro`. The scroller is `App.vue:29`'s `VContainer` (`px-2 px-md-3 overflow-y-auto`). Timer and Manual: the root `VRow` in `TimerView.vue:2` and `AddActivityManuallyView.vue:2` has gutters (no `noGutters`), plus `ActivitySelectionForm.vue:45`'s `VRow class="my-0"`. Pomodoro: `PomodoroTimerView.vue:2`'s root row grows to 384 px.
+- **Expected:** a vertical form doesn't pan sideways, and its fields keep the same side margin as the Stopwatch form (12 px) (plain sense; consistency with the sibling view).
+- **Actual:** the container's `scrollWidth`/`clientWidth` is 398/390 on Timer and Manual, and 400/390 on Pomodoro, so a slightly diagonal swipe pans the form sideways. On Timer and Manual the Role, Category and Activity fields span x 0–390, flush with both screen edges, and the "Create new activity" `+` ends at 390. Stopwatch (root row `noGutters`) scrolls 390/390 with its fields at 12–378. At 1280 px all three are 992/992, and at 768 px Pomodoro is 768/768. Only the 8 px `px-2` padding below `md` exposes it, because 8 px doesn't cover a gutter row's −12 px margin.
+- **Evidence:** `docs/views/history-capture/screenshots/timer--mobile.png`, `manual--mobile.png`, `pomodoro--mobile.png` (compare `stopwatch--mobile.png`). Overflow script: `div.v-row.justify-center.py-4 → 394`, `div.v-row.my-0 → 398` (Timer, Manual); `div.v-row.v-row--no-gutters.align-center → 392` (Pomodoro).
+- **Repro:** 1. `resize 390 844`, open `/activity-history/timer`. 2. `eval` `document.querySelector('main .v-container').scrollWidth` → 398. 3. The Role field's left edge is at x 0.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload`. 2. On each of `/activity-history/timer`, `/activity-history/manual` and `/activity-history/pomodoro`, `eval` `(c => [c.scrollWidth, c.clientWidth])(document.querySelector('main .v-container'))`. 3. **Pass condition:** the two numbers are equal on all three routes, and every `main .v-field` has `left >= 8` and `right <= 382`.
+- **Root cause guess:** the gutter mismatch is one cause for Timer and Manual. Pomodoro's root row is `noGutters`, so it's a different one: the row is a flex item of the `d-flex` container and keeps `min-width: auto`, so it grows to its content's min-content width. `ActivitySelectionForm`'s own gutter row inside the card is the likely content, since its fields end 4 px from the card edge (380 vs 384).
+  `tracking-dashboards` P2 (a 4 px pan from a gutter `VRow` in the same `App.vue` container) is the gutter mechanism again, in another module. One app-wide fix (`px-3` at every width in `App.vue:29`) would close both.
+- **Suggested fix:** give the root rows of `TimerView` and `AddActivityManuallyView` `noGutters`, like `StopWatchView`, and add `min-width: 0` (or `w-100`) to the Pomodoro root row.
+
+### U2. The "Record new activity" confirm dialog wasn't checked at phone width — it needs a running session (390 px)
+- **Status:** open
+- **Severity:** unverified
+- **Where:** @390×844 · `/activity-history/stopwatch`, `/activity-history/timer`, `/activity-history/pomodoro` → `SaveActivityBody` in `MyDialog`, opened by Stop
+- **What would verify it:** Stop is the only way in, and it needs a running session, which this read-only pass may not start (the running-timer store persists). A mutation-allowed pass would: 1. `playwright-cli resize 390 844`, then `reload`. 2. On `/activity-history/stopwatch`, pick an activity with a long name, Start, wait past one minute (B4/B5 discard shorter sessions), then Stop. 3. Check that the dialog fits within 390 px with no sideways scroll, that "Confirm saving activity "<name>" - done for <length>?" wraps rather than clips, and that Cancel/Confirm are both visible. 4. Press Cancel (no write). The dialog uses the same `MyDialog` as "Create new activity", which fit at 24–366, so a defect is unlikely, but a long activity name in the sentence is untested.
