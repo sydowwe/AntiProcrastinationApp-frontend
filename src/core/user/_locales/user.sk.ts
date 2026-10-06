@@ -26,6 +26,31 @@ const user = {
 			androidTracking: `Nastavenia sledovania na androide`,
 		},
 		backToSettings: `Späť na nastavenia účtu`,
+		// Karta sledovačov (FO7). Čo ktorý sledovač zaznamenáva, zodpovedá oddielom 4 a 5 zásad
+		// ochrany súkromia nižšie — meňte oboje naraz.
+		trackers: {
+			title: `Sledovače aktivity`,
+			intro: `Program pre počítač, aplikácia pre Android aj rozšírenie prehliadača sa prihlasujú e-mailom a heslom tohto účtu. Kým sú prihlásené, každý z nich posiela do vášho účtu:`,
+			desktop: {
+				name: `Program pre počítač`,
+				records: `názvy procesov a produktov a titulky okien`,
+			},
+			android: {
+				name: `Aplikácia pre Android`,
+				records: `názvy aplikácií a ich balíčkov`,
+			},
+			browser: {
+				name: `Rozšírenie prehliadača`,
+				records: `domény a úplné adresy stránok, ktoré otvoríte, spolu s časom na každej z nich`,
+			},
+			sensitive: `Titulky okien a adresy stránok môžu obsahovať citlivé údaje.`,
+			privacyLink: `Ako s týmito dátami zaobchádzame`,
+			signedIn: `Prihlásené`,
+			none: `Žiadny sledovač nie je prihlásený.`,
+			unknownDevice: `Sledovač`,
+			signOut: `Odhlásiť`,
+			signedOut: `Sledovač odhlásený. Kým ho znova neprihlásite, nič neposiela; čo už poslal, zostáva.`,
+		},
 		// Export
 		exportData: `Exportovať moje dáta`,
 		// Nie „úplná záloha“: export je výber deviatich entít v skrátenej podobe a neobsahuje

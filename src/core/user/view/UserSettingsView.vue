@@ -11,6 +11,7 @@
 	<FrameworkUserSettingsView :deleteAccountWarning="i18n.t('user.dangerZone.deleteWarning')">
 		<template #integrations>
 			<GoogleCalendarCard />
+			<TrackersCard />
 		</template>
 		<template #preferences>
 			<PreferencesSection />
@@ -29,6 +30,7 @@
 	import { useI18n } from 'vue-i18n'
 	import FrameworkUserSettingsView from '@/_common/modules/user/view/UserSettingsView.vue'
 	import GoogleCalendarCard from '@/core/googleCalendar/component/GoogleCalendarCard.vue'
+	import TrackersCard from '@/core/user/component/settings/TrackersCard.vue'
 	import PreferencesSection from '@/core/user/component/settings/PreferencesSection.vue'
 	import ModuleSettingsSection from '@/core/user/component/settings/ModuleSettingsSection.vue'
 	import DataExportSection from '@/core/user/component/settings/DataExportSection.vue'

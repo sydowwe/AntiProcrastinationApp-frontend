@@ -23,6 +23,31 @@ const user = {
 			androidTracking: `Android tracking settings`,
 		},
 		backToSettings: `Back to account settings`,
+		// Trackers card (FO7). What each tracker records mirrors the privacy policy's sections 4 and 5
+		// below — change both together.
+		trackers: {
+			title: `Activity trackers`,
+			intro: `The desktop program, the Android app and the browser extension sign in with this account's email and password. While signed in, each one sends your account:`,
+			desktop: {
+				name: `Desktop program`,
+				records: `process and product names, and window titles`,
+			},
+			android: {
+				name: `Android app`,
+				records: `app names and package names`,
+			},
+			browser: {
+				name: `Browser extension`,
+				records: `the domains and full addresses of the pages you open, with the time spent on each`,
+			},
+			sensitive: `Window titles and page addresses can contain sensitive content.`,
+			privacyLink: `How this data is handled`,
+			signedIn: `Signed in`,
+			none: `No tracker is signed in.`,
+			unknownDevice: `Tracker`,
+			signOut: `Sign out`,
+			signedOut: `Tracker signed out. It sends nothing until you sign it in again; what it already sent is kept.`,
+		},
 		// Export
 		exportData: `Export my data`,
 		exportDataDescription: `Download your account data as JSON. The export covers your lists, plans, templates and activity records.`,
