@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `04c405e9`
 
-**Tally (as of round 5):** blocker 0 (X1 fixed and verified live) · bug 0 open (B1–B9 all fixed and verified live) · a11y 0 open (A1 verified live) · polish 0 open (P1, P2 verified live) · opportunity 0 open (O1 built and verified live) · unverified 0 (U1/U2 resolved in round 2, U3 by `F23`, U4 by the `F18` retest). **Nothing open in this unit.**
+**Tally (as of round 6):** blocker 0 open (X1 fixed and verified live) · bug 1 open (B10; B1–B9 fixed and verified live) · a11y 0 open (A1 verified live) · polish 1 open (P3; P1, P2 verified live) · opportunity 0 open (O1 built and verified live) · unverified 0 open (U1/U2 resolved in round 2, U3 by `F23`, U4 by the `F18` retest). 20 entries, **2 open**, both from the x4 narrow-viewport pass.
 
 ## Round history
 | round | date | commit | what changed |
@@ -13,6 +13,7 @@
 | 3 | 2026-09-24 | `1fb9de9e` | **code-only re-check** (no browser session, no reseed) — read the current source for every open finding rather than re-driving the UI. **Fixed in code:** B2/B3 (`useActivityFilterDrafts.ts` was rewritten — combobox rebuild is now a pure derivation, filter writes come only from user input via `onRoleComboboxInput`/`onCategoryComboboxInput`, comments at the top of the file cite both bugs by number), B4 (`DataTable.vue:91` now binds `:title="action.text"`), B5 (`src/router.ts` now has a `/:pathMatch(.*)*` → `NotFoundView` catch-all), B6 (`navItems.ts` registers the family path `/activity-settings`, not the literal `activities` tab, with a comment citing F14), B7 (`ActivityRoleTable.vue`/`ActivityCategoryTable.vue` now have a custom `#actions` slot gating Delete on `canDelete`, matching `ActivityTable.vue`'s pattern), B8 (same custom slot passes `item.name` into the confirmation text directly, no more `deleteConfirmationColumn` gap), B9 (`extractServerMessage` in `axiosConfig.ts` now checks `errors` before `message`), A1 (the trash `VIconBtn` now has `:aria-label`, wrapped in a `VTooltip` on the parent span), P1 (Categories' "Role" column renamed to `t('activities.rolesInUse')` = "Roles in use"), P2 (both comboboxes in `ActivitySettingsView.vue` now set explicit `style="min-width: 200px"`). **Still open, confirmed unchanged:** X1 (`ColorPicker.vue:31` still does `model = color.name`, a palette name, not hex — the blocker stands), O1 (still no icon column in either table). **Not verifiable from code alone:** B1 (backend-side filter handling — frontend request shape is unchanged, so it is presumed still open, but this needs a live request/response check against the running API, not a source read). U3/U4 are session-lifetime/one-off observations, not code defects — left as-is. No browser session was run this round, so this is a source-level check only, not a fresh repro. |
 | 4 | 2026-09-24 | `1fb9de9e` | **live check of X1 and B1**, no reseed. Round 3's "X1 still open" read the wrong side: `ColorPicker` emitting a palette name is the *intended* contract. The API moved to it in B10 (`f4ae199`, `b34181e`: `ColorRuleExtensions.MustBePaletteColor`, `ColorPalette` — the same 29 names as `colorPalette.ts`). B1 was the API's filter record declaring `RoleId`/`CategoryId` while the client sent `roleIds`/`categoryIds`, fixed in B11 (`68ec991`). No frontend change was needed for either. Both close as **fixed and verified**; see each finding's Status for evidence. The same session also reconfirmed B2/B3 (URL param survives, one grid request), B7 (disabled Delete with a reason label on in-use/system roles) and B8 (confirmation names the row, button reads "Delete"). The fixture is unchanged: the Health & Fitness edit saved identical values, and the throwaway category was deleted (204). Side fix: the Role/Category Name fields' client-only `lettersWithDiacriticsAndSpecialCharsRule` rejected digits ("letters and special characters only"), so `X1VerifyCategory` could not be submitted. The API only requires non-empty and max length, and a name is the user's own label, so the rule was dropped from `ActivityRoleForm.vue`/`ActivityCategoryForm.vue`, keeping `requiredRule`. The framework rule itself is untouched. |
 | 5 | 2026-09-24 | `d423edcc` | **retest round** — 12 retested live: B2, B3, B4, B5, B6, B7, B8, B9, A1, P1, P2, O1 pass; none reopened; none blocked. Deviations: B4 checked on `/leisure/projects` (Roles/Categories no longer render `DataTable`'s default actions since B7); B9 via a `playwright-cli route` 400 mock, since B7 leaves no clickable server refusal; B7's disabled-Delete condition holds for Roles only, Categories are always-enabled by design. Account(s): primaryUser (10001). Mutations made and reverted: locale EN→SK→EN (twice, confirmed EN); one DELETE route mock, unrouted, row intact; one delete dialog cancelled. Regressions seen outside the Verify blocks: none. Status drift reconciled afterwards: U3 (closed by `F23`) and U4 (closed by the `F18` retest) still read `open` here and are now marked resolved; tally updated. |
+| 6 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 3 views checked (Activities, Roles, Categories tabs); new: B10, P3. The tab bar fits (8–312). Row actions are reachable by swiping the table, and the create/edit dialogs fit. The Merge dialog wasn't opened, because it needs row checkboxes ticked and this pass is read-only. |
 
 **Operator note (round 2):** this round deliberately did **not** run `POST /api/test/seed` to clean up, even though one seeded activity ("Unused Idea", id 12012) was permanently deleted as part of delete-lifecycle testing and could not be restored through the UI (Activity creation works, but the new row would get a different id than the fixture's). Reseeding wipes every account, and this round's own git-status snapshot showed several other `view-docs` units mid-edit, so a shared reseed risked repeating the exact parallel-session collision `findings.md` round 1b already recorded. **Whoever runs the next unit against this account should reseed first** and can then disregard this note.
 
@@ -469,3 +470,59 @@ units' passes look like they lost data or got signed out partway through, this i
   and this pre-existing abort-race guard, the mechanism this finding worried about no longer looks
   reachable. **Downgrading confidence, not the status** — still logging it as open/unverified since it was a
   genuine one-off observation with real evidence, but a future repro attempt should hit for it.
+
+---
+
+### B10. The filter bar is pushed off-screen by the tabs: off to the right on Activities, and squeezed to 14 px slivers on Roles and Categories (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/activity-settings/activities`, `/roles`, `/categories` →
+  `ActivitySettingsView.vue:3-14` (row `d-flex align-center` with no wrap; `VTabs class="flex-0-0"`, 312 px;
+  filter group `d-flex flex-wrap ga-2 ml-14 flex-1-1`; Roles/Categories comboboxes `min-width: 200px`)
+- **Expected:** every filter is visible and usable on landing at phone width, as it is at desktop width
+  (plain sense; WCAG 1.4.10 reflow). The F22 comment on the tabs says the filter group should wrap *beside*
+  them, and that only works while there is room beside them.
+- **Actual:** the tabs end at 312 and `ml-14` adds 56 px, so the filter group starts at x 368. **Activities:**
+  Name 368–486, Text 494–612, Roles and Categories 368–612, and the Active/Archived/All toggle 368–612. Only a
+  22 px sliver of each shows at the right edge. `main .v-container` (`overflow-x: auto`) is 612/390, so the
+  whole page content pans 222 px sideways under a swipe, tabs and table included. **Roles / Categories:** the
+  group can't overflow, because its two text fields shrink instead. Name and Text are each **14 px wide**
+  (368–382), with no label or value visible and no scroll to reveal them (`.v-container` 390/390).
+- **Evidence:** `docs/views/activity-settings/screenshots/activities--mobile.png`, `roles--mobile.png`,
+  `categories--mobile.png`. Overflow script on Activities: `div.d-flex.flex-wrap.ga-2 → 612`. `eval`
+  on `.v-input` boxes: Roles tab `Name: 368,80,382,120`, `Text: 368,128,382,168`.
+- **Repro:** 1. `resize 390 844`. 2. Open `/activity-settings/activities` and look for the Name filter. 3. Switch
+  to Roles.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-settings/activities`. 2. **Pass:**
+  `getByRole('textbox', { name: 'Name' })`, both comboboxes and the Active/Archived/All buttons each have
+  `left >= 0 && right <= 390`, and `main .v-container` has `scrollWidth <= clientWidth`. 3. On
+  `/activity-settings/roles`, **pass:** the Name and Text fields are each at least 150 px wide.
+- **Root cause guess:** the F22 fix stopped the tabs shrinking and let the filters wrap beside them, but the
+  outer row still never wraps, so below ~700 px there's no "beside".
+- **Suggested fix:** `flex-wrap` on the outer row, and drop `ml-14` below `md`. The filter group then takes its
+  own full-width line under the tabs. Or move the filters into a `FilterPanel`/expansion below `sm`.
+
+### P3. The create (+) button sits in the table's last column, behind a sideways table swipe on Activities and Categories (390 px)
+- **Status:** open
+- **Severity:** polish (reachable by swiping the table; the row actions in the same column are reachable the same way, by design)
+- **Where:** @390×844 · `/activity-settings/activities` (Add at 606–646 in a 372 px `.v-table__wrapper`,
+  `scrollWidth 693`), `/activity-settings/categories` (391–431, `scrollWidth 454`). On `/roles` the table
+  is narrow enough that Add (319–359) shows. Component: framework `BasicTable.vue:21-41` (`#header.actions`
+  create button).
+- **Expected:** a tab's create action is visible on landing (plain sense). Row actions may sit behind the
+  table's own scroll, but "create" isn't tied to a row.
+- **Actual:** on landing, the Activities and Categories tables show no create button. Swiping the table to its
+  end reveals it, along with the row actions, which all hit-test correctly once scrolled in (Edit and
+  Archive at 237–325, 40×40). Nothing hints that the table scrolls.
+- **Evidence:** `docs/views/activity-settings/screenshots/activities--mobile.png` (no "+") vs
+  `activities--mobile-actions.png` (after the swipe). `categories--mobile.png`: Edit starts at 367, and Add is
+  off-screen.
+- **Repro:** 1. `resize 390 844`. 2. Open `/activity-settings/activities`. 3. Look for the "+" button.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/activity-settings/activities` and
+  `/activity-settings/categories`. 2. **Pass:** `getByRole('button', { name: 'Add', exact: true })` has
+  `right <= 390` without scrolling the table.
+- **Root cause guess:** the same root as planner-day **P6** (the Repeating Tasks "Add" in the same
+  `BasicTable` header slot). Both come from `BasicTable` putting the create button in the actions column
+  header, so the fix probably belongs in the framework: one finding to batch, two units affected.
+- **Suggested fix:** below `md`, render `BasicTable`'s create button above the table (or let the page supply
+  it in a toolbar) instead of in the last column header.

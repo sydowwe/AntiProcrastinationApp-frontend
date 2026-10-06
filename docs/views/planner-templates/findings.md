@@ -2,10 +2,11 @@
 
 > Pass: live verification · captured 2026-09-24 · commit `222f0051`
 
-**Tally:** blocker 0 (2 fixed, live-verified) · bug 0 (5 fixed, live-verified) · a11y 0 (4 fixed, live-verified) ·
-polish 0 (2 fixed live-verified, 1 fix blocked from live retest — P3) · opportunity 0 ·
-unverified 0 (U2 fixed and verified live; U3 fixed and verified live) — **every finding in this doc is now
-closed; 13 of 14 confirmed live by retest 2026-09-25, P3 blocked pending a background-task fixture row**
+**Tally:** blocker 0 open (X1, X2 fixed) · bug 1 open (B6; B1–B5 fixed) · a11y 0 open (A1–A4 fixed) ·
+polish 1 open (P4; P1, P2 fixed, P3 fixed with its live retest blocked) · opportunity 0 ·
+unverified 0 open (U2, U3 fixed) — 18 entries, **2 open** (both from the x4 narrow-viewport pass, round 6).
+Of the 16 closed, 15 were confirmed live by the 2026-09-25 retest or earlier; P3 is blocked pending a
+background-task fixture row
 
 ## Round history
 | round | date | commit | what changed |
@@ -15,6 +16,7 @@ closed; 13 of 14 confirmed live by retest 2026-09-25, P3 blocked pending a backg
 | 3 | 2026-09-24 | `222f0051` | **source-read check, no live drive** — read every file each open finding pointed at rather than re-running the app. All 13 open findings (X1, X2, B1-B5, A1-A3, P1-P3, U3) check out fixed in code, most tagged with an `Fnn`/`FW` reference in an explanatory comment at the fix site, so they landed as part of the app's ongoing fix queue rather than from this doc directly. **U2 is the one exception** — the drag-and-drop wiring in `TemplateSplitView.vue` is unchanged from round 2, so it stays unverified pending an actual live drag attempt (this pass did not drive the browser). See each finding below for the specific evidence read. |
 | 4 | 2026-09-24 | `222f0051` | **live U2 retest.** First pass hit an unrelated environment problem: sign-in failed three ways (cached-state refresh 500s, fresh form-login 500s) because a pending backend migration hadn't been applied yet; once it was, `POST /api/test/seed` plus a fresh form login worked cleanly. Opened `/day-planner/templates/split?left=20001&right=20002` and ran `playwright-cli drag` from the "Bug Fixing" task's drag handle to the right panel's time grid — the exact same invocation that registered as a same-panel reschedule in round 2. This time it produced `PUT /api/template-planner-task/20102` with `templateId` changed from 20001 to 20002 and the start/end time untouched, and a follow-up snapshot confirmed the task moved panels. Confirms the `pointer-events: auto` fix found by source read in round 3 (`TemplatePlannerTaskBlock.vue:74-83`) is the real fix — round 2's failures were never about how the drag was scripted, only about the handle not receiving the pointer press. State was reset via a second `POST /api/test/seed` afterward. **U2 closed — every finding in this doc is now fixed.** |
 | 5 | 2026-09-25 | `d423edcc` | **retest round** — 13 retested live: X1, X2, B1, B2, B3, B4, B5, A1, A2, A3, P1, P2, U3 pass; none reopened; P3 blocked (no seeded template has an `isBackground` task, and the unit notes forbid adding one to a fixture row). Account: `primaryUser`. Mutations made and reverted: pin-toggled Home Office (20001) on and back off via its pin button (PATCH `.../20001/pinned` x2, confirmed via request log); opened "Add Template" and submitted empty (B2) — no template was created (no POST fired), dialog cancelled; opened and cancelled the Compare dialog (X1/B3); the `pinned` fixture template (Relaxed Weekend) was never touched. No regressions seen outside the Verify blocks. |
+| 6 | 2026-10-06 | `27dd210b` | **x4 narrow viewport (390×844)** — 3 views checked; new: B6, P4. X2 and A3 (mobile side panel) did not reproduce. On the standalone view the panel is 8–382 × 64–844 and named. Grid, panel-focus and touch defects on `TemplateDayPlannerView` and the split panes were added to planner-day B9, A2 and U1's **Where**, not re-filed here. The selection bar was added to `_shell` B2, and the Add Template dialog to `_shell` U3. |
 
 ---
 
@@ -469,3 +471,59 @@ closed; 13 of 14 confirmed live by retest 2026-09-25, P3 blocked pending a backg
   auto` fix already landed but didn't drive the browser to confirm it. Round 4 confirmed it live, using the
   same `playwright-cli drag` invocation that failed in round 2 — it now works because the fix changed what
   element receives the pointer events, not how the drag is driven.
+
+---
+
+### B6. The split view has no narrow layout: two 171 px panes clip their own controls, task titles and side panels (390 px)
+- **Status:** open
+- **Severity:** bug
+- **Where:** @390×844 · `/day-planner/templates/split?left=20001&right=20002` → `TemplateSplitView.vue` (two
+  side-by-side columns at every width), each pane's `DayPlanner` card (`overflow: hidden`). The only entry
+  point, "Edit Side by Side", is `v-if="mdAndUp"` (`TemplateListView.vue:43`), so a phone reaches this view
+  only through a link or bookmark. B4 made both picks part of the URL, which makes that more likely.
+- **Expected:** a view that loads at phone width either lays its panes out so their controls are reachable
+  (stacked, or one pane at a time), or says it needs a wider screen. It shouldn't render controls the user
+  can't reach (plain sense; WCAG 1.4.10 reflow).
+- **Actual:** the panes stay side by side, each card 171 px wide (8–179 and 211–382). In each pane the
+  slot-size toggle's **30M** button (178–228 in the left pane, 381–431 in the right) lies outside the card's
+  `overflow: hidden` clip, so nothing can reach it. The Start field is cut at the pane edge. The task column is
+  63 px wide, so a block reads "Morni" for "Morning Exercise" and the role chip and location are cut. Opening
+  a pane's side panel squeezes it into the same 171 px: the X straddles the pane edge (157–193), and Bed Time
+  and the Routine tab are cut. The planner-day findings this view also inherits (B9 card clip, A2 panel focus,
+  U1 touch-action) are filed there, with this route in their **Where**.
+- **Evidence:** `docs/views/planner-templates/screenshots/day-planner-templates-split--mobile.png`,
+  `day-planner-templates-split--mobile-tasks.png`, `day-planner-templates-split--mobile-panel.png`. `eval`
+  per pane: `card [8,208,179,880]`, `btns 30M:178,418,228,454`, `tasksCol [102,…,165,…]`. The page itself
+  doesn't scroll sideways (`docScroll 390`, `.v-container` 390/390).
+- **Repro:** 1. `resize 390 844`. 2. Open `/day-planner/templates/split?left=20001&right=20002`. 3. Look for
+  the 30M slot button in either pane, and read the task titles. 4. Tap "Open panel" in the left pane.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on
+  `/day-planner/templates/split?left=20001&right=20002`. 2. **Pass:** either the view shows one pane at a
+  time, or stacks them, or shows a "needs a wider screen" message with a link back to the list. If panes
+  render, every `.v-btn-group button` in each satisfies `right <= closest('.v-card').right`, and each
+  `.tasks-column` is at least 200 px wide.
+- **Root cause guess:** the view was built for desktop only (its entry button is `mdAndUp`), but the route
+  isn't guarded and the layout has no breakpoint.
+- **Suggested fix:** below `md`, stack the panes (each full width) or show a left/right `MyBtnToggle` that
+  swaps which pane is visible. Cross-pane drag is unlikely to work on touch anyway (unverified, see planner-day U1).
+
+### P4. The list toolbar doesn't wrap: "Add Template" is cut to "+ ADD" and the whole list pans 88 px sideways (390 px)
+- **Status:** open
+- **Severity:** polish (the button stays tappable through its visible 62 px)
+- **Where:** @390×844 · `/day-planner/templates` → `TemplateListView.vue:3-58` (header row
+  `d-flex justify-space-between`, toolbar `d-flex align-center ga-3` with no wrap; the sort `VSelect` has
+  `min-width: 170px`)
+- **Expected:** the page header fits the viewport and the primary action is fully visible, without the
+  content panning sideways (plain sense; WCAG 1.4.10 reflow).
+- **Actual:** the title wraps to "Day / Templates" (8–146), the sort select takes 146–316, and "Add Template"
+  spans 328–478, so only "+ ADD" shows. The content scroller (`main .v-container`, `overflow-x: auto`) is
+  478/390 wide, so the whole list pans 88 px sideways under a horizontal swipe. The cards themselves fit (4–386).
+  Compare and Edit Side by Side are hidden below `md` on purpose (`v-if="mdAndUp"`), so they don't add to it.
+- **Evidence:** `docs/views/planner-templates/screenshots/day-planner-templates--mobile.png`. Overflow script:
+  `div.d-flex.align-center.ga-3 → 478`. `elementFromPoint(360,123)` hits the button.
+- **Repro:** 1. `resize 390 844`. 2. Open `/day-planner/templates`. 3. Look at the header row.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner/templates`. 2. **Pass:**
+  `getByRole('button', { name: 'Add Template' })` has `right <= 390`, and `main .v-container` has
+  `scrollWidth <= clientWidth`.
+- **Suggested fix:** `flex-wrap` on the header row (title above, toolbar below), or an icon-only "Add" below
+  `sm`.

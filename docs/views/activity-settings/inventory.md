@@ -140,6 +140,14 @@ path). See Findings B5.
 - duplicate requests: **`POST /api/activity/grid` fires twice on every mount of this tab** — one
   `net::ERR_ABORTED`, one 200 — reproduced 3 times (initial load, one `goto`, one `reload`). See Findings B3.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/activities--mobile.png)
+- layout: the tab bar fits on one row (8–312, no scroll arrows). The filter group can't wrap below the tabs, so it starts at x 368 and runs to 612 (B10). The table takes the card's full width and scrolls sideways in its own `v-table__wrapper` (693/372), as designed. About 6 rows show above the pager.
+- mobile-only controls: none (no breakpoint logic anywhere in `src/core/activity`)
+- replaced controls: none
+- overflow: `docScroll 390`, but `main .v-container` is 612/390 (`div.d-flex.flex-wrap.ga-2 → 612`), so the page content pans 222 px sideways (B10). `table → 702` is inside the table's own scroller (fine).
+- visual sweep: Name/Roles/Categories/Active show only as 22 px slivers at the right edge (B10). Add (+) and the row actions are off-screen until the table is swiped (P3). After the swipe, Edit and Archive (40×40) hit-test correctly, and the disabled Delete is greyed as intended (`activities--mobile-actions.png`). Create dialog fits (24–366 × 128–716, Cancel/Create visible, `activities--mobile-create-dialog.png`). Merge dialog not opened (needs ticked row checkboxes, and this pass is read-only). Console clean.
+
 ---
 
 ### Roles tab (`/activity-settings/roles`)
@@ -198,6 +206,14 @@ registers the `activities` path)
   rebuild on mount, and only one `POST /api/activity-role/grid` fires per load (confirmed by inspecting the
   request log around the tab's first render).
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/roles--mobile.png)
+- layout: tabs fit. The table fits almost entirely (`v-table__wrapper` 382/372): Add (319–359) and each row's Edit/Delete (295–383) are visible without a swipe. Long "Text" cells wrap to five lines.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none at page level (`.v-container` 390/390). Name and Text filters are crushed to 14 px (368–382) instead (B10).
+- visual sweep: the two filters appear as thin outlined slivers at the top right with no label (B10). Table rows read cleanly. Console clean.
+
 ---
 
 ### Categories tab (`/activity-settings/categories`)
@@ -236,6 +252,14 @@ B8).
 
 **Console & network:** same pattern as Roles — one `POST /api/activity-category/grid` per load, no
 duplicates observed.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/categories--mobile.png)
+- layout: same as Roles. The table scrolls sideways in its wrapper (454/372); "Roles in use" wraps to four lines.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: none at page level. Name and Text filters are 14 px slivers (B10). Add (391–431) and Delete (415–455) are off-screen until the table is swiped, and Edit starts at 367 (P3).
+- visual sweep: the three seeded rows read cleanly. Create dialog fits (24–366 × 112–732, colour swatches in a 7-wide grid, Cancel/Create visible, `categories--mobile-create-dialog.png`). Console clean.
 
 ## Transitions out of this unit
 | from | control | goes to |

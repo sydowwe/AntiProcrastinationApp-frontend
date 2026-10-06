@@ -78,6 +78,14 @@ still all foreground.
   `console.log(tasks)` on every render of every card's timeline — three log lines on every load, see
   Findings P3.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-templates--mobile.png)
+- layout: cards go single-column, full width (4–386). Title wraps to "Day / Templates". The toolbar row doesn't wrap, so "Add Template" spills to 478 and the content scroller pans 88 px sideways (P4). Card rows hold: name, day-type chip, Active switch and pin fit on one line; the action row wraps Use Today onto its own line.
+- mobile-only controls: none
+- replaced controls: **Compare** and **Edit Side by Side** → nothing. Both are `v-if="mdAndUp"` by design, so compare mode and the split view have no entry point below 960 px.
+- overflow: `docScroll 390`, but `main .v-container` is 478/390 (`div.d-flex.align-center.ga-3 → 478`, P4). The cards' `v-row` ends at 394 (Vuetify's −4 px gutter, not visible).
+- visual sweep: "Add Template" cut to "+ ADD". Everything else reads cleanly. Tap targets: pin 40×40, Active switch 28×28, card buttons ≥ 78×28, day chips 36×36. The card's `:hover` lift is decorative only. Add Template dialog fits (24–366 × 30–814, Cancel/Create visible, `day-planner-templates-create-dialog--mobile.png`). The delete confirm fits (24–366 × 305–539). Console clean.
+
 ### TemplateSplitView (`/day-planner/templates/split`)
 ![empty](screenshots/day-planner-templates-split--empty.png)
 ![populated](screenshots/day-planner-templates-split--populated.png)
@@ -125,6 +133,14 @@ still all foreground.
   `latestLoadToken` handling in `TemplateDayPlannerView.vue`) and are silently swallowed — no console noise.
 - non-2xx: none
 - duplicate requests: the expected/handled aborts above; nothing unhandled
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-templates-split--mobile.png)
+- layout: **doesn't stack, and doesn't scroll sideways either.** The two panes stay side by side at 171 px each (8–179, 211–382), and each planner is compact (< 900 px, `usePlannerLayout.ts`). It's not usable as a comparison: task titles show ~5 characters, the 30M slot button is clipped away, and the side panel is squeezed into the pane (B6). The view is reachable only by URL below `md`, because its entry button is desktop-only.
+- mobile-only controls: none beyond the compact planner's (see TemplateDayPlannerView below). Each pane's "Open panel" toggle exists at every width.
+- replaced controls: none
+- overflow: `docScroll 390`, `.v-container` 390/390. The script's offenders (`div.d-flex.align-center.flex-wrap → 539`, `div.d-flex.ga-4.align-center → 485`) are inside each pane's `overflow: hidden` card, so they're clipped, not scrollable (B6).
+- visual sweep: "Left Template" label is cut at its top edge, and the left select reads "Home O…". Focusing a task scrolled the left pane's clipped card by 182 px, hiding its header (planner-day B9, `day-planner-templates-split--mobile-tasks.png`). Panel open: `day-planner-templates-split--mobile-panel.png` (planner-day A2 reproduces here). Console clean.
 
 ## Transitions out of this unit
 | from | control | goes to |
@@ -218,3 +234,11 @@ prop) · guard: auth
 - Opening the panel produces a **400×16px, horizontally-offscreen sliver** instead of a usable panel — see
   Findings X2 (the blocker, not the a11y-only finding above). The close "X" is still clickable and does
   close it back to the collapsed state.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `27dd210b`
+![mobile](screenshots/day-planner-templates-id--mobile-x4.png)
+- layout: compact planner (root < 900 px). The side panel starts closed and floats over the grid when opened (8–382 × 64–844, X2's fix holds, `day-planner-templates-id--mobile-x4-panel.png`). The header wraps to four rows (title + stats, Start + swap, h/min steppers, slot toggle, undo + Add New Task), and the grid fills the rest of the card. Task blocks are 266 px wide with a readable title, time, role and location. A tap on a block selected it (no drag started).
+- mobile-only controls: compact behaviour of the header toggle — `getByRole('button', { name: 'Open panel' })` / `'Close panel'` (shown at every width, but only overlays below 900 px). Panel X — `getByRole('button', { name: 'Close panel' }).first()` (DOM order puts it before the covered header toggle). Picking a routine item in the panel's Routine tab closes the panel by itself and shows the "Placing / <name> / Cancel" bar (92–298, fits, `day-planner-templates-id--mobile-x4-placing.png`).
+- replaced controls: none
+- overflow: none (`docScroll 390`, no offenders).
+- visual sweep: the breadcrumb wraps ("Day planner - / template", `_shell` P4 already names this route). With a task selected, the ActionBar runs −32…422 and cuts "1 selected" and Cancel (`_shell` B2, `day-planner-templates-id--mobile-x4-selected.png`). The grid's last 50 px are clipped by the card (planner-day B9, last label 22:40). Panel focus doesn't move, Escape doesn't close it, and closing drops focus to `<body>` (planner-day A2). `.tasks-column` is `touch-action: none` (planner-day U1). The Add New Template Task dialog fits (no element past 390, body scrolls inside, Cancel/Confirm visible, `day-planner-templates-id--mobile-x4-task-dialog.png`). Console clean.
