@@ -451,7 +451,7 @@
 ### P6. Planner settings hide controls in horizontal scrollers with no cue: the Repeating Tasks "Add" button and the "30 MIN" slot size (390 px)
 - **Status:** open
 - **Severity:** polish (both are reachable by scrolling sideways)
-- **Where:** @390×844 · `/day-planner/settings` → Repeating Tasks table header (`v-table__wrapper`, `scrollWidth 458 / clientWidth 372`); `?tab=viewDefaults` → "Time slot size" `MyBtnToggle` (`overflow-x: auto`, ends at 365).
+- **Where:** @390×844 · `/day-planner/settings` → Repeating Tasks table header (`v-table__wrapper`, `scrollWidth 458 / clientWidth 372`); `?tab=viewDefaults` → "Time slot size" `MyBtnToggle` (`overflow-x: auto`, ends at 365). **Added by x4 `leisure` (2026-10-06):** the Repeating Tasks "Add" is `BasicTable`'s header button. Its root cause is a dead sticky rule in the framework table, which was meant to pin the actions column. Filed once as `leisure-backlog-picker` B6 [framework], so fix that half there rather than moving the button here.
 - **Expected:** a tab's primary action is visible on landing, above all on an empty table whose only next step is that action (plain sense).
 - **Actual:** the "Add" icon button sits at x 411–451, past the right edge, in an empty table that says "No data available". Nothing hints that the table scrolls. In View Defaults, "30 MIN" (334–413) is cut to "30". The tab strip itself also overflows (to 691), but that's Vuetify's swipeable tab bar, and every tab is reachable.
 - **Evidence:** `docs/views/planner-day/screenshots/day-planner-settings--mobile.png`, `day-planner-settings--mobile-viewdefaults.png`.

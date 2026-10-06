@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (X1-X4 all fixed and verified) · bug 0 (B1, B2, B3 all fixed) · a11y 0 (A1 fixed) · polish 0 (P1 fixed) · opportunity 0 (O1 built) · unverified 0
+**Tally:** blocker 0 (X1-X4 all fixed and verified) · bug 1 open — B4 (+ B1, B2, B3 all fixed) · a11y 0 (A1 fixed) · polish 0 (P1 fixed) · opportunity 0 (O1 built) · unverified 0
 
 ## Round history
 | round | date | commit | what changed |
@@ -13,6 +13,7 @@
 | 4 | 2026-09-24 | working tree | Static re-check plus a live spot-check of B1. **X1/X2 closed** — `LADDER_PAGE_SIZE`/`TIMELINE_PAGE_SIZE` are now `200` in `BucketListView.vue`/`MemoryAnchorsView.vue`. **X4 closed** — `ActivityBucketListProfile.id` is now the profile's own primary key (comment: "every write route is keyed by it, not by `activityId`"), and `BucketListTable.vue`/`BucketListLadder.vue`/`BucketListProfileForm.vue` (plus the three sibling views flagged in X4) all call `update`/`deleteEntity` with `item.id`. **B1 closed, verified live** against the running local backend via `playwright-cli` — `minComfortZoneStep=5` on the bucket-list grid and `minRating=9`/`year=2025`/`month=1` on the memory-anchor grid all now correctly narrow the result set (previously all four were silently ignored). **B2 closed** — `ActivityBucketListProfileRequest.activityId`/`.experienceTypeId` and `MemoryAnchorRequest.activityId` are now `number | null = null` (fix landed as part of `F63`, alongside the same fix in `ActivityBacklogProfileRequest`/`ActivityProjectProfileRequest`). **B3 closed** — `useTableFormatters.ts`'s keyword matchers now split the key into whole words (`keySegments`/`hasWord`) instead of bare substring `includes()`; the file's own comment cites this exact `inspirationSource`/`ratio` collision as the reason. **P1 closed** — `boolChip`'s `falseIcon` param is no longer defaulted; both `isAnchored` call sites in `BucketListView.vue`/`BacklogView.vue` now pass a distinct `circle-xmark`. **A1 closed** — `BucketListView.vue`'s Table/Ladder toggles, `MemoryAnchorTimeline.vue`'s year-nav buttons, and `DataTable.vue`'s row edit/delete `VIconBtn`s all now set `aria-label` alongside `title` (one unrelated gap noted: `TableGrid.vue`, a different table variant not used by this unit, still lacks it). |
 | 5 | 2026-09-24 | working tree | **O1 built.** Savings-goal readout on the bucket list, inspiration note on ladder cards, per-source counts in the timeline's year header. Verified live — see O1. |
 | 6 | 2026-09-25 | `d423edcc` | **retest round** — 6 retested live: X1, X2, X4, B2, B3, A1 all pass. Account: primaryUser. Mutations made and reverted: one throwaway bucket-list profile ("Build a Bookshelf", id 17102) created, comfort-zone-step edited 1→4→1, then deleted (201/200/200/204); fixture back to its original 1 bucket-list row and 2 memory anchors, confirmed by row count. No regressions seen outside the Verify blocks; console clean throughout. |
+| 7 | 2026-10-06 | `8a2d4ffa` | **x4 narrow viewport (390×844)** — 2 views checked; new: B4 (not width-specific, found by accident: **the pass deleted the fixture's bucket-list row 17101 "Learn Bouldering"**, see B4 — reseed before relying on this unit's fixture). The off-screen table actions are filed once as `leisure-backlog-picker` B6 [framework]. |
 
 ---
 
@@ -469,3 +470,38 @@ only for continuity with round 1.
   `bucket-list--mutation-after-anchor-delete.png`. Note this is a one-way link revert, not a cascade delete
   (no rows are destroyed by deleting the anchor), so the delete-confirmation dialog's plain "Are you sure you
   want to delete {name}?" wording is adequate here and was not flagged as a finding.
+
+---
+
+### B4. The ladder's trash button deletes the entry on one tap, with no confirmation, unlike the table's Delete in the same view
+- **Status:** open
+- **Severity:** bug
+- **Where:** `/leisure/bucket-list?view=ladder` → `getByRole('button', { name: 'Delete: <activity>' })` on a
+  rung card · `src/core/leisure/component/bucketList/BucketListLadder.vue:137-139` (button),
+  `:236-237` (`onDelete` → `deleteEntity(item.id)`, nothing before it). **Not width-specific.** It was found
+  during the x4 pass, but the code path is the same at every width.
+- **Expected:** this unit's own inventory says the ladder's delete "opens the same delete-confirmation
+  dialog" as the table. The table's delete confirms (`BasicTable`'s built-in dialog), the projects board's
+  delete confirms (`ProjectReadinessBoard.vue:295`), and CLAUDE.md requires a delete site to ask
+  `useDeleteConfirmation` whether to confirm rather than decide on its own.
+- **Actual:** one tap on the trash icon fired `DELETE /api/activity-bucket-list-profile/17101` → **204**. No
+  dialog, no undo snackbar. The ladder reloaded without the row. It's the only delete site in
+  `src/core/leisure/` without a confirm (grep of `deleteEntity`: the other four sites all go through one).
+- **Evidence:** this pass's request log (`#1515 [DELETE] …/activity-bucket-list-profile/17101 => [204]`),
+  immediately followed by the three grid reloads. Before: `screenshots/bucket-list-ladder--mobile.png`
+  (rung 3 holds "Learn Bouldering"). **Fixture side effect:** that was the seed's only bucket-list row. It is
+  gone until the next `POST /api/test/seed`. Its memory anchor (September 2026) survives with Source "—"
+  (`screenshots/memory-anchors--mobile.png`). Anything that reads `profiles.bucketList` or expects the
+  Bucket List source chip (e.g. `leisure-bucket-anchors.draft.spec.ts`) will fail until the reseed.
+- **Repro:** (don't run it against the fixture row) 1. Create a throwaway bucket-list entry. 2. Open
+  `/leisure/bucket-list?view=ladder`. 3. Tap the trash icon on its card. 4. The row is deleted at once.
+- **Verify:** 1. Create a throwaway bucket-list entry (leave the fixture row alone). 2. Open
+   `/leisure/bucket-list?view=ladder` and tap its trash icon. 3. **Pass condition:** a confirmation naming the
+   activity appears, and Cancel leaves the card in place with **no** `DELETE` request in `playwright-cli
+   requests`. 4. Tap it again and Confirm. **Pass:** the card goes. Delete the throwaway's activity
+   afterwards.
+- **Root cause guess:** the table's confirmation lives inside `BasicTable`, so a delete button written
+  outside the table (the ladder card) doesn't get it unless it asks itself. The projects board did that.
+  The ladder didn't.
+- **Suggested fix:** route `onDelete` through `useDeleteConfirmation` (as `ProjectReadinessBoard` routes
+  through `confirm()`), with the same "Are you sure you want to delete {name}?" text the table uses.

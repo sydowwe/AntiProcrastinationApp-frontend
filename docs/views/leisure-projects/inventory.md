@@ -109,6 +109,31 @@
   (the table's `useServerTable` filter-watcher, which keeps running even though the table isn't mounted);
   the 200-item call is the one that gets aborted (`net::ERR_ABORTED`). See Findings B2.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `8a2d4ffa`
+![mobile](screenshots/projects-board--mobile.png)
+- layout: title, Board/Table toggle (85–213) and Filter (288–382) on one row. **Board:** the three
+  readiness columns **scroll sideways**. They don't stack or squash: each stays 260 px, the board is 812 wide
+  in a 374 px `overflow-x: auto` strip, and it has no scroll-snap. About 1.4 columns show, so the seed's
+  card in "Needs shopping" lands cut at the screen edge ("Build a Boo…"). Swiped into view
+  ([screenshot](screenshots/projects-board-scrolled--mobile.png)), the card reads cleanly: title,
+  difficulty · area · hours, Messy icon, materials and tools lines, "Add to to-do list", and the three
+  status buttons. See `P4`. The toolbar's labelled Add (316–382 × 128) is on screen in board mode.
+  **Table** (`?view=table`, [screenshot](screenshots/projects-table--mobile.png)): columns kept, scrolling
+  sideways (table right 620). Board mode's toolbar Add isn't rendered here.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `docScroll` 390 in both modes. Board: two `.readiness-column` offenders (544, 820) inside
+  `.readiness-board` (`overflow-x: auto`), intentional but see `P4`. Table: the `table` inside
+  `.v-table__wrapper`, with header Add (548) and row Edit/Delete (524–612) off-screen and no other Add,
+  see `leisure-backlog-picker` B6 [framework].
+- touch: no hover-only styles in `ProjectReadinessBoard.vue` (only `cursor: pointer` and a `:focus-visible`
+  outline). Card Delete and status buttons are 32×32, and "Add to to-do list" is 122×20 with 8 px clear
+  below it, which passes on spacing. Status buttons and Delete were not clicked, since both write.
+- dialogs: edit (card title tap, [screenshot](screenshots/projects-edit-dialog--mobile.png)) 24–366 ×
+  50–794, no inner scroll needed, Save/Cancel at y 738, combobox chips wrap inside their fields. Filter panel
+  full-width, Clear/Confirm at y 792.
+- visual sweep: the half-visible card on landing (`P4`), otherwise nothing wrong.
+
 ## Transitions out of this unit
 | from | control | goes to |
 | --- | --- | --- |

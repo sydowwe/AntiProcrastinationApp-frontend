@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (1 fixed and verified live) · bug 0 (5 fixed and verified live) · a11y 0 (1 fixed and verified live) · polish 0 (1 fixed and verified live) · opportunity 0 (2 fixed and verified live) · unverified 0 (5 verified, all pass)
+**Tally:** blocker 1 open (+1 fixed and verified live) · bug 1 open (+5 fixed and verified live) · a11y 0 (1 fixed and verified live) · polish 1 open (+1 fixed and verified live) · opportunity 0 (2 fixed and verified live) · unverified 0 (5 verified, all pass)
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@
 | 3 | 2026-09-24 | live `playwright-cli` pass | U1-U5 all exercised via route mocking + a second-account sign-in; all five pass as designed, no defects found |
 | 4 | 2026-09-24 | uncommitted | O1, O2, P1 fixed (P1 in the framework) |
 | 5 | 2026-09-25 | `d423edcc` | **retest round** — 7 retested live: X1, B1, B2, B3, B4, B5, O1 pass; none reopened; none blocked (B1's third Verify step — a real weather-dependency entry still excluded/boosted — and O1's ranking-penalty observation could not be exercised: the seed has only one backlog row). Account: primaryUser. Mutations made and reverted: X1 Duration edit on row 17001 (45→46→45); two throwaway backlog rows created and deleted (ids 17002, 17003) for the X1-delete and B4 checks, neither of which produced a memory anchor. No regressions seen outside the Verify blocks; F90 toggle groups on `/leisure/pick` ("Time available"/"Energy right now"/"Who's around") still correctly named and pressed-stated. |
+| 6 | 2026-10-06 | `8a2d4ffa` | **x4 narrow viewport (390×844)** — 2 views checked; new: X2, B6, P2. |
 
 ---
 
@@ -402,3 +403,114 @@
   else" as the primary seed user (id 10001) wrote `leisure.picker.history::u10001` to `localStorage`.
   Signing in as the secondary seed user (id 10002) in the same browser showed no `leisure.picker.history`
   key at all under that session — no leak, no cross-account read.
+
+---
+
+### X2. With two or more suggestions on screen, the picker crushes its own constraint card: time, energy and who's-around can't be reached (390 px)
+- **Status:** open
+- **Severity:** blocker
+- **Where:** @390×844 · `/leisure/pick` → the `ConstraintBar` card (first `main .v-card`) ·
+  `src/core/leisure/view/PickerView.vue:2-12` (flex-column root, no `flex-shrink-0` on its children), inside
+  `src/App.vue:28-31` (`VContainer class="h-100 d-flex … overflow-y-auto"`)
+- **Expected:** the view's own subtitle: "Tell us how much time and energy you have — we'll pick three." The
+  constraints are the picker's input, and the group file names this as the view most likely to be used on a
+  phone. When three cards don't fit, the page should scroll. The controls above them shouldn't shrink.
+- **Actual:** the card is clipped (`overflow: hidden`), not scrolled, and how much it loses depends on how
+  many cards are below it:
+  - **1 card** (seed, `?minutes=60`): fits, 325/325 px.
+  - **2 cards** (seed, `?minutes=240`): 137 of 325 px. The Energy row is cut in half. "Who's around" and
+    "More constraints" are hidden: `elementFromPoint` at their centres hits the suggestion card.
+  - **3 cards** (backlog grid mocked to 3 rows with `playwright-cli route`, read-only): **32 of 325 px**. Only
+    the "Time available" label shows. All 11 constraint buttons and "More constraints" are covered. The
+    container does scroll (879 / 780), but only the cards gain from it.
+  - **1 card + "More constraints" open:** 401 of 437 px, and focus has scrolled the card's content 36 px,
+    so the "Time available" label is gone from the top.
+  - **Loading:** the three skeleton cards crush it the same way.
+
+  Three cards is the normal state for any account with three eligible items, so on a phone the user never
+  gets to set time, energy or company. They just get the default draw. At 768 × 1024 it's also clipped
+  (97/179, 2 cards). At 1280 × 800 it fits (156/156), because the cards sit in one row (`md="4"`).
+- **Evidence:** `screenshots/pick-4h--mobile.png` (2 cards), `screenshots/pick-3cards--mobile.png` (3 cards,
+  mocked), `screenshots/pick-more-constraints--mobile.png`. `eval`: card `{height: 32, scrollHeight: 325}`.
+  Ancestor chain: `div.py-4.d-flex.flex-column` h 780 (shrink 1) → `div.v-container` h 780 `overflow-y: auto`
+  `display: flex`.
+- **Repro:** 1. `resize 390 844`. 2. Open `/leisure/pick?minutes=240&energy=medium&people=1`. 3. Wait for two
+   suggestion cards. 4. Try to tap "A group".
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload`. 2. Open
+   `/leisure/pick?minutes=240&energy=medium&people=1` and wait for "Do it now". 3. **Pass condition:** the
+   first `main .v-card` has `getBoundingClientRect().height === scrollHeight`, and
+   `document.elementFromPoint` at the centre of the "A group" button resolves to that button (scroll the
+   container first if it's below the fold). 4. Click "More constraints". **Pass:** the same height check holds
+   and "Time available" is visible.
+- **Root cause guess:** `App.vue`'s `VContainer` is a row flexbox with `h-100`, so the routed view's root is
+  stretched to a definite 780 px. `PickerView`'s flex-column children all keep the default `flex-shrink: 1`,
+  and the `VCard` is the only one whose `overflow: hidden` lets it shrink below its content (min-height 0).
+  Any other view whose root is a flex column holding a card is exposed to the same thing. `planner-day` B9
+  ("the day view's card clips its own content") may be a relative.
+- **Suggested fix:** `class="flex-shrink-0"` on `ConstraintBar` (and on the empty-state card), or drop the
+  definite height from `PickerView`'s root (`align-self-start`). Don't change `App.vue`'s container without
+  checking every view that relies on `h-100`.
+
+---
+
+### B6. The framework table's actions column isn't pinned: Add and every row's Edit/Delete start 300–450 px off-screen — [framework] (390 px)
+- **Status:** open
+- **Severity:** bug — **[framework]**
+- **Where:** @390×844 · `src/_common/component/dataTable/DataTable.vue:237-243` (the sticky rule),
+  `src/_common/component/dataTable/BasicTable.vue:21-43` (the header Add). Observed on all four leisure
+  tables, with the table scrolled to `scrollLeft 0`:
+  `/leisure/backlog` (Add 779–819, Edit 755, Delete 803; table 842 wide in a 372 px wrapper);
+  `/leisure/bucket-list` table mode (Add 700, Edit/Delete 676–764);
+  `/leisure/memory-anchors` table mode (Add 476, Edit/Delete 452–540);
+  `/leisure/projects?view=table` (Add 548, Edit/Delete 524–612).
+  The same button is `planner-day` P6's Repeating Tasks "Add" (`RepeatingTasksTab.vue` is a `BasicTable`).
+- **Expected:** the framework's own CSS. `DataTable.vue:237-243` declares the last column
+  `position: sticky; right: 0`, so the actions are meant to stay put while the data columns scroll. Plain
+  sense, too: on a table view the create action and each row's actions should be on screen when it loads.
+- **Actual:** the rule never matches. `.my-data-table` is set on the `VDataTable` root itself (computed
+  className `"v-table … v-data-table flex-fill my-data-table"`), so the scoped descendant selector
+  `.my-data-table :deep(.v-data-table th:last-child)` looks for a `.v-data-table` *inside* it and finds
+  none. Computed on the last `th`: `position: sticky` (from `fixedHeader`, top only), `right: auto`. On
+  the last `td`: `position: relative`. The actions scroll away with the data and nothing hints that the
+  table scrolls. They can be reached: swiping the table to its end (`scrollLeft 470` on backlog) brings Add
+  to 309–349. In table mode, **Backlog, Bucket list, Memory anchors and Projects have no other Add on
+  screen** (the labelled Add only exists in the ladder, timeline and board modes).
+- **Evidence:** `screenshots/backlog--mobile.png` (Add and row actions absent),
+  `screenshots/backlog-scrolled--mobile.png` (they appear after swiping);
+  `docs/views/leisure-bucket-anchors/screenshots/bucket-list--mobile.png`,
+  `memory-anchors--mobile.png`, `memory-anchors-scrolled--mobile.png`;
+  `docs/views/leisure-projects/screenshots/projects-table--mobile.png`. `eval` on
+  `.my-data-table` → `hasInnerVDT: false`.
+- **Repro:** 1. `resize 390 844`. 2. Open `/leisure/backlog`. 3. Look for the "+" Add button and the row's
+   pencil/trash.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/leisure/backlog`. 2. **Pass condition:**
+   with the table unscrolled, `getByRole('button', { name: 'Add', exact: true })`, the row's "Edit" and its
+   "Delete" all have `right <= innerWidth`, and they keep that position after
+   `document.querySelector('.v-table__wrapper').scrollLeft = 200`. 3. Repeat on
+   `/leisure/projects?view=table`. 4. At 1280 px a table that fits looks the same as before.
+- **Root cause guess:** selector written for a wrapper element that `DataTable` no longer has (or never
+  had). It fails in every app on the framework, but it only shows when a table is wider than its container,
+  which at desktop width is rare.
+- **Suggested fix:** framework: `.my-data-table :deep(th:last-child), .my-data-table :deep(td:last-child)`
+  (the `th`/`td` are real descendants). Check the sticky column keeps an opaque background over the scrolled
+  cells, and that a table with `showActions: false` doesn't pin a data column instead.
+
+---
+
+### P2. Create dialog: "Max people" is squeezed to a 69 px input and its label reads "Max …" (390 px)
+- **Status:** open
+- **Severity:** polish
+- **Where:** @390×844 · `/leisure/backlog` → header Add → `NewBacklogProfileForm` Min/Max people row
+- **Expected:** a field's label is readable before you type into it (plain sense).
+- **Actual:** Min and Max people sit side by side at 149 px each. Each `VNumberInput` gives 80 px to its
+  ▾/▴ buttons, leaving a 69 px input. "Min people" has a value (1), so its label floats and reads in full.
+  "Max people" is empty, so its label sits inline and is cut to "Max …". In the edit dialog, with a value
+  present, it reads fine.
+- **Evidence:** `screenshots/backlog-create-dialog--mobile.png`. `eval`: `Max people field=201,579,149 input=69`.
+- **Repro:** 1. `resize 390 844`, open `/leisure/backlog`. 2. Swipe the table to its end and tap "+".
+   3. Look at the row under Cost.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/leisure/backlog`. 2. Open the create
+   dialog. 3. **Pass condition:** the "Max people" field's `label` has `scrollWidth <= clientWidth` (not
+   truncated).
+- **Suggested fix:** stack the two fields below `sm` (`cols="12" sm="6"`), or use
+  `controlVariant="stacked"` on both inputs to give the text the width back.

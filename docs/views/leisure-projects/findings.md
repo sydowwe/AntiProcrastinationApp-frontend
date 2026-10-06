@@ -2,7 +2,7 @@
 
 > Pass: mutation · captured 2026-09-15 · commit `f457aa0c`
 
-**Tally:** blocker 0 (1 fixed and verified live) · bug 0 (5 fixed and verified live) · a11y 0 (4 fixed and verified live) · polish 0 (3 fixed and verified live) · opportunity 0 (1 fixed and verified live) · unverified 0 (2 verified, both pass)
+**Tally:** blocker 0 (1 fixed and verified live) · bug 0 (5 fixed and verified live) · a11y 0 (4 fixed and verified live) · polish 1 open — P4 (+3 fixed and verified live) · opportunity 0 (1 fixed and verified live) · unverified 0 (2 verified, both pass)
 
 ## Round history
 | round | date | commit | what changed |
@@ -12,6 +12,7 @@
 | 3 | 2026-09-24 | code check only (no browser pass) | X1, B1, B2, B4, B5, A1, A2, A3, A4, P1, P2, P3, O1 confirmed fixed in code against the fix-queue commits; U1, U2 unchanged (unverified either way) |
 | 4 | 2026-09-24 | live `playwright-cli` pass | U1, U2 exercised via route mocking; both pass as designed |
 | 5 | 2026-09-25 | `d423edcc` | **retest round** — 12 retested live: X1, B1, B2, B4, B5, A1, A2, A3, P1, P2, P3, O1 all pass; none reopened, none blocked. Account: primaryUser. Mutations made and reverted: created a throwaway project ("Throwaway Retest Project", est. hours 8.5/8.75, activity id 12103) for B5/B4/X1, deleted last; added one to-do item via O1 to `/todo-list/13002` (Errands), deleted afterwards. The "Throwaway Retest Project" activity itself (id 12103) outlived its project profile (they are separate deletes); triage removed it from `/activity-settings/activities` afterwards (`DELETE /api/activity/12103` → 204), so no residue remains. No regressions seen outside the Verify blocks. |
+| 6 | 2026-10-06 | `8a2d4ffa` | **x4 narrow viewport (390×844)** — 1 view checked (board and `?view=table`); new: P4. The table mode's off-screen Add/Edit/Delete are filed once as `leisure-backlog-picker` B6 [framework]. |
 
 ---
 
@@ -509,3 +510,30 @@
   reliably capture in a saved screenshot — the same limitation the sibling `leisure-backlog-picker` unit
   noted (its U4) for the picker's skeleton loader. A pass with a throttled network would give a firmer
   look at the loading state on both board and table.
+
+---
+
+### P4. The board shows 1.4 columns at a time with no snap, so on landing the only card sits half off-screen (390 px)
+- **Status:** open
+- **Severity:** polish (every card is reachable by swiping, and reads cleanly once in view)
+- **Where:** @390×844 · `/leisure/projects` (board) → `.readiness-board` ·
+  `src/core/leisure/component/project/ProjectReadinessBoard.vue:321-327`
+  (`grid-template-columns: repeat(3, minmax(260px, 1fr))`, `overflow-x: auto`, no `scroll-snap-type`)
+- **Expected:** a kanban on a phone shows whole columns. Either one column per screen with snapping, or
+  stacked. A card shouldn't land cut through its title and controls (plain sense).
+- **Actual:** the columns neither stack nor squash. They stay 260 px with a 16 px gap and the board scrolls
+  sideways (`scrollWidth 812 / clientWidth 374`). "Ready to start" fills 8–284 and "Needs shopping" starts
+  at 284, so the seed's only card ("Build a Bookshelf", 284–544) lands cut at the screen edge: title "Build
+  a Boo…", metadata "Intermediate · W…", the "Planning" status button half-visible, Delete off-screen.
+  Nothing snaps, so a swipe can stop anywhere. Swiped to `scrollLeft 270`, the card sits at 14–274 and
+  everything on it is readable, with Delete and the status buttons at 32×32.
+- **Evidence:** `screenshots/projects-board--mobile.png` (landing),
+  `screenshots/projects-board-scrolled--mobile.png` (swiped).
+- **Repro:** 1. `resize 390 844`. 2. Open `/leisure/projects`. 3. Look at the "Needs shopping" column.
+- **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/leisure/projects`. 2. **Pass condition:**
+   every `.readiness-column` is either fully inside `0…innerWidth` or fully outside it, both on landing and
+   after `document.querySelector('.readiness-board').scrollBy(150, 0)` settles, or the columns stack
+   (each column's `left` is within 16 px of the first one's).
+- **Suggested fix:** below `sm`, stack the columns (`grid-template-columns: 1fr`); empty columns are already
+  short ("No projects"). Or keep the swipe and add `scroll-snap-type: x mandatory` with columns at
+  `calc(100% - 32px)`, so one column shows at a time with a peek of the next.

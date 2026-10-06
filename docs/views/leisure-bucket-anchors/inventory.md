@@ -109,6 +109,28 @@ framework default shared by every table in the app, not unit-specific).
   idle past the access-token lifetime, self-healed by `POST /api/auth/refresh` — matches CLAUDE.md's
   documented behaviour exactly, not a defect.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `8a2d4ffa`
+![mobile](screenshots/bucket-list--mobile.png)
+- layout: title, Table/Ladder toggle (108–236) and Filter (288–382) fit on one row. The progress bars sit
+  under it at 160 px wide, with their text in narrow columns beside them ("Still to / save: 0", "120 of 120
+  in goals / already lived"), wrapped but readable. **Table mode:** every column kept, scrolling sideways
+  inside the wrapper (table right 772). **Ladder mode**
+  ([screenshot](screenshots/bucket-list-ladder--mobile.png)) reflows cleanly. The five rungs stack
+  vertically, the rung card fills the width (activity, inspiration, type, Experienced chip and trash on one
+  row), and its labelled "Add" (316–382 × 205) is on screen.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `docScroll` 390 in both modes. Table mode: the `table` inside `.v-table__wrapper`
+  (`overflow-x: auto`), intentional, but the header Add (700) and row Edit/Delete (676–764) start off-screen,
+  so in table mode no Add is visible on landing. See `leisure-backlog-picker` B6 [framework]. Ladder: no
+  offenders.
+- dialogs: create ([screenshot](screenshots/bucket-list-create-dialog--mobile.png)) 24–366 × 139–706, no
+  inner scroll, Cancel/Create at y 649, comfort-zone stepper 5 × 40 px. Filter panel full-width under the
+  bar, Clear/Confirm at y 792. Delete confirm: **the ladder's trash button has none and deleted the row on
+  the first tap.** See `B4` (not width-specific). "I did this" not reached: the only row was already
+  anchored.
+- visual sweep: nothing wrong at this width. Ladder trash 32×32, toggle buttons 64×36.
+
 ### MemoryAnchorsView (`/leisure/memory-anchors`)
 ![table, default state](screenshots/memory-anchors--table-default.png)
 
@@ -195,6 +217,27 @@ did this" action anywhere in the app.
   view's timeline uses its own `useMemoryAnchorCrud()` instance for the same cancellation-avoidance reason).
 - Also observed the same self-healing `401` burst / `auth/refresh` pattern as bucket list, at a different
   point in the session — not a defect.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `8a2d4ffa`
+![mobile](screenshots/memory-anchors--mobile.png)
+- layout: the title wraps to two lines ("Memory / Anchors") beside the Table/Timeline toggle and Filter.
+  **Table mode:** columns kept, scrolling sideways (table right 548). Highlight gets 81 px and wraps to 4–5
+  lines per row (rows 96 px tall), cramped but readable
+  ([scrolled](screenshots/memory-anchors-scrolled--mobile.png)). **Timeline mode**
+  ([screenshot](screenshots/memory-anchors-timeline--mobile.png)) fits. The year bar is prev/year/next
+  (8–168), then "Memories: 2", then a labelled Add (316–382). The 12-cell strip spans 8–382, and the month
+  rows stack with their anchor cards at full width.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `docScroll` 390 in both modes. Table: the `table` inside `.v-table__wrapper` (intentional). Header
+  Add (476) and row Edit/Delete (452–540) start off-screen, see `leisure-backlog-picker` B6 [framework].
+  Timeline: no offenders.
+- dialogs: unlocked create ([screenshot](screenshots/memory-anchors-create-dialog--mobile.png)) 24–366 ×
+  171–674. Month/Year side by side (149 px each, 69 px inputs, values readable), Cancel/Create at y 617.
+  Year menu 56–170 × 186–242. Filter panel full-width as on the other views.
+- breadcrumb: "Memory anchors" wraps to two lines in the bar. Added to shell `P4`.
+- visual sweep: nothing wrong beyond the cramped Highlight column. Learn Bouldering's Source reads "—"
+  because this pass deleted its bucket-list row (`B4`). That's fixture damage, not a view defect.
 
 ## Transitions out of this unit
 | from | control | goes to |

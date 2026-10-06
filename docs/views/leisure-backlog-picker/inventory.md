@@ -90,6 +90,28 @@ optional), Cost (select, required by data but no client rule), Min/Max people (n
   pattern the audit is looking for.
 - requests while signed out / before data needed: none observed.
 
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `8a2d4ffa`
+![mobile](screenshots/backlog--mobile.png)
+- layout: title and Filter stay on one row. The table keeps every column and scrolls sideways inside its
+  wrapper (`overflow-x: auto`, 842 wide in 372): Activity to Cost show on landing, People/Repeatable/
+  Experienced/actions are off to the right. The "N of M one-time things experienced" bar doesn't render
+  with the seed (its one row is repeatable). Pagination stays centred. The Filter panel is full-width under
+  the bar (0–390 × 64–844), its fields scroll inside it (768/628), Clear/Confirm stay pinned at y 792, and
+  focus moves to its Close button.
+- mobile-only controls: none. `src/core/leisure/` has no `useDisplay`/breakpoint code at all.
+- replaced controls: none
+- overflow: `docScroll` 390. One offender, the `table` (right 851) inside `.v-table__wrapper`
+  (`overflow-x: auto`), which is intentional. **But the actions column doesn't stay pinned**: header Add
+  at 779, row Edit/Delete at 755/803. Swiping the table to its end brings them to 309–383
+  ([screenshot](screenshots/backlog-scrolled--mobile.png)). See `B6` [framework].
+- dialogs: create ([screenshot](screenshots/backlog-create-dialog--mobile.png)) and edit both 24–366 ×
+  24–820. The body scrolls inside (720/673, Repeatable is just below the fold), Cancel/Create at y 764.
+  "Max people" reads "Max …" while empty (`P2`). Delete confirm 24–366 × 321–524, buttons on screen.
+  "Write it down" not reached: the seed has no non-repeatable, un-anchored backlog row. On-screen
+  keyboard: Create sits at y 764, so shell `U3` applies.
+- visual sweep: nothing wrong beyond the hidden actions column. Number-input spinners are 40×48, row
+  icon buttons 40×40, pagination 48×48, so every tap target clears 24 px.
+
 ### PickerView (`/leisure/pick`)
 ![suggestions](screenshots/leisure-pick--suggestions-mocked-weather.png)
 
@@ -167,6 +189,30 @@ here (only the reverse: this view links to `BacklogView`)
   people, "something else") fires **zero** network requests, confirmed by the request log staying
   flat across several toggles.
 - requests while signed out: none observed.
+
+**Narrow viewport (390 × 844)** · checked 2026-10-06 · commit `8a2d4ffa`
+![mobile](screenshots/pick--mobile.png)
+- layout: everything stacks in one column. Title, then the constraint card (Time available 5-up row 24–372;
+  Energy and Who's around rows; "More constraints"), then the cards one per row (`cols="12"`), then
+  "Something else" / "Browse everything". With the seed's single card at 1 h, its "Do it now" (20–267 ×
+  728) and "Plan for later" (275–376) are on screen without scrolling, and so is "Something else" (y 792).
+  **With two or more cards the constraint card is crushed instead of the page scrolling**: 137 px of 325
+  with two ([screenshot](screenshots/pick-4h--mobile.png)), 32 px with three
+  ([screenshot](screenshots/pick-3cards--mobile.png), backlog grid mocked), so the time/energy/company
+  controls can't be reached. See `X2`. With one card the view fills exactly 780 px, which leaves ~100 px of
+  blank space inside the card above its buttons. That's the same stretched flex column.
+- mobile-only controls: none
+- replaced controls: none
+- overflow: `docScroll` 390. One offender, a `v-row` reaching 400, which is Vuetify's −12 px row gutter
+  and clipped by its parent. Not a finding.
+- dialogs: "Plan for later" 24–366 × 295–549 ([screenshot](screenshots/pick-plan-later--mobile.png)),
+  stepper ‹ › 36×36, Cancel/"Add to plan" at y 493. Nothing clipped. The Start field takes typed input; no
+  picker popup opened from it. Cancelled, not committed. "More constraints" opens two full-width selects
+  (24–372) inside the card, which runs into `X2`
+  ([screenshot](screenshots/pick-more-constraints--mobile.png)).
+- breadcrumb: "What should I do?" wraps to two lines in the bar. Added to shell `P4`.
+- visual sweep: the crushed constraint card (`X2`), otherwise nothing wrong. Toggle buttons are 64–96 × 40.
+  "Browse everything" is 126 × 28.
 
 ## Transitions out of this unit
 | from | control | goes to |
