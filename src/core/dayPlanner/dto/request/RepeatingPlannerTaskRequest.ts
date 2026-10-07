@@ -20,6 +20,8 @@ export class RepeatingPlannerTaskRequest {
 		public activeFromDate: string | null = null,
 		public activeToDate: string | null = null,
 		public scheduledForDayTypes: DayType[] = [],
+		/** FO6: the rule puts its own blocks on today's and tomorrow's plan. */
+		public autoPlace: boolean = false,
 	) {}
 
 	static fromEntity(task: RepeatingPlannerTask): RepeatingPlannerTaskRequest {
@@ -38,6 +40,7 @@ export class RepeatingPlannerTaskRequest {
 			task.activeFromDate,
 			task.activeToDate,
 			task.scheduledForDayTypes,
+			task.autoPlace,
 		)
 	}
 }

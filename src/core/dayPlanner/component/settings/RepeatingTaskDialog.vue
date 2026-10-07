@@ -49,6 +49,15 @@
 				/>
 			</div>
 
+			<!-- FO6: opt in to the rule placing its own blocks on today's and tomorrow's plan -->
+			<VSwitch
+				v-model="data.autoPlace"
+				:label="$t('planner.settings.autoPlaceLabel')"
+				:hint="$t('planner.settings.autoPlaceHint')"
+				persistentHint
+				color="primary"
+			/>
+
 			<!-- Location -->
 			<VTextField
 				v-model="data.location"
@@ -237,8 +246,7 @@
 	import { getRecurrenceTypeIcon, RecurrenceType } from '@/core/dayPlanner/dto/enum/RecurrenceType.ts'
 	import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
-	import type { DayType } from '@/_common/dto/enum/DayType.ts'
-	import { getDayTypeColor, getDayTypeIcon } from '@/_common/dto/enum/DayType.ts'
+	import { DayType, getDayTypeColor, getDayTypeIcon } from '@/_common/dto/enum/DayType.ts'
 	import { dayTypeOptions } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
 	import { RepeatingPlannerTaskRequest } from '@/core/dayPlanner/dto/request/RepeatingPlannerTaskRequest.ts'
 	import type { RepeatingPlannerTask } from '@/core/dayPlanner/dto/response/RepeatingPlannerTask.ts'
@@ -284,9 +292,11 @@
 				if (!toDate.value) return t('planner.settings.endDateRequired')
 				return null
 			case RecurrenceType.DayType:
-				return data.value.scheduledForDayTypes.length === 0
-					? t('planner.settings.selectAtLeastOneDayType')
-					: null
+				if (data.value.scheduledForDayTypes.length === 0) return t('planner.settings.selectAtLeastOneDayType')
+				// The server refuses this too: away days get no automatic blocks, so the switch would do nothing.
+				if (data.value.autoPlace && data.value.scheduledForDayTypes.every(isAwayDayType))
+					return t('planner.settings.autoPlaceAwayOnly')
+				return null
 		}
 	})
 
@@ -358,6 +368,10 @@
 			data.value.scheduledDates.push(d)
 			showRecurrenceError.value = false
 		}
+	}
+
+	function isAwayDayType(type: DayType): boolean {
+		return type === DayType.Vacation || type === DayType.SickDay
 	}
 
 	function toggleDayType(type: DayType) {

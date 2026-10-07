@@ -41,11 +41,20 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public originalDate: string | null = null,
 		/** How many times the task has been carried over to a later day. "Pushed 4×" is the cue to split or drop it. */
 		public carryOverCount: number = 0,
+		/**
+		 * The repeating rule that put this block on the plan by itself (FO6), or null. Like the template line, it is
+		 * provenance: a copy of the day drops it, and deleting the rule leaves the block with null.
+		 */
+		public sourceRepeatingTaskId: number | null = null,
 	) {}
 
 	/** Derived, not sent: the server has no `isFromTemplate` member, so reading one off the wire was always undefined. */
 	get isFromTemplate(): boolean {
 		return this.sourceTemplateTaskId != null
+	}
+
+	get isFromRepeatingTask(): boolean {
+		return this.sourceRepeatingTaskId != null
 	}
 
 	get isTaskOneRow(): boolean {
@@ -107,6 +116,7 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			false,
 			json.originalDate ?? null,
 			json.carryOverCount ?? 0,
+			json.sourceRepeatingTaskId ?? null,
 		)
 	}
 

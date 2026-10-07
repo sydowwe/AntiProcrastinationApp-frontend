@@ -350,6 +350,22 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, high. Frontend Sonnet 5.5, high.
 
 ### FO6. Recurring commitments put themselves on the plan (opt-in, today and tomorrow only)
+- **Status (2026-10-07): built and committed (backend `5c17788`, frontend the commit after it); two migrations to
+  apply,** FO3 phase 2's `20261007200704` first. Backend: `RepeatingTaskMaterialiser` (Planning)
+  runs from `GET /calendar/day-plan/{date}` (home) and `GET /calendar/by-Date/{date}` (the day planner) for the user's
+  today and tomorrow, and after a rule's create/update.
+  **The "never twice" record is `RepeatingPlannerTask.MaterialisedThrough`** (migration
+  `20261007204638_RepeatingPlannerTaskMaterialisedThrough`), because a deleted occurrence takes its own `planner_task`
+  evidence with it. Every day the materialiser looks at is decided, so a deleted or skipped occurrence never returns,
+  and neither does one on an away day that is un-marked later. Conflicts go through
+  `PlannerTemplateApplier.StageAgainstDay` (split out of `Stage`) with `DefaultConflictResolution`. A rule edit
+  updates its *untouched* occurrences from today on: `NotStarted`, no original slot, still the old rule's exact plan,
+  and no to-do, Google or reminder link. When the rule stops placing on a day, such an occurrence is removed. A day
+  the edit newly matches gets its block. The day matcher `RepeatingPlannerTaskSchedule.FallsOn` is now shared with
+  the suggestion endpoint. The validator refuses `AutoPlace` on a `DayType` rule scheduled only for away days. The
+  FO5 hook is `IsUserAbsentAsync` (always false). Frontend: the switch in `RepeatingTaskDialog`, and a `repeat`
+  mark in the origin slot of `PlannerTaskBlock`. **Not built:** reminders (N1). Marking a day away after its
+  occurrence was placed does not remove the occurrence.
 - **Source:** F1-06.
 - **Moment:** Wednesday 17:40. "Gym, Mon/Wed/Fri 18:00" exists as a rule, but home doesn't show it and no reminder is
   coming.

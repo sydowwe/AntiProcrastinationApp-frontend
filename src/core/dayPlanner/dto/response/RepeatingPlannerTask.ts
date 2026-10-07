@@ -24,6 +24,8 @@ export class RepeatingPlannerTask {
 		public activeFromDate: string | null,
 		public activeToDate: string | null,
 		public scheduledForDayTypes: DayType[],
+		/** FO6: the rule puts its own blocks on today's and tomorrow's plan. */
+		public autoPlace: boolean = false,
 	) {}
 
 	static fromJson(json: any): RepeatingPlannerTask {
@@ -44,6 +46,7 @@ export class RepeatingPlannerTask {
 			json.activeFromDate ?? null,
 			json.activeToDate ?? null,
 			json.scheduledForDayTypes ?? [],
+			json.autoPlace ?? false,
 		)
 	}
 

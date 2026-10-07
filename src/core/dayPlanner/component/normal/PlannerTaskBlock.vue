@@ -8,20 +8,20 @@
 		@resizeStart="emit('resizeStart', $event)"
 		@keydown.d.exact.prevent="emit('toggleDone', task.id)"
 	>
-		<!-- Not on a preview block: the hatching already says the whole overlay is the template. -->
+		<!-- The origin slot (OP15). Not on a preview block: the hatching already says the whole overlay is the template. -->
 		<template
-			v-if="task.isFromTemplate && task.id > 0"
+			v-if="originMark"
 			#prepend
 		>
 			<VTooltip
-				:text="t('planner.calendar.fromTemplate')"
+				:text="originMark.tooltip"
 				location="top"
 			>
 				<template #activator="{ props: tooltipProps }">
 					<VIcon
 						v-bind="tooltipProps"
 						class="from-template-mark"
-						icon="layer-group"
+						:icon="originMark.icon"
 						:size="task.isTaskOneRow ? 14 : 16"
 						aria-hidden="true"
 					/>
@@ -148,10 +148,32 @@
 		t('planner.a11y.carriedOverPart', { count: task.carryOverCount }, task.carryOverCount),
 	)
 
+	/**
+	 * Where the block came from, when it did not come from the user's own hand: a template line (OP15) or a
+	 * repeating rule that placed it by itself (FO6). One mark only — the slot is a single icon wide, and a rule's
+	 * occurrence never carries a template line.
+	 */
+	const originMark = computed(() => {
+		if (task.id <= 0) return null
+		if (task.isFromRepeatingTask)
+			return {
+				icon: 'repeat',
+				tooltip: t('planner.calendar.fromRepeatingTask'),
+				label: t('planner.a11y.fromRepeatingTaskPart'),
+			}
+		if (task.isFromTemplate)
+			return {
+				icon: 'layer-group',
+				tooltip: t('planner.calendar.fromTemplate'),
+				label: t('planner.a11y.fromTemplatePart'),
+			}
+		return null
+	})
+
 	const extraLabelParts = computed(() => [
 		t('planner.a11y.statusPart', { status: t(`planner.status.${task.status}`) }),
 		...(task.carryOverCount > 0 ? [carriedOverLabel.value] : []),
-		...(task.isFromTemplate && task.id > 0 ? [t('planner.a11y.fromTemplatePart')] : []),
+		...(originMark.value ? [originMark.value.label] : []),
 	])
 
 	const classes = computed(() => {
