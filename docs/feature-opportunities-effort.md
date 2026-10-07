@@ -13,13 +13,12 @@
 | FO3 phase 1 | `2748772` | `7557fe30` | Nothing. |
 | FO3 phase 2 | `410dced` | the commit after `7557fe30` | The owner applies migration `20261007200704_PlannerTaskPostponeAndRepeatingSource` and restarts the API. The migration also carries FO6's two columns. |
 | FO7 | `bcf8671`, `dc5059c` (notification hub closed to tracker tokens) | `ba3e54ea` (`_common` → `a0d8095`) | Nothing. Pairing codes (option b) stay deferred. |
+| FO4 | `565f3e6` (xhigh agent) | the commit after `0fd7e874` | The owner restarts the API (no migration), then checks the re-plan live; it was verified against mocked routes only. |
 
 ## Remaining steps
 
 | FO | Step | Opus effort | Why |
 |---|---|---|---|
-| **FO4** | backend agent | **xhigh** | Packing tasks into free time has many edge cases (overlaps, background tasks, fixed blocks, importance), and *apply* must move everything in one transaction with one reminder re-sync. Mistakes here are silent. |
-| | frontend | **medium** | The preview reuses the existing grid. |
 | **FO5** | backend agent | **high**, or **xhigh** if the back-off ships in the same session | It touches four slices, adds a column on `users` and needs a framework collaborator, so two backend repos. |
 | | frontend | **medium** | One card with three choices plus an undo. |
 | **FO6** | backend agent | **medium** | Its two columns are already in FO3 phase 2's migration, so this is the materialiser only, with no `planner_task` migration. |

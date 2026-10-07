@@ -23,6 +23,8 @@ import {
 	useDashboardRefresh,
 } from '@/core/home/composable/useDashboardRefresh.ts'
 import { togglesLinkedTodoItem } from '@/core/home/composable/linkedTodoItemSync.ts'
+import { useDayReplanApi } from '@/core/dayPlanner/api/dayReplanApi.ts'
+import { isMissedAndMovable } from '@/core/dayPlanner/utils/replanCandidates.ts'
 import i18n from '@/i18n.ts'
 
 export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone' | 'noPlan'
@@ -105,9 +107,14 @@ const firedAlerts = new Set<string>()
 // call, so build them once for the module rather than on every command.
 let plannerApi: ReturnType<typeof useTaskPlannerCrud> | null = null
 let calendarApi: ReturnType<typeof useCalendarQuery> | null = null
+let dayReplanApi: ReturnType<typeof useDayReplanApi> | null = null
 
 function planner() {
 	return (plannerApi ??= useTaskPlannerCrud())
+}
+
+function replanApi() {
+	return (dayReplanApi ??= useDayReplanApi())
 }
 
 function calendarQuery() {
@@ -181,6 +188,17 @@ const nextTask = computed(
 )
 const missedTasks = computed(() => sortedTasks.value.filter(isMissed))
 const lastMissedTask = computed(() => missedTasks.value[missedTasks.value.length - 1] ?? null)
+/**
+ * Whether "Re-plan the rest of today" (FO4) has anything to do. Narrower than `missedTasks`, which also
+ * holds overrunning in-progress and on-hold blocks: the re-plan moves only blocks that never started, and
+ * an offer that opens onto "nothing to re-plan" is worse than none. The rule is shared with the day view's
+ * banner, see `isMissedAndMovable`. Off between midnight and the rollover refetch, like the alerts.
+ */
+export const canReplan = computed(
+	() =>
+		planDate.value === todayIsoDate.value &&
+		sortedTasks.value.some(task => isMissedAndMovable(task, nowMinutes.value)),
+)
 
 // Never claim the day is done while unticked tasks remain — surface the missed one instead. And never
 // claim it with no plan at all: an empty task list is "done" only on a day the user planned.
@@ -355,13 +373,22 @@ export async function skipTask(task: PlannerTask, reason: BuiltInSkipReason) {
 	if (task.status !== PlannerTaskStatus.Cancelled) Object.assign(task, previous)
 }
 
-/** Move a task later, keeping its length. Clamped so it cannot spill past midnight. */
+/**
+ * Move a task later, keeping its length: to the first free stretch at least `minutes` after now (a
+ * missed task) or after its own start (an upcoming one), so it no longer lands on top of the next block
+ * (FO4). The server finds the stretch with the re-plan's own packing rule.
+ *
+ * With no free stretch left today, or no answer from the server, it falls back to the plain shift it
+ * always was, clamped so it cannot spill past midnight. The user asked for "later"; a tap that does
+ * nothing because the day is full would read as broken.
+ */
 export async function snoozeTask(task: PlannerTask, minutes: number) {
 	const span = task.endTime.getInMinutes - task.startTime.getInMinutes
 	const latestStart = 24 * 60 - 1 - span
 	// A missed task snoozes relative to now, an upcoming one relative to its own slot.
 	const base = isMissed(task) ? nowMinutes.value : task.startTime.getInMinutes
-	const start = Math.min(base + minutes, Math.max(latestStart, 0))
+	const freeStart = await findFreeStart(task, span, base + minutes)
+	const start = freeStart ?? Math.min(base + minutes, Math.max(latestStart, 0))
 	const previousTimes = { startTime: task.startTime, endTime: task.endTime }
 	task.startTime = Time.fromMinutes(start)
 	task.endTime = Time.fromMinutes(Math.min(start + span, 24 * 60 - 1))
@@ -371,6 +398,24 @@ export async function snoozeTask(task: PlannerTask, minutes: number) {
 		task.startTime = previousTimes.startTime
 		task.endTime = previousTimes.endTime
 		reportSaveFailure('home.snoozeFailed', task)
+	}
+}
+
+/** Start minute of the first free stretch of `span` minutes from `notBefore` on, or null for none or no answer. */
+async function findFreeStart(task: PlannerTask, span: number, notBefore: number): Promise<number | null> {
+	// Only today's plan is loaded here, and the route searches from "now" on today alone.
+	if (planDate.value !== todayIsoDate.value || span <= 0 || notBefore > 24 * 60 - 1) return null
+	try {
+		const slot = await replanApi().fetchNextFreeSlot(
+			planDate.value,
+			span,
+			{ notBeforeMinute: notBefore, excludeTaskId: task.id },
+			// Silent: the fallback still moves the task, so a failed lookup is not worth a toast.
+			{ _silent: true },
+		)
+		return slot.found && slot.startTime ? slot.startTime.getInMinutes : null
+	} catch {
+		return null
 	}
 }
 
@@ -625,6 +670,7 @@ export function useTodayPlan() {
 		nextTask,
 		missedTasks,
 		lastMissedTask,
+		canReplan,
 		focusTask,
 		focusMode,
 		focusIcon,

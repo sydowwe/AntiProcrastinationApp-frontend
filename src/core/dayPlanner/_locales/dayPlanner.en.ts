@@ -410,6 +410,32 @@ const dayPlanner = {
 			inMinutes: `in {count} min`,
 			inTime: `in {duration}`,
 		},
+		// FO4. Says where the rest of the day goes, never how far behind the user is: no counts.
+		replan: {
+			button: `Re-plan the rest of today`,
+			dialogTitle: `Re-plan the rest of today`,
+			apply: `Re-plan`,
+			intro: `Here is how the rest of today fits between {from} and {end}. Nothing changes until you confirm.`,
+			before: `Now`,
+			after: `After`,
+			movesTitle: `Moves`,
+			state: {
+				missed: `didn't start`,
+				late: `running late`,
+				upcoming: `pushed later`,
+			},
+			wontFitTitle: `No room left today`,
+			wontFitHint: `Pick what happens to each one.`,
+			optional: `optional`,
+			decisionLabel: `What happens to {name}`,
+			tomorrow: `Tomorrow`,
+			skip: `Skip`,
+			stale: `Your day changed since this preview, so here is a fresh one.`,
+			nothingLeft: `Nothing is left to re-plan.`,
+			nothingToReplan: `Nothing to re-plan: the rest of today already fits.`,
+			applied: `The rest of today is re-planned.`,
+			bannerText: `Some blocks didn't start on time. Pack the rest of today into the time that's left?`,
+		},
 		// Screen-reader-only strings. Task blocks are toggle buttons (role="button" + aria-pressed),
 		// so their contents never reach the accessibility tree — everything that matters has to be in
 		// `taskLabel` and its parts, or it is colour-only information with no text equivalent.

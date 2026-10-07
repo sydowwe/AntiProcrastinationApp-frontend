@@ -176,6 +176,19 @@
 					{{ $t('home.retry') }}
 				</VBtn>
 				<template v-else-if="focusTask">
+					<!-- FO4: everything has slipped and nothing is next. One tap packs it into the time left. -->
+					<VBtn
+						v-if="focusMode === 'missed' && canReplan"
+						class="nowbar__action"
+						variant="tonal"
+						color="primaryOutline"
+						:size="buttonSize"
+						prependIcon="fa-shuffle"
+						:loading="previewing"
+						@click="replan"
+					>
+						{{ $t('planner.replan.button') }}
+					</VBtn>
 					<!-- one tap from "I see the task" to "I am working on it" -->
 					<VBtn
 						v-if="focusMode !== 'now'"
@@ -245,6 +258,7 @@
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
 	import { userTimeZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useTaskTracker } from '@/core/home/composable/useTaskTracker.ts'
+	import { useHomeReplan } from '@/core/home/composable/useHomeReplan.ts'
 	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import TaskActionMenu from '@/core/home/component/TaskActionMenu.vue'
 	// A store from another module, which the boundary rule normally forbids — home is the app's
@@ -271,6 +285,8 @@
 		streakKeptToday,
 		streakLabel,
 		error,
+		tasks,
+		canReplan,
 		taskColor,
 		minutesLabel,
 		durationLabel,
@@ -279,6 +295,7 @@
 		reload,
 	} = useTodayPlan()
 	const { openTracker } = useTaskTracker()
+	const { previewing, replan } = useHomeReplan({ tasks, reload })
 
 	const dateLocale = computed(() => localeTag(locale.value))
 	// `timeZone` matters here for the same reason it does everywhere else on this page: the headline

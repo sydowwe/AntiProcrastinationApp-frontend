@@ -47,15 +47,18 @@
 						</VBtn>
 					</template>
 				</VAlert>
-				<DayPlannerHeader
-					v-else
-					v-model:activePanel="activePanel"
-					v-model:panelOpen="panelOpen"
-					:title="currentDateFormatted"
-					:calendar
-					@navigateDate="navigateDate"
-					@undo="handleUndo"
-				/>
+				<template v-else>
+					<DayPlannerHeader
+						v-model:activePanel="activePanel"
+						v-model:panelOpen="panelOpen"
+						:title="currentDateFormatted"
+						:calendar
+						@navigateDate="navigateDate"
+						@undo="handleUndo"
+					/>
+					<!-- FO4: today only, once a movable block has passed unstarted -->
+					<ReplanTodayBanner @replanned="loadTasks" />
+				</template>
 			</template>
 
 			<!-- Custom task block for normal planner -->
@@ -108,6 +111,7 @@
 	import PlannerTaskBlock from '@/core/dayPlanner/component/normal/PlannerTaskBlock.vue'
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
 	import PlannerSelectionActions from '@/core/dayPlanner/component/normal/PlannerSelectionActions.vue'
+	import ReplanTodayBanner from '@/core/dayPlanner/component/normal/ReplanTodayBanner.vue'
 	import {
 		formatToDateWithDay,
 		parseDateFromApi,

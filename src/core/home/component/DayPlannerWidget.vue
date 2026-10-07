@@ -57,6 +57,18 @@
 			>
 				{{ missedTasks.length }}
 			</VChip>
+			<!-- FO4: beside the missed chip it answers -->
+			<VIconBtn
+				v-if="canReplan"
+				icon="fa-shuffle"
+				variant="tonal"
+				color="primaryOutline"
+				size="small"
+				:loading="previewing"
+				:title="$t('planner.replan.button')"
+				:aria-label="$t('planner.replan.button')"
+				@click="replan"
+			/>
 			<VProgressCircular
 				v-if="hasPlan && totalCount > 0"
 				:modelValue="progressPercent"
@@ -291,6 +303,7 @@
 	import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
 	import { getPlannerTaskStatusIcon, PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { useTodayPlan } from '@/core/home/composable/useTodayPlan.ts'
+	import { useHomeReplan } from '@/core/home/composable/useHomeReplan.ts'
 	import { HOME_SHORTCUT_KEYS, withShortcut } from '@/core/home/composable/useHomeShortcuts.ts'
 	import DayStrip from '@/core/home/component/DayStrip.vue'
 	import DayContextBar from '@/core/home/component/DayContextBar.vue'
@@ -309,6 +322,8 @@
 		completedCount,
 		progressPercent,
 		missedTasks,
+		canReplan,
+		tasks,
 		todayUrlDate,
 		streak,
 		streakKeptToday,
@@ -321,6 +336,7 @@
 		toggleTaskStatus,
 		reload,
 	} = useTodayPlan()
+	const { previewing, replan } = useHomeReplan({ tasks, reload })
 
 	const openLabel = computed(() => t('home.openFullView', { widget: t('home.dayPlanner') }))
 	// The keyboard shortcut goes in the tooltip, not in the accessible name: the name should say what

@@ -421,6 +421,32 @@ const dayPlanner = {
 			inMinutes: `o {count} minútu | o {count} minúty | o {count} minút`,
 			inTime: `o {duration}`,
 		},
+		// FO4. Hovorí, kam ide zvyšok dňa, nikdy nie o koľko je používateľ pozadu: žiadne počty.
+		replan: {
+			button: `Preplánovať zvyšok dňa`,
+			dialogTitle: `Preplánovať zvyšok dňa`,
+			apply: `Preplánovať`,
+			intro: `Takto sa zvyšok dňa zmestí medzi {from} a {end}. Nič sa nezmení, kým to nepotvrdíš.`,
+			before: `Teraz`,
+			after: `Potom`,
+			movesTitle: `Presuny`,
+			state: {
+				missed: `nezačalo sa`,
+				late: `mešká`,
+				upcoming: `posunuté neskôr`,
+			},
+			wontFitTitle: `Dnes sa už nezmestí`,
+			wontFitHint: `Pri každom vyber, čo s ním.`,
+			optional: `voliteľné`,
+			decisionLabel: `Čo s úlohou {name}`,
+			tomorrow: `Zajtra`,
+			skip: `Vynechať`,
+			stale: `Tvoj deň sa od tohto návrhu zmenil, tu je nový.`,
+			nothingLeft: `Už nie je čo preplánovať.`,
+			nothingToReplan: `Nie je čo preplánovať, zvyšok dňa sa zmestí.`,
+			applied: `Zvyšok dňa je preplánovaný.`,
+			bannerText: `Niektoré bloky sa nezačali načas. Poskladať zvyšok dňa do času, ktorý ostáva?`,
+		},
 		// Reťazce, ktoré vidí len čítačka obrazovky. Bloky úloh sú prepínacie tlačidlá (role="button"
 		// + aria-pressed), takže ich obsah sa do prístupnostného stromu nedostane — všetko podstatné
 		// musí byť v `taskLabel` a jeho častiach, inak je to farebná informácia bez textovej náhrady.

@@ -270,6 +270,29 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high, for both. The framing (offer help, never a score) is the hard part.
 
 ### FO4. "Re-plan the rest of today": one tap moves what slipped into the time that's left
+- **Status (2026-10-07): built, no migration; live check waits on an API restart.** Backend `565f3e6`, frontend
+  the commit after `0fd7e874`. The running API predated it, so the UI was checked with mocked `replan` /
+  `apply` routes, and *Move later* falls back to its old shift until the restart.
+  - **Backend:**
+    - `POST calendar/day-plan/{date}/replan` returns a preview with a token. `…/replan/apply` recomputes from
+      the token in one transaction, with one reminder re-sync.
+    - A changed day, a token older than 10 minutes or a second submit is a 409, and nothing is written.
+    - `GET …/next-free-slot?minutes=&notBeforeMinute=&excludeTaskId=` finds one block's slot.
+    - "Missed" is derived in one place (`PlannerTaskMissedRule`), and the packing is `DayPacking`.
+    - Every move goes through `PlannerTaskMoveRecorder`, so a re-plan counts postponements like a manual move.
+    - What moves: `NotStarted` foreground blocks of activities that are not unavoidable. `InProgress`, `OnHold`,
+      `Completed` and unavoidable blocks stay put; background blocks neither move nor block.
+    - The window runs from now to bed time, which is 23:59 until FO10. Optional blocks (importance 666) give way
+      first.
+    - *Tomorrow* keeps the time of day and does not check tomorrow's free time.
+  - **Frontend:**
+    - `ReplanDayForm.vue`: a before/after `MiniTimeline`, the moves listed in text, and a *Tomorrow* / *Skip*
+      toggle per block that won't fit (optional blocks default to *Skip*). A 409 swaps in a fresh preview.
+    - Shared flow: `useDayReplan`. A preview with nothing to move never opens the dialog.
+    - Entry points: the now bar (missed mode), the planner card header, and `ReplanTodayBanner` on today's day
+      view. All three are offered only when `isMissedAndMovable` matches a block.
+    - Home's *Move later* asks `next-free-slot`.
+  - **Not done:** the leisure "Do it now" and to-do handoff callers of `next-free-slot`; the N5 notification.
 - **Source:** F1-01. It can later read FO10's bed time and F3-04's typical-load figure (both noted in *Rejected* /
   FO10).
 - **Moment:** 11:30, after the 10:00 and 11:00 blocks both slipped.
