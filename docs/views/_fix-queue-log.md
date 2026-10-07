@@ -8,6 +8,34 @@
 
 ## Pass history (newest first)
 
+> **Seventeenth pass, 2026-10-07, commit `e99e54f0`: the X4 narrow-viewport round absorbed** (`x4/00-shell` in `0e77f904`, then
+> groups `a`–`f` in `8a2d4ffa`, `fb38dc15`, `cb161387`, `7e7fe905`, `dd9ded6c`, `dcbc2655`, `fcd8f877`). The operator scoped the pass
+> to the X4 findings (`UNIT-ORDER.md` B3). The seven group runs filed **47 findings** across 14 units and the shell. Forty-five carry
+> `(390 px)` in the title. Two were filed without it: `leisure-bucket-anchors/B4` is a one-tap delete that isn't width-specific, found
+> by accident **at the cost of the fixture's only bucket-list row, 17101**, so reseed before trusting that unit's specs.
+> `tracking-dashboards/B6` was re-measured at 1440 and is a desktop defect. The 47 became **17 app batches (`F91`–`F107`) and 10
+> framework batches (`FW27`–`FW36`)**, with no escalations (nothing seen at 390 px is server-side) and four `unverified` rows. Every
+> finding carries measured geometry and a screenshot, so none was dropped to `unverified` for weak evidence, and none was dropped
+> outright. Two severities changed, both upward by merging (`activity-settings/P3` and `planner-day/P6`'s *Add* half into `FW27`).
+>
+> What this pass could see that no single group could is **two common ancestors**. `App.vue:29`'s container
+> (`h-100 d-flex px-2 … overflow-y-auto`) sits behind three families:
+> - its `px-2` against `VRow` gutters causes the 4–10 px pans (`F92`);
+> - its `overflow-y-auto` computes `overflow-x: auto`, which is why four non-wrapping rows in four modules all show up as "the whole
+>   page pans" rather than as a clip (`F93`);
+> - its definite height under `d-flex` stretch is behind the five viewport-locked layouts, which include both blockers (`F91`).
+>
+> The other ancestor is the framework `DataTable`'s sticky actions column, which has never matched (`FW27`). Three units reported its
+> symptom, with two different proposed fixes (§128). The container itself stays untouched: `F91` fixes the views, not `App.vue`.
+>
+> Four X4 defects were made or left in place by fixes verified only at desktop width (§130). Every new layout batch therefore names a
+> 1440 *and* a 390 check, and the queue says so above `F91`. Two records disagree with the queue: `user-settings/U3` (§131) and
+> `_shell` round 2's Escape claim (§127). One architecture note isn't a finding: `StackedBarsChart` crosses a module boundary (§135).
+>
+> Coverage: the seven `x4/` prompt files are still in `prompts/view-docs/x4/`, not `_done/`, although each has its commit; that's the
+> operator's call. `x4/submodule.md` has not run, and its findings go to `prompts/view-docs/units/_submodule/_fix-queue.md`, not here.
+> The queue's header said units 16–19 had not run; they have, with their own queue, and the header now says so.
+
 > **Sixteenth pass, 2026-09-21, commit `0a174507` + working tree — no unit absorbed; two landed backend
 > asks and a source re-read of the fifteenth pass's headline batches.** No `findings.md` has changed
 > since the fifteenth pass (checked by mtime: the newest is unit 13's, from before that pass wrote the
@@ -8618,6 +8646,64 @@ Everything below was checked against the **current working-tree source** this pa
     re-confirmed on the same trip: `HistoryPieChartBuilder.cs:20` is already `OtherName = "_other"`, so
     the backend's offer to do the History side as a follow-up needs no answer but "nothing to do".
 
+*Seventeenth pass (2026-10-07), the X4 narrow-viewport round:*
+
+127. **`_shell/A4` says Escape doesn't close the mobile drawer, but `_shell` round 2 recorded that it does.** A4 tried Escape with
+    focus in three places and found no Escape handler in Vuetify 3.12.4's `VNavigationDrawer.js`. No batch in this queue has touched
+    the drawer's close path since round 2, so this reads as round 2 being wrong, perhaps observed at a width where the drawer is
+    permanent, rather than as a regression. `FW29` adds the handler either way, and its *Risk* line says it must not double-close.
+
+128. **One defect, two proposed fixes.** `activity-settings/P3` ("render `BasicTable`'s create button above the table") and
+    `planner-day/P6` ("move *Add* into the tab's toolbar") both treat the off-screen *Add* as a placement problem.
+    `leisure-backlog-picker/B6` found the actual mechanism: `DataTable.vue:237-243` declares the last column
+    `position: sticky; right: 0`, and the selector can never match, because `.my-data-table` *is* the `.v-data-table`. Read this pass,
+    including `:6`. The queue takes `B6`'s fix (`FW27`): it restores declared intent, and it also pins the row actions, which moving
+    the button wouldn't. The row-hover rule at `:280` has the same dead descendant and has never rendered either; `FW27` covers it.
+    `planner-day/P6` had already been annotated with the merge by the x4 `leisure` group.
+
+129. **The gutter pan came with three diagnoses.** `tracking-dashboards/P2` blamed each dashboard's `VRow`. `history-capture/P2`
+    proposed `noGutters` per view. `auth/P4`, the last group to run, found the shared cause, `App.vue:29`'s `px-2`, and annotated
+    `tracking-dashboards/P2`. The queue merges all three into `F92` with the container fix, and keeps `history-capture/P2`'s second,
+    distinct cause: Pomodoro's `noGutters` row grows through `min-width: auto` under the same `d-flex` container. `auth/P4`'s
+    untraced extra 4 px on the nested `/login` and `/registration` rows would be a framework residue, which `F92` says to file
+    separately if it survives.
+
+130. **Four X4 defects were made or left in place by fixes verified at desktop width only.** Two were made:
+    - `F22`'s comment promises the filters wrap "beside" the tabs, and below ~700 px there is no "beside" (`activity-settings/B10`).
+    - `F26` sized the period banner to one line of its own content, which is what makes it 420 px at 390 (`history-review/P4`).
+
+    Two were left in place:
+    - `F12` made the tracking-settings table visible, inside a card that clips at 390 (`tracking-settings/X5`).
+    - `F31` fixed the pie's legend layout, but not the row that squeezes its canvas to 134 px (`history-review/B7`).
+
+    The counterexample is `F51`, which was verified at 390 and 1024, and whose `X2`/`A3` didn't reproduce in this round. The
+    seventeenth pass puts a 390 check into every layout batch's *Verification*.
+
+131. **`user-settings/U3` is closed in the queue and open in its unit file.** The queue (*Needs verification* → `user-settings`) closed
+    it on 2026-09-24 by promoting the spec. `user-settings/findings.md` still reads `Status: open`, and the unit's x4 round-history row
+    says "U3 itself was left as filed". The queue is right and the unit file is stale. The next session that writes to that file
+    should mark it.
+
+132. **`todo-routine/B12` is filed as narrow-only, but its own evidence says otherwise.** It reports that at 1440×900 "the footer sits
+    inside the card for three of the four groups", which leaves one group clipped at desktop width too. `F91`'s item-area change
+    (`h-100` → `flex: 1 1 0; min-height: 0`) is therefore not breakpoint-gated.
+
+133. **`leisure-bucket-anchors/B4`'s expectation is stricter than the rule it cites.** It expects a confirmation unconditionally and
+    cites CLAUDE.md's `useDeleteConfirmation`. That composable lets a non-cascading, non-undoable delete skip the dialog when
+    `askBeforeDelete` is off. So the `Verify:` holds only with the preference at its default (`true`, read this pass in
+    `useUserPreferences.ts`), and `F102` says so. The unit's inventory states that the ladder's delete "opens the same
+    delete-confirmation dialog"; that line is wrong and should be corrected when the unit is next written.
+
+134. **`history-review/B7` notes in passing that Home's history pie "rendered no canvas on 2026-10-06".** That pass treated it as "not
+    affected"; it could equally be a widget that never draws. It was not filed by `home`'s own x4 run (which checked one view). Moved
+    to *Needs verification* as an unfiled row.
+
+135. **`StackedBarsChart` crosses a module boundary that CLAUDE.md forbids.** `HistorySummaryView.vue:142` and
+    `HistoryDetailView.vue:217` (`activityHistory`) import `@/core/activityTracking/component/stackedBars/StackedBarsChart.vue`. The
+    only sanctioned cross-module component import is the `historyDashboard` library. This is not an X4 finding, and the queue opens no
+    batch for it. `F95` names it in its *Risk*, because every edit there lands on two modules' screens, and moving the component into
+    `historyDashboard` (or raising it for the framework) is the rule's own remedy.
+
 ### Re-grades
 
 | finding | was | now | why |
@@ -8808,6 +8894,19 @@ Everything below was checked against the **current working-tree source** this pa
 | `leisure-backlog-picker/U5` | `unverified`, "settles from one file read" | ✅ **closed — not a defect**; the key is already user-scoped | Round 2 filed it against a state of the file that `P4` had already fixed |
 | `planner-templates/U3` | `unverified`, "settles from one file read" | ✅ **closed — confirmed**; absorbed by `F56` as control #4, no new batch | `TemplateSplitView.vue:5-11` has no name source at all; a browser could only re-observe the markup |
 | `todo-routine` seed-drift note (Meditation streak 6, not 5) | standing caveat for later passes | **retired** — a reseed restores 5 and an un-tick now walks the streak back | Answered by `B9` (API `4ab3710`), option 2; client needs nothing |
+| *(seventeenth pass, 2026-10-07: the X4 narrow-viewport round, 47 findings)* | | | |
+| `activity-settings/P3` | `polish`, *"framework: render the create button above the table"* | **merged into `leisure-backlog-picker/B6`** (`FW27`) and graded with it: **`bug`** | §128. The same dead sticky rule. On Activities and Categories the only create action is off-screen with no cue, which `B6` grades `bug` on four leisure tables |
+| `planner-day/P6` | `polish`, two halves | the *Add* half is **merged into `FW27`** (`bug`); the slot-size half stays `polish` (`F106`) | The unit had already annotated the merge; split on rule 1 |
+| `tracking-dashboards/P2` + `history-capture/P2` (Timer/Manual half) | two `polish` findings with per-view fixes | **merged into `auth/P4`** (`F92`), `polish` | §129. One cause, `App.vue:29`'s `px-2` |
+| `history-capture/P2` (Pomodoro half) | the same finding | stays in `F92` as a second cause | The same container (`d-flex` stretch leaves the row at `min-width: auto`), so the same session |
+| `todo-routine/B12` | `bug`, "a narrow-viewport defect" | `bug` stands, **not narrow-only** | §132. One of four groups clips at 1440 by the finding's own evidence |
+| `leisure-bucket-anchors/B4` | `bug`, "a confirmation appears" unconditionally | `bug` stands; its **`Verify:` is conditioned** on `askBeforeDelete` (default `true`) | §133 |
+| `tracking-dashboards/B4` | `bug` | `bug` stands, after `polish` was considered | Nothing is unreachable, but a 422 px stacked-bars column can never be seen whole under a 377 px pin |
+| `planner-templates/B6` | `bug` | `bug` stands, with its **reach noted**: the only phone path is a link (`F54` made links shareable) | `F99` recommends a guard message, not a phone layout |
+| `leisure-backlog-picker/X2`, `tracking-settings/X5` | `blocker` ×2 | both stand, both in `F91` | The picker's whole input on a phone, and Save plus every mapping row. Both are reachable only at desktop width |
+| `planner-day/U1` | `unverified` | `unverified`, **settle first** | If confirmed, a swipe creates or moves a task. Its fix touches the grid `F91` releases |
+| *(aside in `history-review/B7`)* Home's pie drew no canvas | unfiled | a *Needs verification* row | §134 |
+| `_shell/A4` (Escape) vs `_shell` round 2 | contradicting records | A4 taken as current | §127 |
 
 ### Findings this triage did not challenge further
 
