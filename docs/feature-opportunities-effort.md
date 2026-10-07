@@ -10,19 +10,19 @@
 |---|---|---|---|
 | FO1 | `ab5f0e7` | `ec4b7a30` | Owner applies migration `20261006183310_RoutinePeriodCompletionIsExcused` and restarts the API. The FO1 section still says "uncommitted"; that is stale. |
 | FO2 | `9058535` | `4e16f51a` | Nothing. |
-| FO3 phase 1 | `2748772` | `7557fe30` | Phase 2, below. |
+| FO3 phase 1 | `2748772` | `7557fe30` | Nothing. |
+| FO3 phase 2 | `410dced` | the commit after `7557fe30` | The owner applies migration `20261007200704_PlannerTaskPostponeAndRepeatingSource` and restarts the API. The migration also carries FO6's two columns. |
 | FO7 | `bcf8671`, `dc5059c` (notification hub closed to tracker tokens) | `ba3e54ea` (`_common` → `a0d8095`) | Nothing. Pairing codes (option b) stay deferred. |
 
 ## Remaining steps
 
 | FO | Step | Opus effort | Why |
 |---|---|---|---|
-| **FO3 phase 2** | backend agent | **high** | It migrates the busiest table (`planner_task`), with one increment rule across four write paths. Run it as the single wave C migration together with FO6's column. |
 | **FO4** | backend agent | **xhigh** | Packing tasks into free time has many edge cases (overlaps, background tasks, fixed blocks, importance), and *apply* must move everything in one transaction with one reminder re-sync. Mistakes here are silent. |
 | | frontend | **medium** | The preview reuses the existing grid. |
 | **FO5** | backend agent | **high**, or **xhigh** if the back-off ships in the same session | It touches four slices, adds a column on `users` and needs a framework collaborator, so two backend repos. |
 | | frontend | **medium** | One card with three choices plus an undo. |
-| **FO6** | backend agent | **medium** | The materialiser is simple once FO3 phase 2's migration has landed. |
+| **FO6** | backend agent | **medium** | Its two columns are already in FO3 phase 2's migration, so this is the materialiser only, with no `planner_task` migration. |
 | | frontend | **low** | One switch and one small mark. |
 | **FO8** | F3-01 (to-dos) | **high** | It sets the shared rule (medians, sample thresholds, wording). The wording must describe the estimate, never the person. |
 | | F2-06 (routines), F2-07 (timers) | **medium** | Both reuse the rule; the reads only add data. |

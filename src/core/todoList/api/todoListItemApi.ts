@@ -6,6 +6,7 @@ import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/Chan
 import { API } from '@/_common/axiosConfig.ts'
 import type { AxiosRequestConfig } from 'axios'
 import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
+import { RescheduleOverdueResult } from '@/core/todoList/dto/response/RescheduleOverdueResult.ts'
 
 /**
  * `todoListId` is required, and deliberately not optional: the backend rejects the unfiltered call with a 400
@@ -122,6 +123,17 @@ export function useTodoListItemCrud(todoListId: number) {
 		}
 	}
 
+	/**
+	 * Moves every open item of this list whose due date has passed to the user's today plus `days`, in one
+	 * request (FO3). The server picks the items on the user's own date and records each move as a
+	 * postponement — the per-item PUT loop this replaced could half-fail and decided "overdue" on the
+	 * browser's clock.
+	 */
+	async function rescheduleOverdue(days: number): Promise<RescheduleOverdueResult> {
+		const { data } = await API.post(`${url}/reschedule-overdue`, { listId: todoListId, days })
+		return RescheduleOverdueResult.fromJson(data)
+	}
+
 	async function uncheckAll(doneIds: number[]) {
 		if (doneIds.length === 0) return
 		try {
@@ -146,5 +158,6 @@ export function useTodoListItemCrud(todoListId: number) {
 		moveToList,
 		toggleIsDone,
 		uncheckAll,
+		rescheduleOverdue,
 	}
 }

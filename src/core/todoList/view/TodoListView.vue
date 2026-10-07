@@ -199,6 +199,7 @@
 		moveToList,
 		toggleIsDone,
 		uncheckAll: uncheckAllApi,
+		rescheduleOverdue: rescheduleOverdueApi,
 	} = useTodoListItemCrud(todoListId)
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()
 	const plannerStore = useDayPlannerStore()
@@ -391,7 +392,7 @@
 	}
 
 	const { RENEGOTIATE_THRESHOLD, overdueItems, isRenegotiating, rescheduleOverdue, reviewOverdueOneByOne } =
-		useOverdueRenegotiation(items, filterDueState, { update, fetchAll })
+		useOverdueRenegotiation(items, filterDueState, { update, fetchAll, rescheduleOverdue: rescheduleOverdueApi })
 
 	const { unscheduledNudgeDismissed, unscheduledItems, showUnscheduledNudge, openFirstUnscheduled } =
 		useUnscheduledNudge(

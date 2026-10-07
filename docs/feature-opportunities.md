@@ -195,8 +195,26 @@ never ships a call to a route or field that the running API does not have yet.
   subtly wrong.
 
 ### FO3. A task that keeps slipping is offered a smaller first step, and carrying it over stops counting against you
-- **Status (2026-10-06): phase 1 built and checked live, no migration. Phase 2 not started** (it is
-  wave C's batched `planner_task` migration, shared with FO6).
+- **Status (2026-10-07): both phases built.** Phase 1 checked live (no migration). Phase 2 (backend `410dced`)
+  is built and tested but **not yet live**: it needs migration `20261007200704_PlannerTaskPostponeAndRepeatingSource` applied and
+  an API restart. That migration is wave C's single `planner_task` migration, and also carries FO6's two columns.
+  - **Phase 2, as built:**
+    - **Planner.** `PlannerTaskPostponeRule` is the one rule, fed by `PlannerTaskMoveRecorder` from the PUT and the
+      span patch. A move is a postponement when the task was `NotStarted`, the new slot is later, and the
+      *original* slot has passed on the user's clock. It adds 1 to `PostponeCount`; on the first slip it fixes
+      `OriginalDate` + `OriginalStartTime` as a pair. Carry-over sets the same pair but counts only
+      `CarryOverCount`, so the two counts are disjoint. Moving a started block, or tidying up a future day, is not
+      counted.
+    - **Drift.** The trend measures a block's lateness from its original start while it is still on that day, so
+      a snoozed block started at its new time reads as late.
+    - **To-dos.** `TodoListItemPostponeRule` adds 1 to `PostponeCount` and sets `FirstDueDate` once, when an open
+      item's due date is pushed later after its first due date has passed. It runs on the item PUT and on the new
+      `POST /todo-list-item/reschedule-overdue { listId?, days }`, which the banner now calls instead of a PUT per
+      item.
+    - **Help.** Both counts feed `planHelp` as failed attempts that point to *a smaller step*. An item that is only
+      ever renegotiated can be stuck too. Neither count reaches the wire (`[JsonIgnore]`; asserted on raw JSON).
+    - **Not done:** an undo of the bulk reschedule restores the dates but leaves the postponement counted (no
+      undo endpoint). FO4's *apply* must call `PlannerTaskMoveRecorder` too.
   - **Backend:** `ITodoListItemPlanSource.PlanHistoryAsync` sorts every linked block by outcome: completed,
     carried over (the sum of `CarryOverCount`), missed (a foreground `NotStarted`/`OnHold` block on a day before
     the user's today), and skipped per key. TodoLists' `TodoListItemPlanHelp` turns that into `planHelp`
@@ -343,7 +361,8 @@ never ships a call to a route or field that the running API does not have yet.
     Planning endpoints re-sync existing reminders, but no planner-task create registers one.
 - **Backend logic needed** (`.Planning`):
   - **Two columns:** `RepeatingPlannerTask.AutoPlace` (default false) and `PlannerTask.SourceRepeatingTaskId` (`SET NULL`,
-    in wave C's batched migration).
+    indexed, navigation-free). **Already added (2026-10-07)** in FO3 phase 2's migration
+    `20261007200704_PlannerTaskPostponeAndRepeatingSource`; no DTO exposes them and nothing writes them yet.
   - **A materialiser beside `CalendarProvisioner`.** It runs lazily from the day-plan read for today and tomorrow, and
     creates one `NotStarted` occurrence unless one with that source already exists, whatever its status.
   - **Occurrence rules.** Deleting or skipping an occurrence never touches the rule and is never undone. Editing the rule
@@ -359,8 +378,8 @@ never ships a call to a route or field that the running API does not have yet.
 - **Evidence re-checked (F5):** `RepeatingPlannerTask.cs` (no `AutoPlace`), a grep for `AutoPlace|SourceRepeatingTaskId`
   (none), and the reminder-registration call sites (the 11 Planning endpoints that call it do not include a
   planner-task create).
-- **Implementation split:** a **separate backend agent**: a migration on `planner_task` (shared with FO3 phase 2) and a
-  materialiser that writes from a read path. Then a small frontend session.
+- **Implementation split:** a **separate backend agent** for the materialiser that writes from a read path (the
+  `planner_task` columns already landed with FO3 phase 2). Then a small frontend session.
 - **Model / effort:** backend Opus 5.5, medium. Frontend Sonnet 5.5, low.
 
 ### FO7. Every user can connect the desktop tracker, browser extension or phone app
