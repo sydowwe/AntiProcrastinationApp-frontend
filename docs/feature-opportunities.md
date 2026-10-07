@@ -91,7 +91,9 @@ never ships a call to a route or field that the running API does not have yet.
 ---
 
 ### FO1. Vacation and sick days stop breaking routines, nudging, and suggesting the office
-- **Status (2026-10-06): built, uncommitted in both repos, migration not yet applied.** Backend: Core
+- **Status (2026-10-07): built and committed** (backend `ab5f0e7`, frontend `ec4b7a30`). Migration
+  `20261006183310_RoutinePeriodCompletionIsExcused` is the owner's to apply; it was not confirmed applied when this line
+  was written. What was built (2026-10-06): backend: Core
   `DayTypeExtensions.IsAway` + `CalendarDayTypesChangedEvent`; `ICalendarDayLookup.GetAwayDatesAsync`;
   `RoutineAwayRule` wired into all five reset sites (job, grouped read, both toggles, the host's planner-task
   sync); `CalendarDayTypesChangedEventHandler` (retroactive); J2/J3 skips; P1 silent for `Excused`; both
@@ -362,6 +364,16 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, medium. Frontend Sonnet 5.5, low.
 
 ### FO7. Every user can connect the desktop tracker, browser extension or phone app
+- **Status (2026-10-07): built and committed, no migration.** Backend `bcf8671` deletes the `HasExtensionAccess`
+  override; framework `4edb8bd` adds `IsExtensionClient` to `GET /user/sessions`. Frontend `ba3e54ea` adds
+  `TrackersCard.vue` under `#integrations` (what each tracker records, in the privacy policy's words, plus a *Sign out*
+  per tracker session); `_common` `a0d8095` labels tracker sessions "App" and makes the revoke quiet on a 404.
+  The column `User.HasExtensionAccess` is still there, unread, until a migration drops it. Pairing codes stay deferred.
+  **Follow-up (2026-10-07, backend `dc5059c`, API restart needed):** a tracker token could still open `/hubs/notifications` and receive live
+  notifications, because the hub is not a FastEndpoints route and never got the configurator's `DenyExtensionClients`.
+  `Program.cs` now attaches the policy to the hub mapping, pinned by
+  `ExtensionActivityTrackingTests.ExtensionJwt_CannotOpen_TheNotificationHub`. With that, a tracker token reaches only
+  the three ingest routes (desktop heartbeat, web-extension heartbeat, Android sync), and those return counts, not data.
 - **Source:** F2-03.
 - **Moment:** a new user installs the tracker, signs in, and gets "Extension access not enabled for this account".
 - **Today:**

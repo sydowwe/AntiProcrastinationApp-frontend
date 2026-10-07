@@ -14,6 +14,32 @@
 - **Realtime**: `@microsoft/signalr`, used only by the framework's notifications module
 - **Animations**: `@formkit/auto-animate` — registered globally, use `v-auto-animate` directive for list enter/leave animations instead of custom CSS transitions
 
+## Working in the backend repo from here
+
+The API is a separate repo at `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer`. A session started here does **not** load that
+repo's instructions or memories, so before you edit, build, test or commit **anything** in it, load them yourself, as if the
+session had been started there:
+
+1. **Read `C:\Users\jakub\RiderProjects\AdhdTimeOrganizer\CLAUDE.md`**, then whichever `docs/claude/*.md` it points to for your
+   task (`slices`, `persistence`, `endpoints`, `wiring`, `testing`) and the touched project's `docs/summary.md`.
+2. **Read its memory index**, `C:\Users\jakub\.claude\projects\C--Users-jakub-RiderProjects-AdhdTimeOrganizer\memory\MEMORY.md`,
+   and open every entry that bears on the task.
+3. **Glance at `.claude/commands/`** in that repo, since its slash-command workflows (`module-review`, `module-audit`,
+   `document-module`) define how those jobs are done there.
+
+For backend files, **that repo's rules win over this file**. Save a memory about a backend fact to the backend's memory
+directory, not to this repo's, so a session started there finds it.
+
+The traps that have already cost a detour from here:
+
+- **Never `dotnet build` or `dotnet test`.** Rider's debugger holds `AdhdTimeOrganizer/bin`, so a plain build dies on
+  `MSB3021`, and `dotnet test` is refused outright on the .NET 10 SDK. Use `./scripts/test.ps1` (run from the repo root;
+  `-Class` / `-Method` / `-BuildOnly` / `-NoBuild`), which builds into `artifacts-cli/`.
+- **`dotnet ef migrations add`** needs the artifacts-path setup in the backend memory `dotnet-ef-while-rider-holds-bin.md`.
+- **Restarting the API and applying a migration are the owner's job** (Rider's debugger; see this repo's memory
+  `project_api_migrations_manual.md`). Write the migration and say it needs applying, but do neither yourself.
+- `framework/` is a submodule there too: commit inside it first, then the gitlink. Committing still never means pushing.
+
 ## Architecture — read this first
 
 The app is **module-first**, not layer-first. There is no top-level `api/`, `views/`, or `stores/`.
