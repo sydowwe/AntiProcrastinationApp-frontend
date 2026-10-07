@@ -449,7 +449,7 @@
 - **Suggested fix:** stack Day Type and Location below `sm` (`cols="12" sm="6"`).
 
 ### P6. Planner settings hide controls in horizontal scrollers with no cue: the Repeating Tasks "Add" button and the "30 MIN" slot size (390 px)
-- **Status:** open
+- **Status:** open — the *Add* half fixed 2026-10-07 (`FW27`, the pinned actions column); the "30 MIN" half is `F106`
 - **Severity:** polish (both are reachable by scrolling sideways)
 - **Where:** @390×844 · `/day-planner/settings` → Repeating Tasks table header (`v-table__wrapper`, `scrollWidth 458 / clientWidth 372`); `?tab=viewDefaults` → "Time slot size" `MyBtnToggle` (`overflow-x: auto`, ends at 365). **Added by x4 `leisure` (2026-10-06):** the Repeating Tasks "Add" is `BasicTable`'s header button. Its root cause is a dead sticky rule in the framework table, which was meant to pin the actions column. Filed once as `leisure-backlog-picker` B6 [framework], so fix that half there rather than moving the button here.
 - **Expected:** a tab's primary action is visible on landing, above all on an empty table whose only next step is that action (plain sense).

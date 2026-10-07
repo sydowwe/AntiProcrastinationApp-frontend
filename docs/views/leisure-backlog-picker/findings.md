@@ -454,7 +454,7 @@
 ---
 
 ### B6. The framework table's actions column isn't pinned: Add and every row's Edit/Delete start 300–450 px off-screen — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW27`; `/leisure/backlog` and `/leisure/projects?view=table` at 390: Add 309–349, Edit 285–325, Delete 333–373, unchanged after `scrollLeft = 200`)
 - **Severity:** bug — **[framework]**
 - **Where:** @390×844 · `src/_common/component/dataTable/DataTable.vue:237-243` (the sticky rule),
   `src/_common/component/dataTable/BasicTable.vue:21-43` (the header Add). Observed on all four leisure

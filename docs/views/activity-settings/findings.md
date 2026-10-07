@@ -503,7 +503,7 @@ units' passes look like they lost data or got signed out partway through, this i
   own full-width line under the tabs. Or move the filters into a `FilterPanel`/expansion below `sm`.
 
 ### P3. The create (+) button sits in the table's last column, behind a sideways table swipe on Activities and Categories (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW27`: the framework `DataTable` pins its `actions` column with Vuetify's `fixed: 'end'`, so the + stays on screen; the button stays in the header, per §128)
 - **Severity:** polish (reachable by swiping the table; the row actions in the same column are reachable the same way, by design)
 - **Where:** @390×844 · `/activity-settings/activities` (Add at 606–646 in a 372 px `.v-table__wrapper`,
   `scrollWidth 693`), `/activity-settings/categories` (391–431, `scrollWidth 454`). On `/roles` the table

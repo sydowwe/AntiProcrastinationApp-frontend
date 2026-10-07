@@ -330,7 +330,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **What would verify it:** This pass performed ordinary-speed navigations and never saw a stranded overlay, and the source clearly shows `hideFullScreenLoading()` firing unconditionally on every route change. A stronger test — navigating away *during* a slow request that shows the loader, e.g. by throttling the network — was not attempted in this pass and would give firmer confidence.
 
 ### B2. ActionBar is wider than the viewport, and its first and last actions (incl. Cancel) are off-screen and unreachable — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW28`; one selected task on `/day-planner/2026-10-06` at 390: bar 8–382, Cancel 311–373 always visible, the eight actions scroll inside a 286 px strip and Split ends at 303 when scrolled; at 1440 the bar is unchanged)
 - **Severity:** bug — **[framework]**
 - **Where:** @390×844 · `src/_common/component/ActionBar.vue:36-51,69-85`. Observed on `/day-planner/2026-10-01` with one task selected (`SelectionActionBar`, `dayPlanner`). Same component, not observed: the use-template bar. Also clipped at 768×1024. **Added by x4 `planner` (2026-10-06):** reconfirmed on `/day-planner/05-10-2026` (same −177…567 geometry). On `/day-planner?mode=bulkSelect` with one day selected, the bulk bar spans −136…526: Select All −25…56 (part cut), **Copy Day** 375…447 and **Cancel** 455…517 off-screen. On `/day-planner?mode=applyTemplate` the bar spans −12…402: "Select template" starts at −3 and Cancel ends at 393, so it's marginal but tappable. **Added by x4 `planner` second half (2026-10-06):** `/day-planner/templates/20001` with one task selected (Delete/Edit/Cut/Duplicate/Split/Cancel) spans −32…422: "1 selected" is cut to "…lected" and **Cancel** sits at 351…413, so 39 px of it shows. The routine "Placing" bar on the same view fits (92…298).
 - **Expected:** every action of a bar the user summoned is reachable on a phone, Cancel above all, since a phone has no Escape key (plain sense; WCAG 1.4.10 reflow).
@@ -376,7 +376,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** move `d-none d-md-flex` from the `VSheet` onto the `RouterLink`.
 
 ### P3. The snackbar lands on top of the error state's only action and swallows taps for 3 s — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW32`, the close-action option: every error toast now has Close. The toast still lands over "To the lists" for its first moment, so this `Verify:`'s step 3 as written still fails; the pass instead is that Close (57×36) dismisses it and `elementFromPoint` then hits the link. Bottom placement was rejected because it covers `ActionBar`'s Cancel)
 - **Severity:** polish — **[framework]** (transient: the action works once the toast times out)
 - **Where:** @390×844 · `src/_common/component/feedback/Snackbar.vue:8-14` (`location="top"`, `mt-16`). Observed on `/todo-list/999999999` over `TodoListView`'s not-found alert. Any view that pairs an error toast with a top-of-content action will match.
 - **Expected:** a transient toast doesn't cover the one control the user needs next (group-file check 5; plain sense).
