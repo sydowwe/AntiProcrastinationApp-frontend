@@ -663,7 +663,11 @@ the x4 narrow-viewport pass (2026-10-06): B10, A4, P2, P3, U4.
   (14001/14002) and counts 6, but the API returns no `suggestedTime` for them.
 
 ### B10. The list view pans sideways by 90 px on a phone, and each row's ⋮ menu and the Undo button start off-screen (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F93`: the toolbar is two groups that wrap. Below `sm`, back + *Add* take the first line and Change
+  order / Focus / Undo the second. At 390 on `/todo-list/13001` and `/13002` the scroller is 390/390, the toolbar spans 8–382 and Undo is
+  at 303–367, so steps 3–4 pass). **Step 2's ⋮ measurement was not run**: `GET /api/todo-list-item` returned 500 on 2026-10-08, so no
+  rows rendered. Reorder mode wasn't driven either, for the same reason. At 1440 the toolbar now wraps to two lines inside its 464 px
+  column. That isn't a regression: the old single row was 496 px there and already overran the column by 16 px on each side
 - **Severity:** bug
 - **Where:** @390×844 · `/todo-list/:id` → `src/core/todoList/component/TodoListToolbar.vue:2` (`d-flex justify-center mb-3 ga-3`, no wrap), inside `TodoListView.vue:31-38` (`cols="12"`). Seen on `/todo-list/13001` and `/todo-list/13002`.
 - **Expected:** at 390 px the view fits the viewport, and every row action can be reached without a sideways swipe (template rule: a page that scrolls sideways is always a finding; plain sense, WCAG 1.4.10 reflow).
@@ -675,7 +679,7 @@ the x4 narrow-viewport pass (2026-10-06): B10, A4, P2, P3, U4.
 - **Suggested fix:** let the toolbar wrap below `md` (`flex-wrap`, with Add `flex-grow-1` on its own row), or turn Change order and Focus into icon buttons with labels below `sm`. Don't shrink the item rows.
 
 ### A4. Closing the mobile Categories dialog drops focus to `<body>` (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`F98`: `@afterLeave` refocuses the Categories button. Verified for Close, Escape and picking a category)
 - **Severity:** a11y
 - **Where:** @390×844 · `/todo-list` → `src/core/todoList/view/TodoListsView.vue:4-27` (`VDialog v-model="categoryDrawerOpen"`, no `activator`) opened by the `d-md-none` Categories button at `:68-75`.
 - **Expected:** when a dialog closes, focus returns to the control that opened it (WAI-ARIA dialog pattern). The template counts focus lost around a drawer or dialog as `a11y`.

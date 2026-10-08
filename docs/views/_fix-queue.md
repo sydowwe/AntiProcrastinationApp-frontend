@@ -14,7 +14,8 @@
 > own log beside it (split out 2026-10-07). The seventeenth pass turned its 47 findings into 17 app
 > batches (`F91`–`F107`) and 10 framework batches (`FW27`–`FW36`), all open, plus four `unverified` rows;
 > the batch bodies, those rows, the narrative, contradictions §127–§135 and the re-grades all live there.
-> The numbers were kept, so this queue's next batches are `F108` / `FW37` and its next contradiction §136.
+> The numbers were kept, so this queue's next batches are `F109` / `FW38` and its next contradiction §136 (`F108` and `FW37`
+> were filed in the X4 queue on 2026-10-08).
 
 > Closed batches, closed verification items, the per-pass narrative and the *Contradictions & re-grades* audit
 > trail live in [`_fix-queue-log.md`](_fix-queue-log.md). This file holds only open work.

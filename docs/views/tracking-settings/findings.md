@@ -557,7 +557,9 @@ polish 1 (P1 fixed) · opportunity 1 (O1 built) · unverified 1 (U1 `stale`, sup
 ---
 
 ### X5. On a phone the settings card clips its own content: Save, the distinct-entries table and every mapping row are unreachable (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F91`: below `md` the wrapper and card drop `h-100`, the table takes its rows' height, and the page
+  scrolls; the hint no longer shrinks at any width. Verified on all four routes at 390, where Save, the first row and the mapping
+  rows' Edit/Delete are reachable. At 1440 the card is unchanged)
 - **Severity:** blocker
 - **Where:** @390×844 · `src/core/activityTracking/view/DesktopSettingsView.vue:2-6` and `AndroidSettingsView.vue:2-6` (a `h-100`
   wrapper around `VCard class="h-100 d-flex flex-column"`, which Vuetify makes `overflow: hidden`), with `VCardText class="flex-fill"`

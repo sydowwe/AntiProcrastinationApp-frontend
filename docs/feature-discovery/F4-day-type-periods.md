@@ -296,7 +296,8 @@ The excusal rule:
 
 - **When a cycle is excused.** A cycle is *excused* when at least half of its days (`PeriodStart`..`PeriodEnd`, which are
   already `DateOnly` on `RoutinePeriodCompletion.cs:19-20`) are away days for that user. For a daily routine that means
-  the day itself is away. For a weekly one, four or more of its seven days. The threshold is an open question.
+  the day itself is away. For a weekly one, four or more of its seven days. The owner confirmed this threshold on
+  2026-10-06.
 - **What an excused cycle records.** It writes its completion row with a new `IsExcused = true` and the outcome
   `StreakOutcome.Excused`. It **carries** the run the way a freeze does, without spending budget. The streak is held, not
   extended, and grace is not opened. `RecomputeStreak` treats `IsExcused` like `IsFrozen`. `Apply` refuses to freeze an
@@ -465,6 +466,13 @@ must not ship a call to a route or a field that does not exist yet.
 ---
 
 ## Open questions for the owner
+
+> **Answered 2026-10-06 (questions 1–3):**
+> 1. Automatic.
+> 2. At least half of the cycle's days.
+> 3. `Special` is not away.
+>
+> The rest are still open. See `docs/feature-opportunities.md` § *Owner decisions*.
 
 1. **Automatic or offered?** Should away days excuse routine cycles automatically (recommended: it removes a decision,
    and the user is the only person the streak is for), or should the app offer it on return?

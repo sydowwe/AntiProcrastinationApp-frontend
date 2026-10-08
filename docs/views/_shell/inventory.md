@@ -342,7 +342,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** framework: drop `min-width: min-content` below `md` and give the bar `max-width: calc(100vw - 16px)` with `flex-wrap: wrap` or `overflow-x: auto`, keeping Cancel pinned. App side (`dayPlanner`), consider an overflow menu for the secondary actions.
 
 ### B3. "My reminders" has no navigation path below 960 px — the user menu is hidden and its drawer replacement omits it — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW30`: the drawer footer and `UserMenu` render one entry list, `nav/useUserMenuEntries.ts`. Verified at 390: `/pripomienky/moje` and `/notifikacie` are both links in the open drawer)
 - **Severity:** bug — **[framework]**
 - **Where:** @390×844 · `src/_common/nav/UserMenu.vue:8` (`d-none d-md-flex` on the activator), `src/_common/nav/AppSidebar.vue:85-110` (mobile `#append`). App side: `src/app/nav/navItems.ts:79` keeps `myReminders` out of the sidebar *because* the user menu links to it. Every route.
 - **Expected:** a destination that's reachable from the shell at desktop width is also reachable at phone width (plain sense; `navItems.ts:79` assumes the user menu is always there).
@@ -354,7 +354,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** framework: render `UserMenu`'s entries (or the menu itself, as an icon-only activator) in the mobile drawer footer, so every app gets the same set. Don't add `myReminders` to `navItems.ts`, which would duplicate it on desktop.
 
 ### A4. Mobile nav drawer: focus doesn't move in on open, Escape doesn't close it, and closing drops focus to `<body>` — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW29`: focus moves to the first entry on open, Escape closes, a dismiss returns focus to the toggle and a chosen entry sends it to `<main>`. Verified at 390 and 1024)
 - **Severity:** a11y — **[framework]**
 - **Where:** @390×844 · `src/_common/nav/AppSidebar.vue:2-12` (temporary below 1280 px via `Navbar.vue:11,24`). Every route.
 - **Expected:** a modal (temporary + scrim) drawer behaves like a dialog: focus moves into it on open, Escape closes it, and focus returns to the toggle on close (WAI-ARIA dialog pattern; same expectation as `A1`).
@@ -365,7 +365,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** pass `captureFocus` / `retainFocus` when `isMobile`, add `@keydown.esc` on the drawer that closes it, and refocus the toggle on close (the toggle lives in `AppTopBar`, so `Navbar` owns the hand-off).
 
 ### A5. The hidden brand link is still a tab stop below 960 px — an invisible 0×0 focus target — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW29`: `d-none d-md-flex` is on the `RouterLink`. Verified: Tab from the toggle lands on the theme toggle at 390, and on the visible brand link at 1440)
 - **Severity:** a11y — **[framework]**
 - **Where:** @390×844 · `src/_common/nav/AppTopBar.vue:19-31`: the `RouterLink` is always rendered, and only the `VSheet` inside it is `d-none d-md-flex`. Every route.
 - **Expected:** a control that's hidden isn't focusable (WCAG 2.4.7 / 2.4.3: a focused element must be visible).
@@ -387,7 +387,7 @@ One layout difference worth recording: the top bar renders a **fifth** button at
 - **Suggested fix:** below `md`, use `location="bottom"` for the queue (the usual phone placement, away from the bar and page headers), or give error toasts a close action.
 
 ### P4. Breadcrumb segments wrap onto two lines inside the top bar instead of truncating — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`FW31`: below `md` only parent + current render, and every crumb is one line, ellipsised with `title`. Verified: every `li` is 24 px on the five named routes. The template route's current crumb still ellipsises, with `title`)
 - **Severity:** polish — **[framework]**
 - **Where:** @390×844 · `src/_common/nav/AppBreadcrumbs.vue` in `AppTopBar.vue:33-36` (204 px slot). `/day-planner/templates/20001`, `/todo-list/13001`, and any route whose crumb text exceeds the slot. Also `/todo-list/13002` (added by x4 `todo`, 2026-10-06): with the longer current crumb "Errands", the middle crumb wraps onto **three** lines ("To- / do / list"). **Also `/activity-history/detail`** (added by x4 `history`, 2026-10-06), where it's worse than "wraps": with three crumbs (Home › Summary › History Detail) the slot's `scrollWidth` is 238 against a 204 `clientWidth` (`overflow: hidden`). The current crumb (258–318, two lines) is cut at 284, so only "His / Det" shows, right against the theme toggle. `docs/views/history-review/screenshots/activity-history-detail--mobile.png`. Also `/activity-tracking/desktop` ("Desktop / tracking") and `/activity-tracking/android` ("Android / tracking"), added by x4 `tracking` 2026-10-06. Also `/leisure/pick` ("What should I / do?") and `/leisure/memory-anchors` ("Memory / anchors"), added by x4 `leisure` 2026-10-06; both two lines, nothing clipped.
 - **Expected:** a breadcrumb in a one-line bar stays one line: ancestors collapse or truncate with an ellipsis, and the current page stays readable (plain sense, consistent with the bar's own single-row layout).

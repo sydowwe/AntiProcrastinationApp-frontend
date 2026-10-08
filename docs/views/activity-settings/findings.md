@@ -474,7 +474,9 @@ units' passes look like they lost data or got signed out partway through, this i
 ---
 
 ### B10. The filter bar is pushed off-screen by the tabs: off to the right on Activities, and squeezed to 14 px slivers on Roles and Categories (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F93`: below `md` the filter group takes its own full-width line under the tabs. At 390 the scroller is
+  390/390 on all three tabs, the filters sit at 12–378 under the tabs, and Roles' two fields are 179 px each. At 1280 and 1440 the
+  filters still sit beside the tabs, 56 px from them, and the Categories label isn't clipped (77/77, `F22` holds))
 - **Severity:** bug
 - **Where:** @390×844 · `/activity-settings/activities`, `/roles`, `/categories` →
   `ActivitySettingsView.vue:3-14` (row `d-flex align-center` with no wrap; `VTabs class="flex-0-0"`, 312 px;

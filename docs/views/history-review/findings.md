@@ -336,7 +336,9 @@ Everything earlier is closed: B1-B4, A1-A2, P1-P3 fixed and verified in code; U1
 - **Suggested fix:** `flex-column flex-sm-row` on the row in `HistoryPieChartSection.vue:28`, and drop the details card's `min-width` when stacked.
 
 ### P4. The period-total banner is wider than the screen, cutting off its %-change chip and making the page pan sideways (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F93`: the inner row wraps and `.myAlert` is `max-width: 100%`. At 390 on `/activity-history` the
+  banner is 8–382 (≤ 386), two lines tall with the chip wrapped onto the second, and the scroller is 390/390. `/detail`: 16–372. At 1280
+  and 1440 it is the same one-line 296–726 banner as before, so `B1` holds)
 - **Severity:** polish
 - **Where:** @390×844 · `/activity-history` and `/activity-history/detail` (Top Activities panel) → `src/core/historyDashboard/component/summaryCards/HistoryPeriodBanner.vue:11` (inner `d-flex align-center ga-1`, no wrap) together with `:72-74` (`.myAlert { flex: 0 0 auto }`, the B1 fix). Fine at 768×1024, where the 416 px banner fits.
 - **Expected:** the banner fits the panel width and wraps its text, so the change chip stays readable (plain sense; B1's own Verify asked for the banner to be legible).

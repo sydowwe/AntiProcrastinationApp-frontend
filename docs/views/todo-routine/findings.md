@@ -943,7 +943,9 @@ Screenshots: `screenshots/routine-todo-list--round6-v4-overview.png` (rows 1–5
   filter set to one group (where the row has room and should not change).
 
 ### B12. On a phone the group card's footer — the "Hide done" switch and the heatmap that opens History — is clipped out of view (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F91`: the item area takes the remaining height, not the card's, at every width. Below `md` the
+  board isn't viewport-height, and the list grows to its items (`BaseToDoList`'s new `naturalHeight`). Verified at 390, where the
+  heatmap sits inside the card and opens History and *Hide done* is reachable, and at 1440 for all four groups)
 - **Severity:** bug
 - **Where:** @390×844 · `/routine-todo-list` → `src/core/todoList/component/routine/RoutineGroupCard.vue:11` (the item area is `class="h-100"`, so it claims the card's full height) and `:66-83` (the footer row with `VSwitch` + `RoutineGroupHeatmap`), inside the card's `overflow: hidden` and `RoutineToDoListView.vue:67-72` (`VRow … overflow-hidden`, a viewport-height layout).
 - **Expected:** every control a group card has at desktop width is reachable on a phone. Both footer controls are listed in the inventory's Actions table: Hide done (per group), and the heatmap strip, which is the only way to open the history dialog (plain sense; template §3).

@@ -764,7 +764,11 @@ duplicated, so the tally isn't double-counted.
   either view's error path) is real regardless of whether four fast-localhost attempts happened to catch it.
 
 ### P4. Login and Registration pan 8 px sideways on a phone, and their controls start at the screen edge (390 px)
-- **Status:** open
+- **Status:** open, **partly fixed 2026-10-08** (`F92`: `App.vue`'s scroller is `px-3`). `/forgotten-password` and `/user/settings`
+  now pass (`scrollWidth` 390/390, controls from 24). `/login` and `/registration` still pan **4 px** (394/390, controls 8–382). The
+  "4 px more than the arithmetic predicts" is traced: the framework defaults `VCol` to `pa-2` (8 px, `createAppVuetify.ts:48`) while
+  `VRow` keeps −12 px gutters, so the nested row at `LoginView.vue:31` / `RegistrationView.vue:62` overruns its column by 4 px. That
+  remainder is **`FW37`**.
 - **Severity:** polish
 - **Where:** @390×844 · `src/App.vue:29` (the content scroller `.v-main .v-container`, `px-2` = 8 px, `overflow-y-auto`, which computes `overflow-x: auto` too) against `VRow`'s −12 px gutters. `/login` and `/registration` pan **8 px** because each has a second nested `VRow` (`LoginView.vue:31`, `RegistrationView.vue:62`, both `src/_common/modules/user/view/`). `/forgotten-password` and `/user/settings` pan **4 px**, with one `VRow` each. The confirm views pan 0. **Same root cause as `tracking-dashboards` P2** (4 px on all four dashboards), which blamed each view's `VRow`. The container's padding is the one shared cause.
 - **Expected:** no sideways scroll at 390 px (template step 2; WCAG 1.4.10), and controls inset from the screen edge, where phone cases and edge gestures take taps.

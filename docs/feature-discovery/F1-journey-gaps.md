@@ -5,6 +5,11 @@
 > the untracked `docs/feature-discovery/`; none of it is cited here) · backend commit `cde16f8`, **clean** (framework
 > submodule `892a6f7`).
 >
+> **Rechecked 2026-10-06 (F5)** against backend `0409fa0` (clean) and frontend `27dd210b`. The F3 pass had already
+> added *Fixed since* notes for *Out of scope* #3, #5, #6, #7, #9 and #10, and for F1-03 and F1-05. F5 re-opened the
+> claims behind F1-01, F1-03, F1-04 and F1-06. F1-03 and F1-06 hold as noted. F1-01 and F1-04 each gained a *Built
+> since* note: the carry-over now moves tasks, and there is a seven-day carry-over read.
+>
 > Inputs read:
 > - **Rules and the journey's sources:** `prompts/feature-discovery/_RULES.md`; all fifteen `docs/views/<unit>/usecase.md`
 >   plus `_submodule/{notifications,reminders-user,scheduler}/usecase.md`; `docs/views/glossary.md`.
@@ -72,6 +77,12 @@ One structural finding runs under all six: **the server has no concept of a miss
       (`OverdueTasksBanner.vue:99-134`).
 
     A grep of `src/` for `freeSlot|nextFree|findFree|availableSlot` finds nothing.
+
+    **Built since (checked 2026-10-06, F5, backend `0409fa0`):** the carry-over no longer copies. It *moves* the task
+    through `POST /planner-task/{id}/carry-over` (`OverdueTasksBanner.vue:137-156`). The task still lands at the same
+    time of day, and the only guard is an overwrite confirm (`:125-127`). So it still places blind. Home's snooze is
+    unchanged and checks no other block (`useTodayPlan.ts:359-375`). The backend still has no `replan`, `freeSlot` or
+    `NextFree` (grep of every `*.cs`).
   - **The server has no "missed" state.** `PlannerTaskStatus` has no such member (`PlannerTask.cs:7`), and the trend's
     `NeverHappenedCount` covers only days strictly before today (Planning `domain-map.md` § *Plan-vs-actual trend*).
   - **There is no batch move.** `PatchPlannerTaskSpanEndpoint` takes one task, and each `UpdatePlannerTaskEndpoint` call
@@ -281,6 +292,17 @@ One structural finding runs under all six: **the server has no concept of a miss
     - the routine weekly review asks about one period at a time, and "pause" means hiding it indefinitely
       (`useRoutineGroups.ts:52-61`);
     - history's first-run probe looks only at the last 366 days (`historyDashboardApi.ts:101-109`).
+  - **Built since (checked 2026-10-06, F5, backend `0409fa0`): the planner half is now seven days long.**
+    `GET /planner-task/carry-over-candidates` returns the tasks left open on the last seven days in one read
+    (`GetCarryOverCandidatesPlannerTaskEndpoint.cs:13-31`), and the banner uses it (`OverdueTasksBanner.vue:75-89`). So
+    the "only yesterday" and "one `filter` call per day" bullets above are stale. **Still open:**
+    - anything older than seven days;
+    - every other slice: to-dos are still per list and client-side (`useOverdueRenegotiation.ts:34,54`), and the
+      dashboard query still has no lower bound (`GetDashboardTodoListItemEndpoint.cs:46`);
+    - `User` still has no activity field (`User.cs:10-33`).
+
+    OP19 added `lastLoginAt`, derived from `RefreshToken.SessionStartedAt`. That is the last *sign-in*, not the last
+    *use*: a remembered session can be used for weeks without signing in again. So it cannot stand in for `LastActiveAt`.
 - **Backend logic needed** (host `AdhdTimeOrganizer`, because it spans slices; each slice exposes a keyed
   `IReturnSummarySource` seam, the same pattern as `IActivityMembershipSource`):
   - **`User.LastActiveAt`**, stamped at most hourly by authenticated requests (a host middleware, or the refresh endpoint).

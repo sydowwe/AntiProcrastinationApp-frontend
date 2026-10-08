@@ -248,7 +248,10 @@
 - **Suggested fix:** delete the `console.log(allPresets.value)` line.
 
 ### P2. Timer, Pomodoro and Manual scroll sideways by 8–10 px, and their fields run to the screen edge (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F92`: `App.vue`'s scroller is `px-3`, Pomodoro's root row is `min-width: 0`, and
+  `ActivitySelectionForm.vue:45`'s nested row is `mx-n2`. The container fix alone left Timer and Manual at 394/390, because the
+  framework's `VCol` default is `pa-2` (8 px) against the row's −12 px; see `FW37`. All three routes now measure 390/390 with every
+  field at 8–382. 1440 unchanged)
 - **Severity:** polish
 - **Where:** @390×844 · `/activity-history/timer`, `/activity-history/manual`, `/activity-history/pomodoro`. The scroller is `App.vue:29`'s `VContainer` (`px-2 px-md-3 overflow-y-auto`). Timer and Manual: the root `VRow` in `TimerView.vue:2` and `AddActivityManuallyView.vue:2` has gutters (no `noGutters`), plus `ActivitySelectionForm.vue:45`'s `VRow class="my-0"`. Pomodoro: `PomodoroTimerView.vue:2`'s root row grows to 384 px.
 - **Expected:** a vertical form doesn't pan sideways, and its fields keep the same side margin as the Stopwatch form (12 px) (plain sense; consistency with the sibling view).

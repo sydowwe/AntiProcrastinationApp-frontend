@@ -407,7 +407,9 @@
 ---
 
 ### X2. With two or more suggestions on screen, the picker crushes its own constraint card: time, energy and who's-around can't be reached (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F91`: `flex-shrink-0` on `ConstraintBar`, the empty-state card and the weather hint. Verified at
+  390 with two suggestions, 325/325 and "A group" hit-testable, and 437/437 with *More constraints* open; 156/156 at 1440. The
+  three-card case wasn't re-run)
 - **Severity:** blocker
 - **Where:** @390×844 · `/leisure/pick` → the `ConstraintBar` card (first `main .v-card`) ·
   `src/core/leisure/view/PickerView.vue:2-12` (flex-column root, no `flex-shrink-0` on its children), inside

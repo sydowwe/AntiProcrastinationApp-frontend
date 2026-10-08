@@ -2,10 +2,10 @@
 
 > Pass: live verification · captured 2026-09-24 · commit `222f0051`
 
-**Tally:** blocker 0 open (X1, X2 fixed) · bug 1 open (B6; B1–B5 fixed) · a11y 0 open (A1–A4 fixed) ·
+**Tally:** blocker 0 open (X1, X2 fixed) · bug 0 open (B1–B6 fixed) · a11y 0 open (A1–A4 fixed) ·
 polish 1 open (P4; P1, P2 fixed, P3 fixed with its live retest blocked) · opportunity 0 ·
-unverified 0 open (U2, U3 fixed) — 18 entries, **2 open** (both from the x4 narrow-viewport pass, round 6).
-Of the 16 closed, 15 were confirmed live by the 2026-09-25 retest or earlier; P3 is blocked pending a
+unverified 0 open (U2, U3 fixed) — 18 entries, **1 open** (P4, from the x4 narrow-viewport pass, round 6).
+B6 was fixed 2026-10-08 (`F99`). Of the other 16 closed, 15 were confirmed live by the 2026-09-25 retest or earlier; P3 is blocked pending a
 background-task fixture row
 
 ## Round history
@@ -475,7 +475,8 @@ background-task fixture row
 ---
 
 ### B6. The split view has no narrow layout: two 171 px panes clip their own controls, task titles and side panels (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (X4 queue `F99`, the alert branch) — verified with `playwright-cli` at 390×844: the view says it
+  needs a wider screen and links to both picks and back to the list. No page-level sideways scroll; at 1440×900 the split renders.
 - **Severity:** bug
 - **Where:** @390×844 · `/day-planner/templates/split?left=20001&right=20002` → `TemplateSplitView.vue` (two
   side-by-side columns at every width), each pane's `DayPlanner` card (`overflow: hidden`). The only entry
@@ -508,7 +509,9 @@ background-task fixture row
   swaps which pane is visible. Cross-pane drag is unlikely to work on touch anyway (unverified, see planner-day U1).
 
 ### P4. The list toolbar doesn't wrap: "Add Template" is cut to "+ ADD" and the whole list pans 88 px sideways (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F93`: both header rows wrap, and the sort select's `min-width` applies only at `smAndUp`. At 390 the
+  toolbar sits under the title, Most Used at 12–153 and *Add Template* whole at 165–316, and the scroller is 390/390. At 1280 and 1440 the
+  title and all four controls stay on one line)
 - **Severity:** polish (the button stays tappable through its visible 62 px)
 - **Where:** @390×844 · `/day-planner/templates` → `TemplateListView.vue:3-58` (header row
   `d-flex justify-space-between`, toolbar `d-flex align-center ga-3` with no wrap; the sort `VSelect` has

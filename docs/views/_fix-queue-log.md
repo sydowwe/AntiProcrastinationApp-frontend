@@ -12,7 +12,7 @@
 > `FW27`–`FW36`, contradictions §127–§135. **Moved 2026-10-07 to its own queue and log,
 > [`_x4/_fix-queue.md`](_x4/_fix-queue.md) and [`_x4/_fix-queue-log.md`](_x4/_fix-queue-log.md)**: the narrative, the
 > contradictions and the re-grades are there, and that log takes the X4 batches' bodies when they close. Batch and § numbers were
-> kept, so the next app-side numbers are `F108`, `FW37` and §136.
+> kept, so the next app-side numbers are `F109`, `FW38` and §136 (`F108` and `FW37` went to the X4 queue, 2026-10-08).
 
 > **Sixteenth pass, 2026-09-21, commit `0a174507` + working tree — no unit absorbed; two landed backend
 > asks and a source re-read of the fifteenth pass's headline batches.** No `findings.md` has changed

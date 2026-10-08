@@ -145,8 +145,14 @@
   *Remembered* chip, with a tooltip, sits next to *This device*. The Appearance card's *Last login* row was already
   built and now renders.
   Checked live with both responses route-patched, because the running API predates the change: the row, the chip,
-  its tooltip and "Last login: 2 hours ago" rendered as above. No console errors. No e2e spec yet. The running API
+  its tooltip and "Last login: 2 hours ago" rendered as above. No console errors. The running API
   needs the migration applied and a restart.
+  `e2e/tests/user-settings-session-signin.spec.ts` (6 tests, route-patched on both `GET /user/sessions` and
+  `GET /user/data`) covers the row's "ip · Signed in · Last used" shape with the sign-in as an absolute date and time
+  (expected string computed in the page), the *Remembered* chip and its tooltip on a stay-logged-in session only, the
+  chip beside *This device*, a session without `createdAt` showing no *Signed in* part, *Last login* reading "2 hours
+  ago" from `lastLoginAt`, and the row's absence when the field is missing. All 6 passed two runs in a row on
+  2026-10-05 (~21 s).
 
 - **OP18**, built 2026-10-05, app-side only. Both the template list and the suggestions endpoint already project
   `suggestedLocation` (`TaskPlannerDayTemplateResponse`), and the wire spelling (`"Home"`) equals the client enum
@@ -161,7 +167,8 @@
   has a location. *Home Office* (server: *Scheduled for Mondays*) carried the chip, *Office Day* (*Suggested for
   Workdays*) did not, *Relaxed Weekend* was added as a location-only row, and the list showed the chip on the two
   Home templates. Selecting *Office Day* showed "Office" in the preview. Unpatched, the day showed the two server
-  rows and no chips. No console errors. No e2e spec yet.
+  rows and no chips. No console errors. E2e: `planner-template-location-chip.spec.ts` (4 tests, 2 consecutive
+  green runs on 5 Oct), with the `by-date` response route-patched.
 
 - **OP17**, built 2026-10-05, in both repos. `TodoListCategoryResponse` gains a nullable `ListCount`. The category
   projection fills it with a correlated count that carries its own `UserId` clause, the same one `HideEmpty`'s EXISTS
@@ -180,7 +187,8 @@
   the seed account has no categories. The badge read "2", the delete confirm read "Lists in this category: 2. They are
   kept…", the chip showed on the two patched cards under *All* and on none under *Other*. `/routine-todo-list` (real
   data) showed each row's bar in its period's colour: lime for Daily, lavender for Weekly, blue for Monthly. No console
-  errors. No e2e spec yet.
+  errors. E2e: `todo-list-category-count.spec.ts` (8 tests, 2 consecutive green runs on 5 Oct), with the category and
+  list responses route-patched and the routine accent bar read off real data.
 
 - **OP15**, built 2026-10-05, in both repos. **"Needs backend: no" was wrong:** no write path had ever set
   `PlannerTask.SourceTemplateTaskId`. The apply endpoints build their tasks from the client's lines, and
@@ -293,8 +301,9 @@
   Checked live with the day-type response route-patched to add the reason, because the running API predates it:
   Fri–Sun → Workday gave the message above with 2 days selected, a second Workday pick fired again (0/2), and Fri
   alone showed "Day type updated for 1 day" and left bulk mode. After the API restart, the same Fri–Sun run against
-  the real response, with no patch, gave the same message and the weekend-specific reason. No console errors. No e2e
-  spec yet. The seed's
+  the real response, with no patch, gave the same message and the weekend-specific reason. No console errors. E2e:
+  `planner-batch-failure-names.spec.ts` (3 tests, 2 consecutive green runs on 5 Oct), with the day-type batch
+  answered by a route patch so no fixture day is written. The seed's
   Thu 10 and Fri 11 Sep were written as Workday during the check.
 
 - **OP8**, built 2026-10-04, app-side only. `FocusBlockDto` already sent `StartedAt` / `EndedAt` and `FocusBlock.fromJson`
@@ -324,7 +333,8 @@
   only the best streak, and the NowBar chip only the count. An API without the field falls back to `Complete` or
   `Empty`, never to "at stake".
   Checked live with the day-plan response route-patched to each outcome: both chips carried the right label, variant
-  and check mark. No console errors. No e2e spec yet. After the API restart, the real day-plan response carried
+  and check mark. No console errors. E2e: `home-streak-kept-today.spec.ts` (5 tests, 2 consecutive
+  green runs on 5 Oct), with the day-plan response's `streak` route-patched. After the API restart, the real day-plan response carried
   `"todayOutcome": "Incomplete"` for the seed account's unfinished today. That account's streak is 0, so no chip
   showed there; the chip states were only seen with the patched response.
 
@@ -375,7 +385,9 @@
   always starts open.
   Checked live at 1600 px: with the setting off, the panel started closed after in-app navigation and after a full
   reload. ☰ opened it and ✕ closed it. With the setting back on (the seed value), it started open, and at 700 px it
-  started closed. On template 20001, ✕ and ☰ closed and reopened the panel. No console errors. No e2e spec yet.
+  started closed. On template 20001, ✕ and ☰ closed and reopened the panel. No console errors. E2e:
+  `planner-details-panel-default.spec.ts` (6 tests, 2 consecutive green runs on 5 Oct), with `GET planner/settings`
+  route-patched.
 
 - **OP1**, built 2026-10-04, app-side only. The API already accepted, validated and returned both fields
   (`RoutineTimePeriodValidator`: lead 1 to length − 1 or null, budget 0–10), and `RoutinePeriodNudgeJob` already
@@ -490,12 +502,16 @@
 - activity-settings **O1**, fixed 2026-09-24: Role and Category icons are shown in their settings tables.
 - tracking-settings **O1**, built 2026-09-24: a mapping's `isActive` is editable inline on both Mappings tables.
 - leisure-backlog-picker **O1**, fixed 2026-09-25: `maxParticipants` is shown (People column) and used by the picker.
+  E2e: `leisure-backlog-max-participants.spec.ts` (4 tests, 2 consecutive green runs on 5 Oct). The picker demotes a
+  too-small row by 2 points rather than excluding it, so the spec pins the demotion, with the backlog grid route-patched.
 - leisure-backlog-picker **O2**, fixed 2026-09-24: the anchor link navigates by `activityId`. The `memoryAnchorId`
   leftover is OP23.
 - leisure-bucket-anchors **O1**, built 2026-09-24: `financialGoal`, `inspirationSource` and the anchor source flags are
-  spent.
+  spent. E2e: `leisure-bucket-anchor-fields.spec.ts` (10 tests, 2 consecutive green runs on 5 Oct), on the seeded row where
+  it carries the fields and with the grids route-patched for the sums and the other flag combinations.
 - leisure-projects **O1**, fixed 2026-09-25: the shopping-list → to-do handoff exists. It is guarded by the server's unique
-  index, not `isOnTodoList`, which is never populated.
+  index, not `isOnTodoList`, which is never populated. E2e: `leisure-projects-todo-handoff.spec.ts` (3 tests, 2
+  consecutive green runs on 5 Oct), with its project and lists created and removed through the API.
 
 Not counted: tracking-settings **B5** (distinct entries mark covered tuples). It was filed as a bug, re-graded to
 opportunity in `_fix-queue.md` §103, and has landed.

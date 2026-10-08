@@ -239,7 +239,8 @@ opportunity 0 · unverified 1 (U1 verified) — 11 entries, 6 open
 - **Suggested fix:** let `.header` wrap (`flex-wrap`), so the toggle drops under the title and legend.
 
 ### P2. The dashboards' content scroller pans 4 px sideways (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F92`: `App.vue`'s scroller is `px-3`. `/activity-tracking`, `/unified`, `/desktop` and `/android` all
+  measure 390/390 with controls from 12 px. 1440 unchanged)
 - **Severity:** polish
 - **Where:** @390×844 · the `VRow` at `ActivityDashboard.vue:54` (and its twins in the other three views) inside `.v-main .v-container`
   (`overflow: auto`). All four dashboards.
@@ -254,7 +255,8 @@ opportunity 0 · unverified 1 (U1 verified) — 11 entries, 6 open
 - **Root cause guess:** `VRow`'s −12 px gutters overrun the container's narrow-screen padding. **Added by x4 `account` (2026-10-06):** the padding is `App.vue:29`'s `px-2`, shared by every route. The same 4 px pan shows on `/user/settings` and `/forgotten-password`, and 8 px on `/login` and `/registration` (nested rows). Filed with all routes as `auth` P4, so fix them together.
 
 ### B6. The All sources view squashes its Sources card to 26 px, so the Browser/Desktop/Phone chips render under the timeline and can't be clicked
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F91`: `flex-shrink-0` on `<ActivitySourceFilter>`. Verified at 390 and 1440, where all three chips
+  are hit-testable and the card is whole. *Desktop* writes `?sources=webExtension,android`)
 - **Severity:** bug
 - **Where:** `/activity-tracking/unified` → `src/core/activityTracking/component/unified/ActivitySourceFilter.vue:2-5` (`VCard`, which
   Vuetify makes `overflow: hidden`), a child of the `h-100 d-flex flex-column` root at `UnifiedActivityDashboard.vue:2`. Happens at every

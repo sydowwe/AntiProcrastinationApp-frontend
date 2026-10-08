@@ -393,7 +393,10 @@
   whichever matches the intended design).
 
 ### B9. The day view's card clips its own content: the last 40 minutes of the day can't be scrolled to, and a focus scroll hides the header for good (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F91`: below `md` the card isn't viewport-height and the page scrolls. At every width the card body
+  can shrink, so the grid fits the card, which it didn't at 1440 either (up to 108 px clipped in a split pane). Step 2 passes on the
+  day and the template at 390 and 1440, and on both split panes at 1440; below `md` the split is `F99`'s alert. Step 3 couldn't run,
+  because task 16002 is gone. Swipe-scrolling the grid was `B10`, fixed the same day by `F108`)
 - **Severity:** bug
 - **Where:** @390×844 · `/day-planner/05-10-2026` → `DayPlanner.vue:4` (`VCard class="h-100"`, Vuetify's `overflow: hidden`) + `DayPlanner.vue:162-166` (`.calendar-grid { height: 500px }` below 600 px) + `DayPlannerHeader.vue` (wraps to ~470 px). **Also `/day-planner/templates/20001` and both panes of `/day-planner/templates/split?left=20001&right=20002`** (confirmed by x4 `planner` second half, 2026-10-06). On the template view the card is `t80 b828 sh 810/748` and the grid ends at 878, so the last label reached is 22:40 of a 07:00–23:00 day. In each split pane the card is `sh 854/672` with the grid ending at 1060 against the card's 880, and the card itself ends 36 px below the viewport with nothing to scroll it into view (`.v-container` 780/780). Focusing a task in the left pane scrolled its clipped card by 182 px and took the pane's title, slot buttons and template select with it (`docs/views/planner-templates/screenshots/day-planner-templates-split--mobile-tasks.png`).
 - **Expected:** every time slot in the grid can be scrolled into view, and the date heading and day arrows stay reachable (plain sense, WCAG 1.4.10 reflow).
@@ -405,7 +408,7 @@
 - **Suggested fix:** below `md`, drop `h-100` from the card and let the page scroll, or size the grid as `flex: 1 1 0; min-height: 0` so it shrinks to the space the header leaves.
 
 ### A2. The compact side panel acts like a modal but doesn't manage focus: focus stays on the toggle it covers, Escape doesn't close it, and closing drops focus to `<body>` (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-07 (`F98`: when compact, `PlannerSidePanelShell` focuses its X on open, closes on Escape and refocuses the opener on close. Verified on the day, the template and a split pane)
 - **Severity:** a11y
 - **Where:** @390×844 · `/day-planner/05-10-2026` → `PlannerSidePanelShell.vue:5-25` (absolute overlay, `z-index: 30`, when `compact`) and `DayPlannerHeader.vue:8-14` (the toggle). **Also `/day-planner/templates/20001` (toggle in `TemplatePlannerHeader.vue:8-14`) and each pane of `/day-planner/templates/split`** (confirmed by x4 `planner` second half, 2026-10-06). Same three symptoms on both: after "Open panel", focus stays on the header toggle (now "Close panel"), which `elementFromPoint` shows is covered. Escape leaves the panel open. Closing with the panel's X leaves focus on `<body>`. In a split pane the panel is also clipped by the 171 px pane: its X spans 157–193 across the pane edge, and Bed Time and the Routine tab are cut (`docs/views/planner-templates/screenshots/day-planner-templates-split--mobile-panel.png`).
 - **Expected:** an overlay panel that covers the controls under it moves focus into itself, closes on Escape, and returns focus to its opener (WAI-ARIA disclosure/dialog practice; same expectation as `_shell` A4 for the nav drawer).
@@ -416,7 +419,11 @@
 - **Suggested fix:** when `compact`, focus the panel's X on open, add `@keydown.esc` on the card, and refocus the header toggle on close (the view owns both, through `panelOpen`).
 
 ### P3. Month grid at phone width: day headers misalign and clip, the "Days to show" select stretches and clips, and the grid gets a 263 px window — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`FW33`, framework `8cf8079`, pointer bumped in `59ce7415`). The headers are a sticky row of the
+  scroller (short names below `md`), and the toolbar wraps. All three steps pass at 390 on `/day-planner` and
+  `/activity-history/calendar`: every header matches its column to 0 px, nothing in the toolbar ends past 390, and both fields are
+  40 px tall. The body window grew from 286 to 335 px. The rest of the toolbar height is `MonthYearPicker`'s own wrap (› alone on
+  a line), which is outside this finding.
 - **Severity:** polish — **[framework]**
 - **Where:** @390×844 · `/day-planner` → `src/_common/component/calendar/CalendarGrid.vue:15-31` (toolbar `d-flex ga-3` with no wrap, `VSelect minWidth="210px"`), `:46-55,363-370` (headers use `day.name`, never the `shortName` that `allDays` already computes; `padding-right: 16px`). **Also `/activity-history/calendar`** (added by x4 `history`, 2026-10-06): header grid 17–417 over a 17–373 body, so the Thursday cell "01.10." (170–220) sits mostly under "Wed" (127–201) and "Sun" (366–417) is clipped. The "Days to show" select is 213–423 × 165–407 (242 px tall). The DateRangePicker is squeezed so ‹ sits above Month and › beside Year. Same overflow-script lines (`div.d-flex.ga-3 → 423`, `div.day-header.weekend → 417`). `docs/views/history-review/screenshots/activity-history-calendar--mobile.png`, `--768.png`.
 - **Expected:** the column headers line up with the day columns and fit, every toolbar control is fully visible, and the grid shows a useful slice of the month (plain sense).
@@ -427,7 +434,10 @@
 - **Suggested fix:** render `shortName` below `sm`, give the toolbar row `flex-wrap`, and drop the select's fixed `minWidth` below `sm`.
 
 ### P4. Month-grid day cells cut off their own summary: "0/2 task", no percentage, and a clipped today badge (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-08 (`F101` in `59ce7415`; the today badge is `FW33`'s, in the framework cell header). Below `sm` a cell
+  shows the day number, a bold `N/M` over the bar, and icon markers for location, template, weather and notes. Verify passes at 390:
+  31/31 `.day-cell`s, and every `.cell-content` too, have `scrollWidth <= clientWidth` (the today cell was 71/51). Also clean at 768,
+  1280 and 1440, where the full row now wraps instead of overrunning a 105 px cell.
 - **Severity:** polish
 - **Where:** @390×844 · `/day-planner` → `src/core/dayPlanner/component/calendar/CellTaskProgress.vue:65-95` (the below-`sm` branch) inside `CalendarGrid`'s 53 px `.day-cell` (`overflow: hidden`).
 - **Expected:** a day cell shows the planned/done figure in a form that fits the cell (plain sense; at desktop width the cell carries `N/M tasks` + `%`).
@@ -470,9 +480,32 @@
 - **Verify:** 1. `playwright-cli resize 390 844`, then `reload` on `/day-planner/task/999999`. **Pass:** `.v-alert__content` is ≥ 250 px wide and the alert is under 250 px tall.
 - **Suggested fix:** put the link under the text (default slot, or an actions row) instead of `#append` below `sm`.
 
-### U1. A swipe on the task column probably can't scroll the day grid, and may create or move a task instead (390 px)
-- **Status:** open
-- **Severity:** unverified
+### B10. A swipe on the task column doesn't scroll the day grid: it opens *Add New Task* or moves the task under the finger — confirmed live, renumbered from `U1` (390 px)
+- **Status:** fixed 2026-10-08 (`F108`: the column is `pan-y`, and on touch, drag, create and resize arm only after a 400 ms
+  long press. Verified with emulated touch at 390 on the template, where a swipe scrolls 104 px from an empty slot and from task
+  20101 with no dialog and no write, and on the day, where it scrolls 107 px. The mouse path at 1440 is unchanged)
+- **Severity:** blocker (re-graded from `unverified`, 2026-10-08). The natural scroll gesture writes to the server on every
+  `DayPlanner` mount, on any touch device, and the only way to scroll the grid is its 80 px time column.
+- **Confirmed (2026-10-08):** `playwright-cli` at 390×844 on `/day-planner/templates/20001`, with CDP touch emulation
+  (`Emulation.setTouchEmulationEnabled`, `navigator.maxTouchPoints` 5) and real touch input (`Input.dispatchTouchEvent`, a 100 px
+  upward swipe in ten steps). Every write to `/api/(template-)planner-task` was intercepted and aborted, so no fixture row changed.
+  The day route couldn't be used: `POST /api/planner-task/filter` returned 500 that day, so its grid didn't render. The template
+  view mounts the same `DayPlanner` and `PlannerTasksColumn`.
+  - **Empty slot** (235, 518): the grid's `scrollTop` stayed 0, and the *Add New Template Task* dialog opened.
+  - **Task block** (235, 611): the grid's `scrollTop` stayed 0, and `PATCH /api/template-planner-task/20101` fired. The task was moved
+    under the finger.
+  - **Control, time column** (66, 518), `touch-action: auto`: the same gesture scrolled the grid 181 px, so the emulated input does
+    produce native scrolling.
+
+  Read with the source: `touch-action: none` means the browser never claims the gesture for scrolling and never sends
+  `pointercancel`. `handlePointerDown` therefore always starts a creation preview or a drag, `pointerup` opens the dialog (`:353`), and
+  a drag past `MOVEMENT_THRESHOLD` (5 px) saves the move (`:262`).
 - **Where:** @390×844 · `/day-planner/:date` (and every `DayPlanner` mount; **`/day-planner/templates/20001` confirmed** by x4 `planner` second half, 2026-10-06: `.tasks-column` is `touch-action: none` across 102–368 of the 20–370 grid, the same geometry. In a split pane it is 63 px of a 147 px grid) → `PlannerTasksColumn.vue:181-188` (`.tasks-column { touch-action: none }`), `usePlannerPointerInteractions.ts:74-113`.
-- **What would verify it:** live: `.tasks-column` has computed `touch-action: none` and spans x 102–368 of the 20–370 grid. Only the 80 px time column (`touch-action: auto`) lets the browser scroll. Source: a `pointerdown` on an empty slot starts a creation preview (and `pointerup` opens the create dialog, line 353), and one on a task block starts a drag that moves the task once past `MOVEMENT_THRESHOLD`. So a vertical swipe over 76 % of the grid would either open "Add New Task" or reschedule the task under the finger. This pass's browser has `maxTouchPoints 0`, and the read-only rule forbids the drag, so neither was reproduced. Needs a touch-enabled context (`hasTouch: true`, `page.touchscreen`) on a throwaway day: swipe up over an empty slot and over a task, and record whether the grid scrolls, a dialog opens, or a `PUT /api/planner-task/*` fires.
-- **Suggested fix (if confirmed):** `touch-action: pan-y` on the column, and start drag/create only after a long-press for `pointerType === 'touch'`.
+- **What verified it** (the round's original note, kept): live: `.tasks-column` has computed `touch-action: none` and spans x 102–368 of the 20–370 grid. Only the 80 px time column (`touch-action: auto`) lets the browser scroll. Source: a `pointerdown` on an empty slot starts a creation preview (and `pointerup` opens the create dialog, line 353), and one on a task block starts a drag that moves the task once past `MOVEMENT_THRESHOLD`. So a vertical swipe over 76 % of the grid would either open "Add New Task" or reschedule the task under the finger. This pass's browser has `maxTouchPoints 0`, and the read-only rule forbids the drag, so neither was reproduced. Needs a touch-enabled context (`hasTouch: true`, `page.touchscreen`) on a throwaway day: swipe up over an empty slot and over a task, and record whether the grid scrolls, a dialog opens, or a `PUT /api/planner-task/*` fires.
+- **Verify:** 1. `playwright-cli resize 390 844`, then enable touch through `run-code` (a CDP session:
+  `Emulation.setTouchEmulationEnabled { enabled: true, maxTouchPoints: 5 }`), route writes to `/api/(template-)?planner-task` to
+  `abort()`, and `reload` on `/day-planner/templates/20001` (and on `/day-planner/:date` once its filter loads). 2. Dispatch a 100 px
+  upward `touchStart` / `touchMove` ×10 / `touchEnd` over an empty slot, then over a task block. **Pass:** each swipe changes the grid's
+  `scrollTop`, opens no dialog and sends no write. 3. A long-press on a task block and then a drag still moves it, and a long-press on an
+  empty slot followed by a drag still creates. 4. With a mouse at 1440, drag-to-move and drag-to-create behave as before.
+- **Suggested fix:** `touch-action: pan-y` on the column, and start drag/create only after a long-press for `pointerType === 'touch'`.
