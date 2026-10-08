@@ -13,7 +13,36 @@
 			<span class="text-h5">{{ $t('planner.template.compareEditTitle') }}</span>
 		</div>
 
-		<div class="split-view-grid">
+		<!-- Below md the two panes don't fit (F99). Entry is mdAndUp-only, but a shared ?left=&right= link isn't. -->
+		<VAlert
+			v-if="!mdAndUp"
+			type="info"
+			variant="tonal"
+			:title="$t('planner.template.narrowScreenTitle')"
+			:text="$t('planner.template.narrowScreenText')"
+		>
+			<div class="mt-3 d-flex flex-column align-start ga-1">
+				<VBtn
+					v-for="link in narrowScreenLinks"
+					:key="link.id"
+					variant="text"
+					:to="{ name: 'dayPlannerTemplate', params: { templateId: link.id } }"
+				>
+					{{ $t('planner.template.openTemplate', { name: link.name }) }}
+				</VBtn>
+				<VBtn
+					variant="text"
+					:to="{ name: 'dayPlannerTemplateList' }"
+				>
+					{{ $t('planner.template.backToList') }}
+				</VBtn>
+			</div>
+		</VAlert>
+
+		<div
+			v-else
+			class="split-view-grid"
+		>
 			<!-- Left panel -->
 			<div
 				ref="leftPanelRef"
@@ -76,8 +105,9 @@
 </template>
 
 <script setup lang="ts">
-	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { useRouter } from 'vue-router'
+	import { useDisplay } from 'vuetify'
 	import { dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -93,6 +123,7 @@
 
 	const router = useRouter()
 	const { t } = useI18n()
+	const { mdAndUp } = useDisplay()
 	const { fetchAll } = useTaskPlannerDayTemplateTaskCrud()
 	const { update: updateTask, fetchById: fetchByIdTask } = useTemplatePlannerTaskCrud()
 	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
@@ -124,6 +155,13 @@
 		immediate: false,
 	})
 
+	// The picks from the URL, offered as single-template links when the split doesn't fit (F99).
+	const narrowScreenLinks = computed(() =>
+		[leftTemplateId.value, rightTemplateId.value]
+			.filter((id): id is number => id !== null)
+			.map(id => ({ id, name: templateOptions.value.find(option => option.id === id)?.text ?? '' })),
+	)
+
 	const leftPanelRef = ref<HTMLElement | null>(null)
 	const rightPanelRef = ref<HTMLElement | null>(null)
 	const isDropTargetLeft = ref(false)
@@ -132,6 +170,9 @@
 	const dropCleanups: (() => void)[] = []
 	let monitorCleanup: (() => void) | null = null
 
+	// The panels mount and unmount with the breakpoint, so the drop targets follow the refs, not onMounted.
+	watch([leftPanelRef, rightPanelRef], setupDropTargets, { flush: 'post' })
+
 	onMounted(async () => {
 		templateOptionsLoading.value = true
 		const templates = await fetchAll()
@@ -139,8 +180,6 @@
 		templateOptionsLoading.value = false
 		hydrateLeft()
 		hydrateRight()
-
-		setupDropTargets()
 
 		monitorCleanup = monitorForElements({
 			canMonitor: ({ source }) => source.data.type === 'cross-template-task',
@@ -163,7 +202,12 @@
 		})
 	})
 
+	function teardownDropTargets() {
+		dropCleanups.splice(0).forEach(c => c())
+	}
+
 	function setupDropTargets() {
+		teardownDropTargets()
 		if (leftPanelRef.value) {
 			dropCleanups.push(
 				dropTargetForElements({
@@ -204,7 +248,7 @@
 
 	onBeforeUnmount(() => {
 		monitorCleanup?.()
-		dropCleanups.forEach(c => c())
+		teardownDropTargets()
 	})
 
 	async function moveTask(taskId: number, sourceStoreId: string, targetStoreId: string, targetTemplateId: number) {
