@@ -214,6 +214,16 @@ const messages = {
 			rule: `Pravidlo`,
 			editRule: `Otvoriť toto pravidlo na záložke Mapovania`,
 		},
+		suggestion: {
+			suggested: `Návrh: {activity}`,
+			seenIn: `v {count} z tvojich {total} časovačov pre {activity}`,
+			createRule: `Vytvoriť pravidlo`,
+			notThis: `Toto nie`,
+			confirmTitle: `Vytvoriť toto pravidlo?`,
+			// {name} is a desktop process or an android app label — the chip is shared (FO9).
+			confirmText: `Odteraz sa čas v {name} počíta ako {activity}.`,
+			confirmDetail: `Môže tiež odškrtnúť bloky a úlohy pre {activity}. Pravidlo môžeš zmeniť alebo zmazať na záložke Mapovania.`,
+		},
 	},
 }
 /**

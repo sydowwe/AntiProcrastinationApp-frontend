@@ -211,6 +211,16 @@ const messages = {
 			rule: `Rule`,
 			editRule: `Open this rule on the Mappings tab`,
 		},
+		suggestion: {
+			suggested: `Suggested: {activity}`,
+			seenIn: `seen in {count} of your {total} {activity} timers`,
+			createRule: `Create rule`,
+			notThis: `Not this`,
+			confirmTitle: `Create this rule?`,
+			// {name} is a desktop process or an android app label — the chip is shared (FO9).
+			confirmText: `From now on, time in {name} counts as {activity}.`,
+			confirmDetail: `It can also tick off {activity} blocks and to-dos. You can change or delete the rule on the Mappings tab.`,
+		},
 	},
 }
 /** One root namespace — see the comment on the SK file, which carries the reasoning. */

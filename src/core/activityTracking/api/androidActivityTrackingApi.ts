@@ -15,6 +15,7 @@ import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { TrackerAndroidMappingResponse } from '@/core/activityTracking/dto/response/android/settings/TrackerAndroidMappingResponse.ts'
 import { TrackerAndroidMappingRequest } from '@/core/activityTracking/dto/request/android/settings/TrackerAndroidMappingRequest.ts'
 import type { AndroidDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/android/settings/AndroidDistinctEntriesFilterRequest.ts'
+import { AndroidMappingSuggestionResponse } from '@/core/activityTracking/dto/response/android/settings/AndroidMappingSuggestionResponse.ts'
 
 const BASE_URL = '/activity-tracking/android'
 
@@ -84,6 +85,15 @@ export async function getAndroidAppDetails(
 		_silent: true,
 	})
 	return AndroidAppDetailsResponse.fromJson(data)
+}
+
+/**
+ * Uncovered apps the user's timer focus phases attribute to one activity and that filled those timers, learned over
+ * the last `days` (server default 30, at most 90). Silent: a failure only means no chips.
+ */
+export async function getAndroidMappingSuggestions(days?: number): Promise<AndroidMappingSuggestionResponse[]> {
+	const { data } = await API.get(`${BASE_URL}/mapping-suggestions`, { params: { days }, _silent: true })
+	return AndroidMappingSuggestionResponse.listFromObjects(data)
 }
 
 export function useTrackerAndroidMappingCrud() {

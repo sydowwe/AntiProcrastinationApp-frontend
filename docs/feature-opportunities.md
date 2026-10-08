@@ -82,7 +82,7 @@ never ships a call to a route or field that the running API does not have yet.
 | Wave | FOs | Shared backend change | Order inside the wave |
 |---|---|---|---|
 | **A. Away means away** | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes |
-| **B. The plan follows what happened** | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions |
+| **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
 | **C. Recover the day** | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time |
 | **D. Coming back** | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step |
 | **E. Learn from what happened** | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first |
@@ -461,7 +461,7 @@ never ships a call to a route or field that the running API does not have yet.
 - **Risks / open questions:**
   - **Pairing code (option b), deferred.** Build it only if typing a password into a tracker becomes the problem. The
     likely case is an account created through Google sign-in (`GoogleSignIn.vue`), which may have no password to type.
-    Check that before FO9 ships.
+    Checked 2026-10-08 (see FO9's status): it has none, and *Forgot password* sets one.
   - **The self-service toggle (option a) is rejected.** It adds a consent click and no security.
 - **Dedupe:** new.
 - **Evidence re-checked (F5):** the grep for `HasExtensionAccess =` assignments (seeders and tests only).
@@ -506,6 +506,47 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Sonnet 5.5, high. The shared wording rule is worth a careful pass.
 
 ### FO9. Tracking that covers your day: phone time counts, and the tracker suggests rules from your own timers
+- **Status (2026-10-08): built and browser-checked, no migration.** Checked against the restarted API with six
+  timers posted for the seed user: both grids showed their chip, *Create rule* confirmed and created the exact
+  rule (the row then showed it), and *Not this* survived a reload.
+  - **F2-01, backend.** `AndroidSyncEndpoint` resolves each *newly stored* session through
+    `AndroidMappingRuleSet` and attributes it with a new sink method,
+    `IActivityTimeAttributionSink.AttributeSpanAsync`. A re-sent session is skipped by the existing dedup, so
+    it is never attributed twice. An ignore rule attributes nothing; the session is still stored.
+  - **Double-count policy (decided here).** A second of phone time is not added when a record of the
+    *same activity* already covers it (a timer, the desktop heartbeat, an earlier session in the batch); what is
+    left extends the record it touches. Other activities' records are not subtracted — overlapping rows of
+    different activities were already possible, and picking between sources stays the unified dashboards' job.
+    A leftover under a minute that extends nothing is dropped, because `IntTime` would store it as zero.
+  - **Only the user's today drives completion.** The sync publishes `ActivityTimeRecordedEvent` (the FO2
+    rule) for today only. A sync is a backlog upload, and the handler's to-do / routine fallback has no day,
+    so last Tuesday's reading would otherwise tick off today's routine item. Past days are attributed to
+    History and stop there.
+  - **F3-02, backend.** New Core seam `IFocusIntervalSource` (History: Pomodoro `Focus` rows and countdown
+    rows only) and `GET /activity-tracking/desktop/mapping-suggestions?days=30` (1–90). It joins focus
+    intervals to the desktop ledger by `WindowStart`, drops minutes any active rule covers (ignore rules
+    included), and suggests an **exact-process, activity-target** rule at 3+ sittings, 10+ minutes and 70 %+
+    under one activity (`MappingSuggestionRule`). Role-level suggestions were left out: a role-only rule moves
+    dashboards but not completion, which is not what "Suggested: Thesis" promises.
+  - **F3-02, Android.** `GET /activity-tracking/android/mapping-suggestions?days=30` suggests an
+    **exact-package** rule on the same thresholds, with phone sessions clipped to the focus interval, plus one
+    more: the app must fill at least half the timer sittings it appeared in (`MappingSuggestionRule.MinFill`).
+    On a phone, the app in the foreground during a focus timer is as often the distraction as the work, so
+    Instagram checked through every Thesis pomodoro would otherwise pass. Duolingo through a language timer
+    does pass. The desktop does not apply it: work there is spread over several processes.
+  - **F3-02, frontend.** `component/settings/MappingSuggestionChip.vue` replaces *Undecided* on a desktop or
+    android distinct-entries row that has a suggestion: "Suggested: Thesis · seen in 7 of your 9 Thesis
+    timers", *Create rule* (confirms what the rule will do, then the ordinary create) and *Not this*
+    (device-local, user-scoped, keyed by process or package + activity). The load and the dismissals are
+    `useMappingSuggestions`, shared by both grids.
+  - **Tests:** `AndroidSyncAttributionTests` (5), `DesktopMappingSuggestionsTests` (6),
+    `AndroidMappingSuggestionsTests` (4), five new `ActivityTimeAttributionSinkTests`, `SeamWiringTests`
+    extended.
+  - **Not done:** the android sessions synced before this stay unattributed (no backfill).
+  - **FO7's pre-FO9 check:** an account created through Google sign-in has no password
+    (`UserRegistrationFlow.cs:125`), so it cannot sign a tracker in directly. *Forgot password* does set one
+    (`ResetPasswordAsync` works on a passwordless account), so it is a detour, not a dead end. Pairing codes
+    stay deferred; a hint on the *Trackers* card for passwordless accounts would be the cheap fix if it bites.
 - **Source:** F2-01 (Android attribution) + F3-02 (mapping suggestions).
 - **Moment:** 90 minutes of phone reading missing from history, and an *Uncovered* list of processes with no hint
   which one was the thesis.

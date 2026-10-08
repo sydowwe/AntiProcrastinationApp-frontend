@@ -6,9 +6,9 @@ export class TrackerAndroidDistinctEntriesResponse {
 		public appLabel: string,
 		public packageName: string,
 		/**
-		 * The active rule that would match this pair, or `null` when undecided (B24). On Android the sync
-		 * does not yet apply rules at ingest, so this says "a rule exists that would match", not "this was
-		 * attributed" — the server resolves it through the same rule set the sync will use when it does.
+		 * The active rule that would match this pair, or `null` when undecided (B24). The sync resolves new
+		 * sessions through the same rule set since FO9, so a session synced from now on is attributed as this
+		 * says; sessions synced before that were stored without attribution and stay so.
 		 */
 		public coveredBy: MappingCoverageResponse | null,
 	) {}

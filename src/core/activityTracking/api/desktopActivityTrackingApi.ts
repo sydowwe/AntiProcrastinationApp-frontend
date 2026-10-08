@@ -15,6 +15,7 @@ import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/reques
 import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
 import { TrackerDesktopMappingResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopMappingResponse.ts'
 import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
+import { DesktopMappingSuggestionResponse } from '@/core/activityTracking/dto/response/desktop/settings/DesktopMappingSuggestionResponse.ts'
 
 const BASE_URL = '/activity-tracking/desktop'
 
@@ -88,6 +89,15 @@ export async function getDesktopProcessDetails(
 		},
 	})
 	return DesktopProcessDetailsResponse.fromJson(data)
+}
+
+/**
+ * Uncovered processes the user's timer focus phases attribute to one activity, learned over the last `days`
+ * (server default 30, at most 90). Silent: a failure only means no chips, which is what an empty answer shows too.
+ */
+export async function getDesktopMappingSuggestions(days?: number): Promise<DesktopMappingSuggestionResponse[]> {
+	const { data } = await API.get(`${BASE_URL}/mapping-suggestions`, { params: { days }, _silent: true })
+	return DesktopMappingSuggestionResponse.listFromObjects(data)
 }
 
 export function useTrackerDesktopMappingCrud() {

@@ -20,7 +20,15 @@
 			@onLoadItems="load"
 		>
 			<template #item.coveredBy="{ item }">
+				<MappingSuggestionChip
+					v-if="!item.coveredBy && suggestionFor(item.processName)"
+					:suggestion="suggestionFor(item.processName)!"
+					:createRule
+					@created="onRuleCreated"
+					@dismiss="dismiss(suggestionFor(item.processName)!)"
+				/>
 				<MappingCoverageChip
+					v-else
 					:coveredBy="item.coveredBy"
 					settingsRouteName="desktopSettings"
 				/>
@@ -35,8 +43,10 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import DataTable from '@/_common/component/dataTable/DataTable.vue'
 	import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
+	import { PatternMatchType } from '@/_common/dto/enum/PatternMatchType.ts'
 	import { TrackerDesktopDistinctEntriesResponse } from '@/core/activityTracking/dto/response/desktop/settings/TrackerDesktopDistinctEntriesResponse.ts'
 	import type { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
+	import { TrackerDesktopMappingRequest } from '@/core/activityTracking/dto/request/desktop/settings/TrackerDesktopMappingRequest.ts'
 	import { VSortItem } from '@/_common/dto/dto/VSortItem.ts'
 	import { TableColumn } from '@/_common/dto/dto/table/TableColumn.ts'
 	import { useFetchFilteredTable } from '@/_common/api/useFetchFilteredTable.ts'
@@ -44,6 +54,13 @@
 	import type { ActivityFormRequest } from '@/core/activity/dto/request/ActivityFormRequest.ts'
 	import DesktopDistinctEntriesActions from '@/core/activityTracking/component/desktop/desktopSettings/DesktopDistinctEntriesActions.vue'
 	import MappingCoverageChip from '@/core/activityTracking/component/settings/MappingCoverageChip.vue'
+	import MappingSuggestionChip from '@/core/activityTracking/component/settings/MappingSuggestionChip.vue'
+	import {
+		getDesktopMappingSuggestions,
+		useTrackerDesktopMappingCrud,
+	} from '@/core/activityTracking/api/desktopActivityTrackingApi.ts'
+	import type { MappingSuggestion } from '@/core/activityTracking/dto/response/MappingSuggestion.ts'
+	import { useMappingSuggestions } from '@/core/activityTracking/composable/useMappingSuggestions.ts'
 	import type { MappingMode } from '@/core/activityTracking/composable/useMappingSettings.ts'
 	import type { RoleCategoryTarget } from '@/core/activityTracking/dto/RoleCategoryTarget.ts'
 
@@ -61,6 +78,7 @@
 		responseClass: TrackerDesktopDistinctEntriesResponse,
 		entityName: 'activity-tracking/desktop',
 	})
+	const { create } = useTrackerDesktopMappingCrud()
 
 	const columns = [
 		new TableColumn('processName', t('activityTracking.settings.processName')),
@@ -72,6 +90,25 @@
 
 	const items = ref<TrackerDesktopDistinctEntriesResponse[]>([])
 	const totalItems = ref(0)
+
+	// FO9: rules learned from the user's own timers, keyed by process — the grid lists a process once per window
+	// title, and one exact-process rule covers them all.
+	const { suggestionFor, ensureLoaded, reload, dismiss } = useMappingSuggestions(
+		getDesktopMappingSuggestions,
+		'desktopMappingSuggestionsDismissed',
+	)
+
+	// Exactly the process, nothing else: the suggestion was learned per process, and a narrower rule the user writes
+	// later still wins, since the matcher walks the most specific rule first.
+	async function createRule(suggestion: MappingSuggestion) {
+		const request = new TrackerDesktopMappingRequest(suggestion.key, PatternMatchType.Exact)
+		request.activityId = suggestion.activityId
+		await create(request)
+	}
+
+	async function onRuleCreated() {
+		await Promise.all([reload(), load()])
+	}
 	// Page, size and sort round-trip through the URL (F15); the filter is the view's and travels beside them.
 	const { page, itemsPerPage, sortBy } = useTableUrlState({
 		defaultSortBy: [new VSortItem('productName', 'asc')],
@@ -85,6 +122,7 @@
 			true,
 			props.filter,
 		)
+		ensureLoaded()
 		try {
 			const result = await fetchFilteredTable(req)
 			items.value = result.items
