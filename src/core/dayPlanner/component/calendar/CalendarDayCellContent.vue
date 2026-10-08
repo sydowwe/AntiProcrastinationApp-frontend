@@ -3,7 +3,10 @@
 		class="cell-content"
 		:style="completionBgStyle"
 	>
-		<div class="d-flex align-center justify-space-between">
+		<div
+			v-if="smAndUp"
+			class="d-flex align-center justify-space-between"
+		>
 			<!-- Wake/Bed Time -->
 			<div
 				v-if="day.wakeUpTime || day.bedTime"
@@ -48,9 +51,25 @@
 			/>
 		</div>
 
+		<!-- Below `sm` the cell is ~50 px wide, too narrow for any of the rows below: each would wrap a word or
+		     two per line, and the clock range ran to three lines. Their icons stay as markers; the day itself has
+		     the details. -->
+		<div
+			v-if="!smAndUp && compactMarkers.length > 0"
+			class="d-flex flex-wrap ga-1"
+			style="opacity: 0.8"
+		>
+			<VIcon
+				v-for="icon in compactMarkers"
+				:key="icon"
+				:icon
+				size="x-small"
+			/>
+		</div>
+
 		<!-- Applied Template -->
 		<div
-			v-if="day.appliedTemplateName"
+			v-if="smAndUp && day.appliedTemplateName"
 			class="cell-info secondary-info"
 		>
 			<VIcon
@@ -81,7 +100,7 @@
 
 		<!-- Weather -->
 		<div
-			v-if="day.weather"
+			v-if="smAndUp && day.weather"
 			class="cell-info secondary-info"
 		>
 			<VIcon
@@ -94,7 +113,7 @@
 
 		<!-- Notes — read only -->
 		<div
-			v-if="day.notes"
+			v-if="smAndUp && day.notes"
 			class="cell-info notes secondary-info"
 		>
 			<VIcon
@@ -115,12 +134,24 @@
 	import MiniTimeline from '@/core/dayPlanner/component/template/MiniTimeline.vue'
 	import CellTaskProgress from '@/core/dayPlanner/component/calendar/CellTaskProgress.vue'
 	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { useDisplay } from 'vuetify/framework'
 
 	const props = defineProps<{
 		day: Calendar
 		selected: boolean
 		tasks: CalendarTaskSummary[]
 	}>()
+
+	const { smAndUp } = useDisplay()
+
+	const compactMarkers = computed(() => {
+		const icons: string[] = []
+		if (props.day.location) icons.push(`fas fa-${LOCATION_ICONS[props.day.location]}`)
+		if (props.day.appliedTemplateName) icons.push('fas fa-file-lines')
+		if (props.day.weather) icons.push('fas fa-cloud-sun')
+		if (props.day.notes) icons.push('fas fa-note-sticky')
+		return icons
+	})
 
 	const completionBgStyle = computed(() => {
 		if (props.day.totalTasks === 0) return {}
@@ -186,10 +217,10 @@
 		}
 	}
 
-	@media (max-width: 600px) {
+	@media (max-width: 599.98px) {
 		.cell-content {
-			padding: 8px;
-			gap: 6px;
+			padding: 4px;
+			gap: 4px;
 		}
 
 		.cell-info {

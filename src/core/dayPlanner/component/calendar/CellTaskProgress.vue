@@ -1,5 +1,28 @@
 <template>
+	<!-- Below `sm` a month-grid cell is ~50 px wide: only `N/M` and the bar fit. A day with no tasks shows
+	     nothing rather than "0/0". -->
 	<div
+		v-if="!smAndUp"
+		class="d-flex flex-column ga-1"
+	>
+		<template v-if="day.totalTasks > 0">
+			<span
+				class="text-no-wrap font-weight-bold"
+				style="font-size: 11px"
+				:class="completionColor"
+			>
+				{{ day.completedTasks }}/{{ day.totalTasks }}
+			</span>
+			<VProgressLinear
+				:modelValue="day.completionRate"
+				:color="completionColor"
+				height="4"
+				rounded
+			/>
+		</template>
+	</div>
+	<div
+		v-else
 		class="d-flex align-center ga-1 pa-0"
 		style="font-size: 13px"
 	>
@@ -8,7 +31,7 @@
 			size="small"
 		/>
 		<VTooltip
-			v-if="smAndUp && tasks.length > 0"
+			v-if="tasks.length > 0"
 			location="end"
 		>
 			<template #activator="{ props: tooltipProps }">
@@ -16,7 +39,9 @@
 					v-bind="tooltipProps"
 					class="flex-grow-1 d-flex flex-column ga-1"
 				>
-					<div class="d-flex align-center ga-2">
+					<!-- Wraps between `sm` and `md`, where a cell is ~90 px and the one-line row needs ~120: the
+					     bar and the percentage drop under the count instead of overrunning the cell. -->
+					<div class="d-flex flex-wrap align-center ga-2">
 						<span class="text-no-wrap">
 							{{
 								$t(
@@ -32,6 +57,7 @@
 							:color="completionColor"
 							height="4"
 							rounded
+							style="flex: 1 1 16px"
 						/>
 						<span
 							v-if="day.totalTasks > 0"
