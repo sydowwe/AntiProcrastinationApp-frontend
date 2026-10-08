@@ -47,6 +47,8 @@
 				@edit="router.push({ name: 'toDoList' })"
 				@delete="router.push({ name: 'toDoList' })"
 				@addToPlanner="router.push({ name: 'dayPlanner', params: { date: todayUrlDate } })"
+				@quickStartTimer="openLogTime($event, true)"
+				@logTime="openLogTime($event, false)"
 				@startShort="startShortSession"
 				@editSection="router.push({ name: 'toDoList' })"
 			/>
@@ -56,6 +58,7 @@
 	<BaseTodoListLogTimeController
 		ref="logTimeController"
 		:kind="ToDoListKind.NORMAL"
+		@itemsChanged="refreshAfterStep"
 		@logTimeCreated="notifyTrackingSessionFinished"
 	/>
 </template>
@@ -181,6 +184,23 @@
 	function refreshAfterStep() {
 		refreshNow()
 		notifyTodoItemsChanged({ except: TODO_LIST_REFRESH_KEY })
+	}
+
+	/**
+	 * The row's stopwatch (`autoStart`) and the menu's *Log time*, the same dialog the list view opens. Both
+	 * buttons rendered here with no handler, so they did nothing. A quick start runs for the item's estimate,
+	 * or 10 minutes without one — the list view's rule.
+	 */
+	function openLogTime(item: TodoListItemEntity, autoStart: boolean) {
+		logTimeController.value?.open(
+			item.activity.id,
+			item.activity.name,
+			false,
+			undefined,
+			autoStart && !item.suggestedTime?.isNotZero() ? Time.fromMinutes(10) : (item.suggestedTime ?? undefined),
+			item.id,
+			autoStart,
+		)
 	}
 
 	/**
