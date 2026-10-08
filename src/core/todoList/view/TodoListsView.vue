@@ -9,6 +9,7 @@
 			class="d-md-none"
 			:scrim="false"
 			style="margin: -12px"
+			@afterLeave="categoriesBtnRef?.$el.focus()"
 		>
 			<TodoListCategoryPane
 				v-model:hideEmpty="hideEmptyCategories"
@@ -65,7 +66,10 @@
 					style="flex-shrink: 0; background: rgb(var(--v-theme-background)); z-index: 10"
 				>
 					<div class="d-flex align-center ga-3">
+						<!-- The dialog above is opened by v-model, so Vuetify has no activator to hand focus
+						     back to; `@afterLeave` does it, for Close, Escape and picking a category (F98). -->
 						<VBtn
+							ref="categoriesBtnRef"
 							prependIcon="bars"
 							variant="tonal"
 							class="d-md-none"
@@ -173,6 +177,7 @@
 	import { onMounted, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { watchDebounced } from '@vueuse/core'
+	import type { VBtn } from 'vuetify/components'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useTodoListCrud } from '@/core/todoList/api/todoListApi.ts'
 	import { useTodoListCategories } from '@/core/todoList/composable/useTodoListCategories.ts'
@@ -193,6 +198,7 @@
 	const { createWithResponse, update, deleteEntity, fetchFilteredSorted } = useTodoListCrud()
 	const { openDialog, confirm } = useDialog()
 
+	const categoriesBtnRef = ref<InstanceType<typeof VBtn>>()
 	const lists = ref<TodoListEntity[]>([])
 	const loading = ref(false)
 	const listFilterName = ref<string | null>(null)

@@ -2,11 +2,15 @@
 <template>
 	<!-- Closable at every width, not only when compact: a wide planner used to show it unconditionally,
 	     so "Show details panel by default" off had nothing to act on (OP2). -->
+	<!-- Compact, it covers the header like a modal does, so it behaves like one: focus in on open,
+	     Escape closes, focus back to the opener on close (F98). -->
 	<VCard
 		v-show="panelOpen"
+		ref="cardRef"
 		class="flex-column align-self-stretch"
 		:elevation="compact ? 12 : 2"
 		:style="panelStyle"
+		@keydown.esc="onEscape"
 	>
 		<VCardTitle class="pt-4 px-5 pb-2 d-flex flex-column ga-2">
 			<div class="d-flex justify-space-between align-center">
@@ -20,6 +24,7 @@
 						icon="xmark"
 						variant="tonal"
 						size="36"
+						class="panel-close"
 						:aria-label="$t('planner.a11y.closePanel')"
 						@click="panelOpen = false"
 					/>
@@ -66,7 +71,8 @@
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, nextTick, ref, watch } from 'vue'
+	import type { VCard } from 'vuetify/components'
 	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { usePlannerCompact } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
@@ -89,6 +95,39 @@
 	// The planner's own width, not the window's (F88): in the template split view a desktop window holds
 	// two narrow planners. Provided by the view through `providePlannerLayout`.
 	const compact = usePlannerCompact()
+
+	const cardRef = ref<InstanceType<typeof VCard>>()
+	// Whatever opened the panel — either header's toggle, the header's Details/Routine buttons, or the
+	// not-found alert's toggle. Remembered rather than named, so each opener gets its own focus back.
+	let opener: HTMLElement | null = null
+
+	function cardEl(): HTMLElement | undefined {
+		return cardRef.value?.$el as HTMLElement | undefined
+	}
+
+	watch(panelOpen, async open => {
+		if (!compact.value) return
+		const card = cardEl()
+		if (open) {
+			const active = document.activeElement
+			opener = active instanceof HTMLElement && !card?.contains(active) ? active : null
+			await nextTick()
+			cardEl()?.querySelector<HTMLElement>('.panel-close')?.focus()
+			return
+		}
+		// Only when focus was in the panel or already lost: a close that happens while the user is on
+		// the grid (picking a routine item closes it) must not pull focus back to the header.
+		const active = document.activeElement
+		const focusLost = !active || active === document.body || !!card?.contains(active)
+		if (focusLost && opener?.isConnected) opener.focus()
+		opener = null
+	})
+
+	function onEscape(e: KeyboardEvent) {
+		if (!compact.value) return
+		e.stopPropagation()
+		panelOpen.value = false
+	}
 
 	// `display: flex` lives here and not as `d-flex`: that class is `!important` and beat `v-show`'s
 	// inline `display: none`, so the close X hid nothing. Vue lets `v-show` win over a bound style.
