@@ -42,7 +42,9 @@
 				></VIdSelect>
 			</div>
 		</div>
-		<VRow class="my-0">
+		<!-- `mx-n2`: the framework defaults `VCol` to `pa-2` (8 px) but `VRow` keeps its −12 px gutters, so a
+			 row nested in a column overruns it by 4 px and pans the page sideways on a phone (F92). -->
+		<VRow class="my-0 mx-n2">
 			<VCol
 				cols="12"
 				:lg="lookupColumns"

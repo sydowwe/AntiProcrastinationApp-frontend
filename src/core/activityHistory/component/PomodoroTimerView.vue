@@ -1,9 +1,12 @@
 <template>
+	<!-- `min-width: 0`: this row is a flex item of App.vue's `d-flex` scroller, and at the default
+		 `min-width: auto` it grows to its content and pans the page sideways on a phone (F92). -->
 	<VRow
 		:class="compact ? undefined : 'py-4'"
 		justify="center"
 		align="center"
 		noGutters
+		style="min-width: 0"
 	>
 		<VCol
 			cols="12"
