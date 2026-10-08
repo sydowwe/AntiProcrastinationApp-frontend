@@ -46,7 +46,7 @@
 
 		<div
 			class="flex-fill overflow-y-auto d-flex flex-column ga-4"
-			style="height: 0"
+			:style="naturalHeight ? undefined : 'height: 0'"
 		>
 			<div
 				v-for="(item, index) in sortedItems"
@@ -127,12 +127,24 @@
 	import { useTodoListDragAndDrop } from '@/core/todoList/composable/dragAndDrop/useTodoListDragAndDrop.ts'
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 
-	const { items, isInChangeOrderMode, listId, activityIds, allItems } = defineProps<{
+	const {
+		items,
+		isInChangeOrderMode,
+		listId,
+		activityIds,
+		allItems,
+		naturalHeight = false,
+	} = defineProps<{
 		items: TEntity[]
 		isInChangeOrderMode: boolean
 		listId: number
 		activityIds: number[]
 		allItems?: TEntity[]
+		/**
+		 * Grow to the items instead of filling, and scrolling inside, a definite-height parent. For a
+		 * list whose page scrolls rather than its card (the routine board below `md`, F91).
+		 */
+		naturalHeight?: boolean
 	}>()
 
 	const emit = defineEmits<{

@@ -64,9 +64,13 @@
 			@reduceFrequency="handleReviewReduceFrequency"
 			@dismissed="dismissForThisWeek"
 		/>
+		<!-- A viewport-height board only from `md` up (F91). Below it the toolbar and the review card
+		     leave the card too little height, which clipped its footer (Hide done, the heatmap that opens
+		     History); there the card takes its content's height and the page scrolls. -->
 		<VRow
-			class="flex-grow-1 overflow-hidden ma-0"
-			style="min-height: 0"
+			class="ma-0"
+			:class="{ 'flex-grow-1 overflow-hidden': mdAndUp }"
+			:style="mdAndUp ? 'min-height: 0' : undefined"
 			justify="center"
 			align="start"
 		>
@@ -74,7 +78,8 @@
 				v-for="group in visibleGroups"
 				:key="group.timePeriod.id"
 				:data-routine-period-id="group.timePeriod.id"
-				class="pa-2 h-100"
+				class="pa-2"
+				:class="{ 'h-100': mdAndUp }"
 				cols="12"
 				:sm="visibleGroups.length >= 2 ? 6 : undefined"
 				:md="visibleGroups.length >= 3 ? 4 : undefined"
@@ -125,6 +130,7 @@
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
 	import { computed, onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { useDisplay } from 'vuetify'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
@@ -144,6 +150,7 @@
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 
 	const { t } = useI18n()
+	const { mdAndUp } = useDisplay()
 
 	const { getAllGrouped } = useRoutineTodoListItemCrud()
 	const { createWithResponse: createPlannerTaskWithResponse } = useTaskPlannerCrud()

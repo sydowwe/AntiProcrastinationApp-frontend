@@ -8,7 +8,13 @@
 			:timePeriod="group.timePeriod"
 			@freezeSpent="emit('freezeSpent')"
 		/>
-		<div class="h-100">
+		<!-- The remaining height, not the card's (`h-100` was the card's whole height, so the footer below
+		     was pushed out whenever the card was short: one group at 1440, every group on a phone). Below
+		     `md` the card isn't viewport-height, so the list grows to its items instead (F91). -->
+		<div
+			class="flex-1-1"
+			style="min-height: 0"
+		>
 			<div
 				v-if="isAllDoneHidden"
 				class="d-flex flex-column align-center justify-center h-100 ga-2 text-medium-emphasis py-6"
@@ -24,6 +30,7 @@
 			<BaseToDoList
 				v-else
 				class="h-100"
+				:naturalHeight="!mdAndUp"
 				:kind="ToDoListKind.ROUTINE"
 				:items="visibleItems"
 				:allItems="group.items"
@@ -85,6 +92,7 @@
 </template>
 <script setup lang="ts">
 	import { computed } from 'vue'
+	import { useDisplay } from 'vuetify'
 	import { ToDoListKind } from '@/core/todoList/dto/enum/ToDoListKind'
 	import type { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDisplayOrderRequest.ts'
 	import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
@@ -120,6 +128,8 @@
 	}>()
 
 	const hideDone = defineModel<boolean>('hideDone', { default: false })
+
+	const { mdAndUp } = useDisplay()
 
 	const isAllDoneHidden = computed(
 		() => hideDone.value && group.items.length > 0 && group.items.every(item => item.isDone),

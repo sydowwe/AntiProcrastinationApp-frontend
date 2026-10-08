@@ -11,9 +11,11 @@
 			@changeDateSpan="setDateSpan"
 		/>
 
+		<!-- `flex-shrink-0` (F91): a card is `overflow: hidden`, so in this full-height column it shrank to
+		     26 px at every width and the timeline painted over its chips. -->
 		<ActivitySourceFilter
 			v-model:sources="sources"
-			class="mb-4"
+			class="mb-4 flex-shrink-0"
 			:breakdown
 			:loading="breakdownLoading"
 			:error="breakdownError"

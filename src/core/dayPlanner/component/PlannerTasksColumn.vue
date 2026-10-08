@@ -183,8 +183,12 @@
 		position: relative;
 		background: rgb(var(--v-theme-neutral-50));
 		user-select: none;
+		-webkit-touch-callout: none;
 		cursor: crosshair;
-		touch-action: none;
+		/* A vertical swipe scrolls the day. Drag, resize and create wait for a long press on touch, and
+		   an armed press cancels `touchmove` so the grid doesn't scroll under it — see
+		   `usePlannerPointerInteractions` (planner-day/B10, F108). */
+		touch-action: pan-y;
 	}
 
 	.task-slot {

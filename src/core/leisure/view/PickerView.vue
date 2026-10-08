@@ -5,13 +5,20 @@
 			<p class="text-body-2 text-medium-emphasis mb-0">{{ $t('leisure.picker.subtitle') }}</p>
 		</div>
 
+		<!-- `flex-shrink-0` on the cards (F91): the view is a flex column stretched to the viewport, and a
+		     card's `overflow: hidden` lets it shrink below its content. With three suggestions below it,
+		     the constraint card was crushed to 32 of its 325 px on a phone. -->
 		<ConstraintBar
 			v-model="constraints"
+			class="flex-shrink-0"
 			:costTierOptions
 			:locationTypeOptions
 		/>
 
-		<WeatherLocationHint v-if="weatherLocation === null && hasWeatherDependentCandidates" />
+		<WeatherLocationHint
+			v-if="weatherLocation === null && hasWeatherDependentCandidates"
+			class="flex-shrink-0"
+		/>
 
 		<VRow v-if="loading && suggestions.length === 0">
 			<VCol
@@ -69,7 +76,7 @@
 
 		<VCard
 			v-else
-			class="pa-6 text-center"
+			class="pa-6 text-center flex-shrink-0"
 			variant="tonal"
 			color="secondaryOutline"
 		>

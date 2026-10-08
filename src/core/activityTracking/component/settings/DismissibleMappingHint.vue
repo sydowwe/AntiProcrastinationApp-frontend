@@ -1,9 +1,10 @@
 <template>
-	<!-- `flex-grow-0`: VAlert ships `flex: 1 1`, which in the views' flex column let it swallow the
-	     height meant for the table. -->
+	<!-- `flex-0-0`: VAlert ships `flex: 1 1`, which in the views' flex column let it swallow the
+	     height meant for the table; and being `overflow: hidden`, it also shrank to 32 px of its text
+	     to make room for the table (F91). -->
 	<VAlert
 		v-if="!dismissed"
-		class="flex-grow-0"
+		class="flex-0-0"
 		type="info"
 		variant="tonal"
 		closable

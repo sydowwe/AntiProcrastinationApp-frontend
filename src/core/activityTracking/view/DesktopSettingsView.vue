@@ -1,8 +1,14 @@
 <template>
-	<div class="py-4 w-100 h-100">
+	<!-- Viewport-locked only from `md` up (F91). Below it the filter bar and actions stack past the
+	     viewport, so a full-height card clipped Save and the table; there the page scrolls instead. -->
+	<div
+		class="py-4 w-100"
+		:class="{ 'h-100': mdAndUp }"
+	>
 		<VCard
 			elevation="2"
-			class="h-100 d-flex flex-column"
+			class="d-flex flex-column"
+			:class="mdAndUp ? 'h-100' : 'natural-height'"
 		>
 			<!-- Wraps (F16): the filter bar drops to its own line when the row is too narrow, and the tab
 			     toggle never shrinks, so its labels never truncate. -->
@@ -72,6 +78,7 @@
 
 <script setup lang="ts">
 	import { computed, ref } from 'vue'
+	import { useDisplay } from 'vuetify'
 	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import { useRoute } from 'vue-router'
 	import { DesktopDistinctEntriesFilterRequest } from '@/core/activityTracking/dto/request/desktop/settings/DesktopDistinctEntriesFilterRequest.ts'
@@ -87,6 +94,7 @@
 	import { useMappingSettings } from '@/core/activityTracking/composable/useMappingSettings.ts'
 	import { useDistinctEntriesUrlState } from '@/core/activityTracking/composable/useDistinctEntriesUrlState.ts'
 
+	const { mdAndUp } = useDisplay()
 	const { create, update } = useTrackerDesktopMappingCrud()
 	const { filter, formData, mode, editedId, request, patternError, keptTarget, loadTarget, saved, clear } =
 		useMappingSettings({
@@ -168,3 +176,12 @@
 		if (editedId.value === id) request.value.isActive = isActive
 	}
 </script>
+
+<style scoped>
+	/* The framework table's body is `height: 0` and fills a definite-height flex parent (FW4). Below
+	   `md` the card has no definite height, so the table would collapse to its header; it takes the
+	   height of its rows instead (F91). */
+	.natural-height :deep(.v-table__wrapper) {
+		height: auto !important;
+	}
+</style>

@@ -82,6 +82,7 @@ const dayPlanner = {
 			setStartEndTimeError: `Set start time and end time`,
 			taskTooShortToSplit: `Task is too short to split`,
 			taskDraggedOutsideGrid: `Task cannot be dragged outside of the grid`,
+			placementConflict: `The tasks can't go there: they would overlap another task or run past the grid`,
 			taskMoved: `Task moved`,
 			tasksDuplicated: `Tasks duplicated`,
 			taskMovedToOtherTemplate: `Task moved to other template`,

@@ -92,6 +92,7 @@ const dayPlanner = {
 			setStartEndTimeError: `Nastavte čas začiatku a konca`,
 			taskTooShortToSplit: `Úloha je príliš krátka na rozdelenie`,
 			taskDraggedOutsideGrid: `Úlohu nie je možné presunúť mimo mriežky`,
+			placementConflict: `Úlohy sem nemožno vložiť: prekrývali by sa s inou úlohou alebo by presiahli mriežku`,
 			taskMoved: `Úloha presunutá`,
 			tasksDuplicated: `Úlohy duplikované`,
 			taskMovedToOtherTemplate: `Úloha presunutá do inej šablóny`,

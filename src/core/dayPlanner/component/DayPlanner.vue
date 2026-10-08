@@ -1,11 +1,22 @@
 <!-- DayPlanner.vue - Unified day planner component for both regular and template views -->
 <template>
 	<div>
-		<VCard class="w-100 h-100 d-flex flex-column">
+		<!-- Viewport-height only from `md` up (F91). Below it the header wraps to ~470 px, and a full-height
+		     card (`overflow: hidden`) clipped the grid's last 40 minutes and let a focus scroll hide the
+		     header for good. There the card takes its content's height and the page scrolls. -->
+		<VCard
+			class="w-100 d-flex flex-column"
+			:class="{ 'h-100': mdAndUp }"
+		>
 			<!-- Header slot - each view provides its own header -->
 			<slot name="header" />
 
-			<VCardText class="pa-3 pa-md-4 pt-2 pt-md-3 flex-fill d-flex flex-column ga-4">
+			<!-- `min-height: 0`: in the viewport-height card the grid (600 px, its own scroller) shrinks to
+			     the space the header leaves, instead of overrunning the card's clip by 28–108 px (F91). -->
+			<VCardText
+				class="pa-3 pa-md-4 pt-2 pt-md-3 flex-fill d-flex flex-column ga-4"
+				style="min-height: 0"
+			>
 				<div class="calendar-grid flex-fill">
 					<!-- Time Column -->
 					<PlannerTimeColumn />
@@ -59,6 +70,7 @@
 
 <script setup lang="ts">
 	import { computed, inject, provide, ref, watch } from 'vue'
+	import { useDisplay } from 'vuetify'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import PlannerTimeColumn from '@/core/dayPlanner/component/misc/PlannerTimeColumn.vue'
 	import PlannerTasksColumn from '@/core/dayPlanner/component/PlannerTasksColumn.vue'
@@ -79,6 +91,7 @@
 	}>()
 
 	const store = inject(PLANNER_STORE_KEY)!
+	const { mdAndUp } = useDisplay()
 
 	// Filled in by `PlannerTasksColumn`; read by `SelectionActionBar`, which is its sibling and has
 	// no other way to hand focus back to the grid. One per planner, so the split view stays honest.
