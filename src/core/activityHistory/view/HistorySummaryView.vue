@@ -40,10 +40,11 @@
 			<HistoryFirstRunState v-if="hasAnyHistoryEver === false" />
 
 			<template v-else>
-				<!-- Stacked Bars -->
+				<!-- Stacked Bars. Never shorter than its header plus the plot's floor: on a phone the column
+				     outgrows the screen, and a flat 200 px left the wrapped header all of it (F95). -->
 				<StackedBarsChart
 					class="flex-fill"
-					style="min-height: 200px"
+					style="min-height: min-content"
 					:windows="stackedBarsWindows"
 					:loading="stackedBarsLoading"
 					:error="stackedBarsError"
@@ -61,6 +62,7 @@
 							v-model:start="windowStartTime"
 							v-model:end="windowEndTime"
 							class="flex-shrink-0"
+							style="max-width: 100%"
 							:label="$t('history.summary.dayFrom')"
 							density="compact"
 							hideDetails

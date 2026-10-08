@@ -1,7 +1,7 @@
 <template>
 	<VCard class="pa-4 pb-3">
 		<div class="header">
-			<div class="d-flex ga-4 align-center">
+			<div class="d-flex flex-wrap ga-4 align-center">
 				<h3 class="text-subtitle-1 font-weight-medium">{{ $t('activityTracking.timeline.title') }}</h3>
 				<!--
 					Lane legend. Two readings of the same three lanes: by default they are the
@@ -48,6 +48,7 @@
 			<MyBtnToggle
 				v-model="viewMode"
 				:label="$t('activityTracking.timeline.layout')"
+				class="flex-shrink-0"
 				mandatory
 				density="compact"
 				variant="outlined"
@@ -209,16 +210,21 @@
 </script>
 
 <style scoped>
+	/* Wraps, so on a phone the layout toggle drops under the title and legend instead of being clipped
+	   by its own scroll group (F96). */
 	.header {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
+		gap: 8px 16px;
 		margin-bottom: 12px;
 	}
 
 	.legend {
 		display: flex;
-		gap: 16px;
+		flex-wrap: wrap;
+		gap: 8px 16px;
 	}
 
 	.legend-item {

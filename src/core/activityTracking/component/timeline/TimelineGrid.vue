@@ -145,6 +145,14 @@
 	}>()
 	const GAP_COLUMN_WIDTH = 48
 	const GRID_PADDING = 32
+	// The grid is never narrower than this, and grows past it when its content needs more (F96).
+	const MIN_GRID_WIDTH = 600
+	// The room the shortest session gets before the timeline scrolls rather than squeezing it. 24, not
+	// more: at 40 the seed's unified day scrolled even at 1440, where it fits…
+	const MIN_SESSION_WIDTH = 24
+	// …counting anything shorter as this long, so a one-minute blip cannot stretch the day to
+	// thousands of pixels. That caps the scale at 2.4 px a minute.
+	const MIN_SESSION_MINUTES = 10
 
 	interface SegmentGroup {
 		segments: TimelineSegment[]
@@ -170,13 +178,32 @@
 		return calculateLaneHeight(props.backgroundSessions, config.value.laneHeight)
 	})
 
+	// The scale at which the shortest session in [from, to) — clipped to it, as it is drawn — is
+	// MIN_SESSION_WIDTH wide.
+	function minPixelsPerMinute(sessions: TimelineSessionDto[], from: Date, to: Date): number {
+		if (sessions.length === 0) return 0
+		const shortestMinutes = Math.min(
+			...sessions.map(
+				s =>
+					(Math.min(s.endedAt.getTime(), to.getTime()) - Math.max(s.startedAt.getTime(), from.getTime())) /
+					60000,
+			),
+		)
+		return MIN_SESSION_WIDTH / Math.max(shortestMinutes, MIN_SESSION_MINUTES)
+	}
+
 	const segmentGroups = computed((): SegmentGroup[] => {
-		const available = containerWidth.value - GRID_PADDING
+		const available = Math.max(containerWidth.value, MIN_GRID_WIDTH) - GRID_PADDING
 
 		if (!isSplitView.value) {
 			const allSessions = [...props.primarySessions, ...props.detailSessions, ...props.backgroundSessions]
 			const segments = buildTimelineSegments(allSessions, props.from, props.to)
-			const widths = calculateSegmentWidths(segments, available, GAP_COLUMN_WIDTH)
+			const widths = calculateSegmentWidths(
+				segments,
+				available,
+				GAP_COLUMN_WIDTH,
+				minPixelsPerMinute(allSessions, props.from, props.to),
+			)
 			return [
 				{
 					segments,
@@ -193,14 +220,24 @@
 		const firstBackground = filterSessionsForRange(props.backgroundSessions, props.from, props.splitPoint)
 		const firstAll = [...firstPrimary, ...firstDetail, ...firstBackground]
 		const firstSegments = buildTimelineSegments(firstAll, props.from, props.splitPoint)
-		const firstWidths = calculateSegmentWidths(firstSegments, available, GAP_COLUMN_WIDTH)
+		const firstWidths = calculateSegmentWidths(
+			firstSegments,
+			available,
+			GAP_COLUMN_WIDTH,
+			minPixelsPerMinute(firstAll, props.from, props.splitPoint),
+		)
 
 		const secondPrimary = filterSessionsForRange(props.primarySessions, props.splitPoint, props.to)
 		const secondDetail = filterSessionsForRange(props.detailSessions, props.splitPoint, props.to)
 		const secondBackground = filterSessionsForRange(props.backgroundSessions, props.splitPoint, props.to)
 		const secondAll = [...secondPrimary, ...secondDetail, ...secondBackground]
 		const secondSegments = buildTimelineSegments(secondAll, props.splitPoint, props.to)
-		const secondWidths = calculateSegmentWidths(secondSegments, available, GAP_COLUMN_WIDTH)
+		const secondWidths = calculateSegmentWidths(
+			secondSegments,
+			available,
+			GAP_COLUMN_WIDTH,
+			minPixelsPerMinute(secondAll, props.splitPoint, props.to),
+		)
 
 		return [
 			{
@@ -245,9 +282,12 @@
 		overflow-y: visible;
 	}
 
+	/* `width: max-content`, so the row is as wide as its segments (never under MIN_GRID_WIDTH) and its
+	   right padding stays inside the scroll range when they outgrow the card. */
 	.timeline-segments {
 		display: flex;
-		min-width: 600px;
+		width: max-content;
+		min-width: 100%;
 		padding: 0 16px;
 	}
 

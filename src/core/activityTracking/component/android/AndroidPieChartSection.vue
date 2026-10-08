@@ -44,7 +44,7 @@
 		</template>
 
 		<template v-else>
-			<div class="d-flex ga-2">
+			<div class="d-flex flex-column flex-md-row ga-2">
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"

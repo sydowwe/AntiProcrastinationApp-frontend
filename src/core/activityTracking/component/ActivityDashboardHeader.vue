@@ -1,8 +1,5 @@
 <template>
-	<div
-		class="w-100 mb-3 d-flex align-center ga-6 flex-wrap bg-background"
-		style="position: sticky; top: 0; z-index: 1000"
-	>
+	<div class="dashboard-header w-100 mb-3 d-flex align-center ga-6 flex-wrap bg-background">
 		<h1 class="text-h4">{{ title }}</h1>
 		<div class="d-flex align-center ga-5 flex-wrap">
 			<ActivityRangePicker
@@ -92,6 +89,20 @@
 </script>
 
 <style scoped>
+	.dashboard-header {
+		position: sticky;
+		top: 0;
+		z-index: 1000;
+	}
+
+	/* Below `md` the header wraps to six rows (269–377 px); pinned under the app bar it left a
+	   422 px chart no room to be seen whole (F97). */
+	@media (max-width: 959.98px) {
+		.dashboard-header {
+			position: static;
+		}
+	}
+
 	.visualization-toggle {
 		border-color: rgba(var(--v-theme-on-surface), 0.3) !important;
 		height: 40px;

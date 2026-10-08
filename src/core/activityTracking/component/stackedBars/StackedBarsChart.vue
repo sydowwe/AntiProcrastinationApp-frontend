@@ -1,6 +1,8 @@
 <template>
 	<VCard class="d-flex flex-column h-100">
-		<div class="pt-4 pb-3 px-5 d-flex align-center ga-5 flex-shrink-0">
+		<!-- Wraps, and below `md` the legend moves under the plot: a header that could not wrap grew the
+		     legend into a 229 px column and left the plot 4 px (F95). -->
+		<div class="pt-4 pb-3 px-5 d-flex flex-wrap align-center ga-5 flex-shrink-0">
 			<!--		<h3 class="text-subtitle-1 font-weight-medium">Activity by Window</h3>-->
 			<VSelect
 				v-model="selectedWindowSize"
@@ -11,22 +13,10 @@
 				style="min-width: 100px; max-width: 100px"
 			/>
 			<slot name="header-right" />
-			<div
-				v-if="legendItems.length > 0"
-				class="legend d-flex flex-wrap ga-2"
-			>
-				<div
-					v-for="item in legendItems"
-					:key="item.key"
-					class="legend-item d-flex align-center ga-1"
-				>
-					<div
-						class="legend-color"
-						:style="{ backgroundColor: item.color }"
-					/>
-					<span class="legend-label">{{ item.label }}</span>
-				</div>
-			</div>
+			<StackedBarsLegend
+				v-if="mdAndUp"
+				:items="legendItems"
+			/>
 		</div>
 
 		<!-- Loading state -->
@@ -70,9 +60,10 @@
 
 		<!-- Chart -->
 		<template v-else>
+			<!-- A floor, so a header that wraps tall can never squeeze the plot to nothing (F95). -->
 			<StackedBarsGrid
 				class="pb-1 flex-grow-1"
-				style="min-height: 0"
+				style="min-height: 150px"
 				:windows="processedWindows"
 				:windowMinutes="selectedWindowSize"
 				:displayMaxMinutes
@@ -82,6 +73,11 @@
 				:interactive
 				@activityClick="handleActivityClick"
 			/>
+			<StackedBarsLegend
+				v-if="!mdAndUp"
+				class="px-5 pt-2 pb-4 flex-shrink-0"
+				:items="legendItems"
+			/>
 		</template>
 	</VCard>
 </template>
@@ -89,7 +85,9 @@
 <script setup lang="ts">
 	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { useDisplay } from 'vuetify'
 	import StackedBarsGrid from './StackedBarsGrid.vue'
+	import StackedBarsLegend from './StackedBarsLegend.vue'
 	import type { StackedBarsInputItem, StackedBarsInputWindow } from '@/core/activityTracking/dto/StackedBarsInput.ts'
 	import type { ColumnData } from './dto/ColumnData'
 	import { ProcessedWindow } from './dto/ProcessedWindow'
@@ -133,6 +131,7 @@
 	}>()
 
 	const { t } = useI18n()
+	const { mdAndUp } = useDisplay()
 
 	// Selected window size
 	const selectedWindowSize = ref(initialWindowSize)
@@ -486,28 +485,3 @@
 		emit('activityClick', window, bar.key)
 	}
 </script>
-
-<style scoped>
-	.legend {
-		font-size: 12px;
-	}
-
-	.legend-item {
-		padding: 2px 6px;
-		border-radius: 4px;
-		background-color: rgba(255, 255, 255, 0.05);
-	}
-
-	.legend-color {
-		width: 12px;
-		height: 12px;
-		border-radius: 2px;
-		flex-shrink: 0;
-	}
-
-	.legend-label {
-		font-size: 11px;
-		color: #fff;
-		white-space: nowrap;
-	}
-</style>

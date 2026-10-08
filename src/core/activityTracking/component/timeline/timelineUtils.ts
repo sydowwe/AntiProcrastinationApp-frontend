@@ -207,18 +207,23 @@ export function buildTimelineSegments(
  * Calculate pixel widths for each segment.
  * Activity segments share available space proportionally by duration.
  * Gap segments get a fixed narrow width.
+ *
+ * The activity share never drops below `minPixelsPerMinute`: on a narrow card the gaps alone can eat
+ * the whole width (12 gaps × 48 px of a 600 px grid left 11 sessions 6 px each — F96), so the
+ * timeline grows past the card and scrolls instead of squeezing.
  */
 export function calculateSegmentWidths(
 	segments: TimelineSegment[],
 	availableWidth: number,
 	gapColumnWidth: number,
+	minPixelsPerMinute = 0,
 ): number[] {
 	const numGaps = segments.filter(s => s.type === 'gap').length
 	const totalGapWidth = numGaps * gapColumnWidth
-	const activityWidth = Math.max(0, availableWidth - totalGapWidth)
 	const totalActivityMinutes = segments
 		.filter(s => s.type === 'activity')
 		.reduce((sum, s) => sum + s.durationMinutes, 0)
+	const activityWidth = Math.max(totalActivityMinutes * minPixelsPerMinute, availableWidth - totalGapWidth)
 
 	return segments.map(segment => {
 		if (segment.type === 'gap') return gapColumnWidth

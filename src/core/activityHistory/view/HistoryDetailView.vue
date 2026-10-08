@@ -97,11 +97,12 @@
 		/>
 
 		<template v-else>
-			<!-- Visualization Toggle -->
+			<!-- Visualization Toggle. `min-content`: never shorter than the chart's header plus its plot's
+			     floor (F95). -->
 			<div
 				v-if="isStackedBars"
 				class="flex-fill"
-				style="min-height: 200px"
+				style="min-height: min-content"
 			>
 				<StackedBarsChart
 					class="w-100"

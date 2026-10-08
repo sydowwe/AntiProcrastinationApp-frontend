@@ -1,8 +1,13 @@
 <template>
-	<div class="pie-chart-container">
+	<div
+		ref="container"
+		class="pie-chart-container"
+	>
 		<VChart
+			autoresize
 			:option="chartOption"
 			class="chart"
+			:style="{ height: `${stacked ? STACKED_HEIGHT : SIDE_HEIGHT}px` }"
 			@click="handleChartClick"
 		/>
 
@@ -45,9 +50,10 @@
 </template>
 
 <script setup lang="ts">
-	import { computed } from 'vue'
+	import { computed, useTemplateRef } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useTheme } from 'vuetify'
+	import { useElementSize } from '@vueuse/core'
 	import VChart from 'vue-echarts'
 	import { use } from 'echarts/core'
 	import { CanvasRenderer } from 'echarts/renderers'
@@ -89,6 +95,41 @@
 	// Register ECharts components
 	use([CanvasRenderer, PieChart, TooltipComponent, LegendComponent])
 
+	// The layout follows the measured width (F94). The canvas was a fixed 470 px with the donut at
+	// `115%` of its 300 px box, so on a 342 px phone card half the donut was cut off. Side by side the
+	// donut sits a fixed distance from the right edge, which is exactly the old 115% at 470 px; below
+	// SIDE_MIN_WIDTH there is no room for a legend beside it, so the legend goes under the donut.
+	const SIDE_HEIGHT = 250
+	// The donut's bottom at its emphasis scale (120 + 95 + 10), plus the one-row paged legend.
+	const STACKED_HEIGHT = 265
+	const SIDE_MIN_WIDTH = 440
+	const PIE_BOX = 300
+	// From the right edge to the donut's centre: 470 − 115% × PIE_BOX.
+	const SIDE_CENTER_FROM_RIGHT = 125
+
+	const container = useTemplateRef<HTMLElement>('container')
+	const { width } = useElementSize(container)
+	const stacked = computed(() => width.value < SIDE_MIN_WIDTH)
+
+	// Both branches set the same keys: vue-echarts merges each option into the last, so a key only one
+	// branch set would survive a switch between them.
+	const layout = computed(() =>
+		stacked.value
+			? {
+					legend: { orient: 'horizontal' as const, left: 'center', top: 'auto', bottom: 0 },
+					series: { center: ['50%', 120], width: '100%', height: '100%', radius: [40, 95] },
+				}
+			: {
+					legend: { orient: 'vertical' as const, left: 0, top: 'center', bottom: 'auto' },
+					series: {
+						center: [width.value - SIDE_CENTER_FROM_RIGHT, '42%'],
+						width: PIE_BOX,
+						height: PIE_BOX,
+						radius: ['35%', '75%'],
+					},
+				},
+	)
+
 	// ECharts identifies a pie item — and its legend entry — by `name`, so `name` carries the key and
 	// every visible string is looked up from it. Naming items by label merged two processes that share
 	// a product name into one legend entry and made a click on either select the first.
@@ -126,9 +167,7 @@
 				pageIconColor: onSurface.value,
 				pageIconInactiveColor: '#888',
 				pageTextStyle: { color: onSurface.value },
-				orient: 'vertical',
-				left: 0,
-				top: 'center',
+				...layout.value.legend,
 				borderColor: '#666',
 				borderRadius: 5,
 				borderWidth: 1,
@@ -155,10 +194,7 @@
 			series: [
 				{
 					type: 'pie',
-					center: ['115%', '42%'], // Move pie to the right to make room for legend
-					width: 300,
-					height: 300,
-					radius: ['35%', '75%'],
+					...layout.value.series,
 					avoidLabelOverlap: false,
 					itemStyle: {
 						borderColor: '#ccc',
@@ -210,14 +246,16 @@
 </script>
 
 <style scoped>
+	/* 470 px where it fits (room for the legend left of the donut), the card's width where it does not. */
 	.pie-chart-container {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		width: 470px;
+		max-width: 100%;
 	}
 
 	.chart {
-		height: 250px;
-		width: 470px; /* Increased width to accommodate legend on left */
+		width: 100%;
 	}
 </style>

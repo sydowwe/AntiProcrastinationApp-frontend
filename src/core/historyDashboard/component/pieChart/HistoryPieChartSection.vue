@@ -25,7 +25,9 @@
 		</template>
 
 		<template v-else>
-			<div class="d-flex ga-2">
+			<!-- Side by side from `sm` up only: on a phone the fixed-width details card left the canvas 134 px,
+			     and the legend cut each name to 0–2 letters (F94). -->
+			<div class="d-flex flex-column flex-sm-row ga-2">
 				<div
 					class="flex-fill"
 					style="min-width: 0"
@@ -38,7 +40,7 @@
 				</div>
 				<VCard
 					variant="outlined"
-					style="min-width: 200px; max-width: 250px"
+					:style="smAndUp ? 'min-width: 200px; max-width: 250px' : undefined"
 				>
 					<VCardTitle class="d-flex align-center justify-space-between">
 						<span>{{ detailsHeader }}</span>
@@ -104,6 +106,7 @@
 <script setup lang="ts">
 	import { computed } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { useDisplay } from 'vuetify'
 	import HistoryPieChart from './HistoryPieChart.vue'
 	import HistoryEmptyState from '@/core/historyDashboard/component/HistoryEmptyState.vue'
 	import HistoryErrorState from '@/core/historyDashboard/component/HistoryErrorState.vue'
@@ -130,6 +133,7 @@
 	const selectedGroup = defineModel<HistoryGroupKey | null>('selectedGroup', { default: null })
 
 	const { t } = useI18n()
+	const { smAndUp } = useDisplay()
 
 	const selectedGroupItem = computed(() => {
 		if (!selectedGroup.value || !props.data) return null

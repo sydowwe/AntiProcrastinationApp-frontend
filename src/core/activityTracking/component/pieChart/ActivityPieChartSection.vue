@@ -46,7 +46,9 @@
 		</template>
 
 		<template v-else>
-			<div class="d-flex ga-2">
+			<!-- The panel drops under the chart below `md`: beside it, on a phone, it lay outside the card's
+			     clip where nothing could reach it (F94). -->
+			<div class="d-flex flex-column flex-md-row ga-2">
 				<div class="chart-column">
 					<ActivityPieChart
 						v-model="viewMode"
