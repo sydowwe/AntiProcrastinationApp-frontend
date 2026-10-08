@@ -1,6 +1,8 @@
 <template>
 	<div class="py-4 h-100 w-100 d-flex flex-column">
-		<div class="d-flex align-center">
+		<!-- Below `md` the filter group takes its own full-width line under the tabs; from `md` up the row
+			 stays one line and the group wraps inside itself (F93). -->
+		<div class="d-flex flex-wrap flex-md-nowrap align-center gr-2">
 			<!-- `flex-0-0`: the tabs must not shrink — the filter group beside them wraps instead (F22). -->
 			<VTabs
 				v-model="activeTab"
@@ -11,7 +13,7 @@
 				<VTab value="roles">{{ t('activities.roles') }}</VTab>
 				<VTab value="categories">{{ t('activities.categories') }}</VTab>
 			</VTabs>
-			<div class="d-flex flex-wrap ga-2 ml-14 flex-1-1">
+			<div class="d-flex flex-wrap ga-2 ml-md-14 flex-1-1-100 flex-md-1-1">
 				<template v-if="activeTab === 'activities'">
 					<VTextField
 						v-model="activityNameDraft"

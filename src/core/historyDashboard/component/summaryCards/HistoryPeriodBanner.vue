@@ -8,7 +8,7 @@
 		variant="tonal"
 		density="compact"
 	>
-		<div class="d-flex align-center ga-1">
+		<div class="d-flex flex-wrap align-center ga-1">
 			<span class="text-high-emphasis font-weight-medium">
 				{{ $t('historyDashboard.periodBanner.periodTotal') }}
 			</span>
@@ -68,9 +68,11 @@
 <style scoped>
 	/* VAlert ships `flex: 1 1` — a 0% basis, so the parent row's `flex-wrap` sees a 0 px item and never
 	   wraps it; it gets squeezed into the leftover instead. Basis `auto` makes it its content width, so it
-	   wraps onto its own line when it does not fit, and it never grows. */
+	   wraps onto its own line when it does not fit, and it never grows. `max-width` caps that content
+	   width at the row on a phone, where the inner row then wraps instead of panning the page (F93). */
 	.myAlert {
 		flex: 0 0 auto;
+		max-width: 100%;
 	}
 
 	.myAlert:deep(.v-alert__prepend) {

@@ -1,8 +1,9 @@
 <template>
 	<div class="py-6 w-100">
-		<div class="mb-5 d-flex justify-space-between align-center">
+		<!-- Both rows wrap: on a phone the toolbar drops under the title instead of panning the page (F93). -->
+		<div class="mb-5 d-flex flex-wrap justify-space-between align-center ga-3">
 			<h1 class="text-h4">{{ $t('planner.template.pageTitle') }}</h1>
-			<div class="d-flex align-center ga-3">
+			<div class="d-flex flex-wrap align-center ga-3">
 				<template v-if="mdAndUp && templates.length >= 2">
 					<VBtn
 						v-if="!compareMode"
@@ -37,7 +38,7 @@
 					density="compact"
 					variant="outlined"
 					hideDetails
-					style="min-width: 170px"
+					:style="smAndUp ? 'min-width: 170px' : undefined"
 				/>
 				<VBtn
 					v-if="mdAndUp"
@@ -212,7 +213,7 @@
 	import { useQueryParamRef } from '@/core/dayPlanner/composable/useQueryParamRef.ts'
 
 	const { showFullScreenLoading, hideFullScreenLoading, fullScreenLoading } = useLoading()
-	const { mdAndUp } = useDisplay()
+	const { smAndUp, mdAndUp } = useDisplay()
 	const router = useRouter()
 	const { fetchAll, update, deleteEntity, setPinned } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchFilteredTasks, createWithResponse: createTaskWithResponse } =
