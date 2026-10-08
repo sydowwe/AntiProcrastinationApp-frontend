@@ -68,6 +68,39 @@ const home = {
 		loadFailedHistory: `Nepodarilo sa načítať dnešnú aktivitu`,
 		loadFailedRoutineTodos: `Nepodarilo sa načítať rutinné úlohy`,
 		loadFailedTodos: `Nepodarilo sa načítať úlohy`,
+		// FO5, karta po štyroch a viac dňoch preč. Nikdy nezačína číslom: veci pomenuje skôr, než ich spočíta,
+		// a dĺžku neprítomnosti nespomína vôbec. Tvary množného čísla v poradí 1 | 2–4 | 0 a 5+ (src/i18n.ts).
+		welcomeBack: {
+			title: `Vitaj späť`,
+			titleMarkedAway: `Vitaj späť z voľna`,
+			intro: `Pár vecí na teba počkalo. Vyber, čo s nimi, a dnešok začne zľahka.`,
+			introEmpty: `Kým si bol preč, nič sa nenahromadilo. Dnešok je celý tvoj.`,
+			andMore: `{names} a ešte 1 | {names} a ešte {count} | {names} a ešte {count}`,
+			todos: {
+				heading: `Úlohy po termíne`,
+				spread: `Rozložiť na najbližších {count} dní`,
+				someday: `Zrušiť termíny (niekedy)`,
+				keep: `Nechať tak`,
+			},
+			tasks: {
+				heading: `Naplánované, kým si bol preč`,
+				closeAsAway: `Zavrieť, bol som preč`,
+				carryToToday: `Presunúť na dnes`,
+				keep: `Nechať tak`,
+			},
+			notifications: {
+				heading: `Notifikácie`,
+				summary: `1 neprečítaná notifikácia | {count} neprečítané notifikácie | {count} neprečítaných notifikácií`,
+				markRead: `Označiť všetky ako prečítané`,
+				keep: `Nechať neprečítané`,
+			},
+			routines: `Dnes začínajú odznova: {names}`,
+			startFresh: `Začať odznova`,
+			dismiss: `Nechať všetko tak`,
+			gotIt: `Rozumiem`,
+			applied: `Nový začiatok. Dnešok začína zľahka.`,
+			undone: `Všetko je späť, ako bolo`,
+		},
 	},
 }
 export default home

@@ -1,5 +1,8 @@
 <template>
 	<div class="home py-4 w-100 d-flex flex-column">
+		<!-- FO5: only after four days or more away, and only until it is answered — above even "now",
+			 because the pile it clears is what would otherwise fill every widget below it. -->
+		<WelcomeBackCard class="mx-2 mb-2 flex-shrink-0" />
 		<!-- what to do right now, above everything else -->
 		<NowBar class="mx-2 mb-2 flex-shrink-0" />
 		<div class="home__region home__region--main">
@@ -81,6 +84,7 @@
 	import { notifyTrackingSessionFinished } from '@/core/home/composable/useDashboardRefresh.ts'
 	import { useHomeShortcuts } from '@/core/home/composable/useHomeShortcuts.ts'
 	import NowBar from '@/core/home/component/NowBar.vue'
+	import WelcomeBackCard from '@/core/home/component/WelcomeBackCard.vue'
 	import DayPlannerWidget from '@/core/home/component/DayPlannerWidget.vue'
 	import RoutineTodoWidget from '@/core/home/component/RoutineTodoWidget.vue'
 	import ActivityHistoryWidget from '@/core/home/component/ActivityHistoryWidget.vue'

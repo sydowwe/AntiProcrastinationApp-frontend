@@ -19,11 +19,22 @@ export enum BuiltInSkipReason {
 	NoTime = 'noTime',
 	NotRelevant = 'notRelevant',
 	NoEnergy = 'noEnergy',
+	/**
+	 * Server-only (FO5): the welcome-back card's fresh start closes the blocks left open while the user
+	 * was away with this key. Never offered and never sent: the server refuses it on the status PATCH,
+	 * and leaves these blocks out of the skip summary.
+	 */
+	Away = 'away',
 }
 
-export const BUILT_IN_SKIP_REASONS = Object.values(BuiltInSkipReason)
+/** The reasons a user can pick — the *Skip* menu's list, and the labels the reason fold recognises. */
+export const BUILT_IN_SKIP_REASONS = [
+	BuiltInSkipReason.NoTime,
+	BuiltInSkipReason.NotRelevant,
+	BuiltInSkipReason.NoEnergy,
+]
 
 /** A key the server sent, or null — including for a value this client does not know yet. */
 export function parseBuiltInSkipReason(raw: unknown): BuiltInSkipReason | null {
-	return BUILT_IN_SKIP_REASONS.find(key => key === raw) ?? null
+	return Object.values(BuiltInSkipReason).find(key => key === raw) ?? null
 }

@@ -68,6 +68,39 @@ const home = {
 		loadFailedHistory: `Couldn't load today's activity`,
 		loadFailedRoutineTodos: `Couldn't load routine tasks`,
 		loadFailedTodos: `Couldn't load tasks`,
+		// FO5, the card after four days or more away. It never leads with a number: items are named before
+		// they are counted, and the length of the absence is not said at all.
+		welcomeBack: {
+			title: `Welcome back`,
+			titleMarkedAway: `Welcome back from your time off`,
+			intro: `A few things waited for you. Choose what happens to them and today starts light.`,
+			introEmpty: `Nothing piled up while you were gone. Today is all yours.`,
+			andMore: `{names} and 1 more | {names} and {count} more`,
+			todos: {
+				heading: `Overdue to-dos`,
+				spread: `Spread over the next {count} days`,
+				someday: `Drop the dates (someday)`,
+				keep: `Leave them`,
+			},
+			tasks: {
+				heading: `Planned while you were away`,
+				closeAsAway: `Close them, I was away`,
+				carryToToday: `Move them to today`,
+				keep: `Leave them`,
+			},
+			notifications: {
+				heading: `Notifications`,
+				summary: `1 unread notification | {count} unread notifications`,
+				markRead: `Mark all read`,
+				keep: `Keep them unread`,
+			},
+			routines: `Starting fresh today: {names}`,
+			startFresh: `Start fresh`,
+			dismiss: `Leave everything as it is`,
+			gotIt: `Got it`,
+			applied: `Fresh start. Today begins light.`,
+			undone: `Everything is back as it was`,
+		},
 	},
 }
 export default home

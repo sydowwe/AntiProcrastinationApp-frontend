@@ -332,6 +332,18 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high, for both.
 
 ### FO5. Coming back after a gap: one card turns the pile into three decisions, and the app goes quiet while you're gone
+- **Status (2026-10-08): step 1 (the greeting) built and on backend `dev` (`8863158`), migration
+  `20261008080300_UserLastActiveAndWelcomeBack` applied.** Frontend card built and committed: `WelcomeBackCard.vue`
+  above the now bar, in `src/core/home/`. Checked end to end in the browser against the real API (2026-10-08), at
+  desktop and phone widths: the card with the seed's pile, start fresh (7 to-dos spread, 4 tasks closed, 5
+  notifications read), undo from the toast (all restored, card back), and dismiss (stays gone after a reload). The
+  back-off (step 2) is not built. Built: `User.LastActiveAt` (hourly stamp, tracker tokens excluded) and
+  `GET /welcome-back`, plus `POST /welcome-back/fresh-start`, `/fresh-start/undo` and `/dismiss`. Also a server-only
+  `SkipReasonKey.Away`, which the skip summary ignores. Two departures from the spec below:
+  - Host-side with no per-slice seams, as the deletion summary is.
+  - The card's past tasks span the whole absence, not only days older than seven, so answering it also clears the
+    carry-over banner.
+  FO6's `IsUserAbsentAsync` deliberately stays false, because every caller is the user's own request.
 - **Source:** F1-04 + F4 unlock 8 (the re-entry day).
 - **Moment:** opening the app after eight unplanned days, onto overdue to-dos across four lists, broken streaks and a
   wall of unread notifications.

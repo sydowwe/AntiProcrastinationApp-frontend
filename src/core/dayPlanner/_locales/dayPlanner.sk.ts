@@ -416,6 +416,8 @@ const dayPlanner = {
 			noTime: `Nestihol som`,
 			notRelevant: `Už nie je aktuálne`,
 			noEnergy: `Nemal som energiu`,
+			// FO5: zavreté kartou „Vitaj späť“, nikdy sa neponúka v menu.
+			away: `Bol som preč`,
 		},
 		nowNext: {
 			now: `Teraz: {name}`,

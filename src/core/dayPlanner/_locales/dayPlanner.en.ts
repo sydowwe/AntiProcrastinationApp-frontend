@@ -405,6 +405,8 @@ const dayPlanner = {
 			noTime: `Ran out of time`,
 			notRelevant: `Not relevant any more`,
 			noEnergy: `No energy for it`,
+			// FO5: closed by the welcome-back card, never offered in the menu.
+			away: `I was away`,
 		},
 		nowNext: {
 			now: `Now: {name}`,
