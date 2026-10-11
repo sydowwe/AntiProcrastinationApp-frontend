@@ -58,12 +58,31 @@ globalThis.NOTIFICATION_SUBJECT_ROUTES = {
 }
 
 /**
- * One `subject` → a path, or `undefined` when there is nowhere specific to go.
+ * `type` → a query parameter that asks the destination to act on the subject, not just show it.
+ * Appended as `<param>=<subject.id>` only when the subject resolved to a path above, because the
+ * destination needs that id to act on.
+ *
+ * The value is the id rather than a flag, so the destination does not depend on `focus`, which it
+ * clears on arrival. The destination re-checks against live state before it acts: a notification
+ * is a snapshot, and by the time it is clicked the action may already be done or impossible.
+ *
+ *   RoutinePeriodEnded  A broken streak's summary says a skip could restore it (P1-01 C). The
+ *                       routine list opens the skip confirm for that period if a miss is still
+ *                       coverable now, and does nothing otherwise. A kept streak lands the same way
+ *                       and finds no miss.
+ */
+globalThis.NOTIFICATION_TYPE_INTENTS = {
+	RoutinePeriodEnded: 'offerFreeze',
+}
+
+/**
+ * One `subject` → a path, or `undefined` when there is nowhere specific to go. With the
+ * notification's `type`, the path also carries that type's intent parameter, if it has one.
  *
  * `undefined` covers all four ways that happens, because callers treat them identically: no subject,
  * a malformed one, a kind this app does not know, and a kind it knows but has no destination for.
  */
-globalThis.resolveNotificationSubjectPath = function (subject) {
+globalThis.resolveNotificationSubjectPath = function (subject, type) {
 	if (!subject || typeof subject !== 'object') return undefined
 
 	var kind = subject.kind
@@ -71,7 +90,12 @@ globalThis.resolveNotificationSubjectPath = function (subject) {
 	if (typeof kind !== 'string' || typeof id !== 'number' || !isFinite(id)) return undefined
 
 	var build = globalThis.NOTIFICATION_SUBJECT_ROUTES[kind]
-	return typeof build === 'function' ? build(id) : undefined
+	if (typeof build !== 'function') return undefined
+
+	var path = build(id)
+	var intent = typeof type === 'string' ? globalThis.NOTIFICATION_TYPE_INTENTS[type] : undefined
+	if (!intent) return path
+	return path + (path.indexOf('?') === -1 ? '?' : '&') + intent + '=' + id
 }
 
 /**
@@ -88,7 +112,7 @@ globalThis.resolveNotificationSubjectPath = function (subject) {
  */
 globalThis.resolveNotificationTargetUrl = function (data) {
 	if (!data || typeof data !== 'object') return '/'
-	return globalThis.resolveNotificationSubjectPath(data.subject) || data.url || '/'
+	return globalThis.resolveNotificationSubjectPath(data.subject, data.type) || data.url || '/'
 }
 
 /*

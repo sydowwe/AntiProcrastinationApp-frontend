@@ -158,15 +158,35 @@ describe('resolving a subject', () => {
 	})
 
 	it('deep-links every routine type to the period it is about', () => {
-		for (const type of [
-			'RoutinePeriodEndingSoon',
-			'RoutinePeriodEnded',
-			'RoutineStreakGraceExpiring',
-			'RoutineSuggestedToday',
-		]) {
+		for (const type of ['RoutinePeriodEndingSoon', 'RoutineStreakGraceExpiring', 'RoutineSuggestedToday']) {
 			expect(notificationRoute(notification(type, { kind: 'routinePeriod', id: 77 }))).toBe(
 				'/routine-todo-list?focus=77',
 			)
+		}
+	})
+
+	it('asks the routine list to offer a skip when a period ended', () => {
+		// P1-01 C. The list checks for a coverable miss itself, so a kept streak carries the parameter too.
+		expect(notificationRoute(notification('RoutinePeriodEnded', { kind: 'routinePeriod', id: 77 }))).toBe(
+			'/routine-todo-list?focus=77&offerFreeze=77',
+		)
+	})
+
+	it('adds no intent when there is no subject to act on', () => {
+		expect(notificationRoute(notification('RoutinePeriodEnded'))).toEqual({ name: 'routineToDoList' })
+		expect(globalThis.resolveNotificationTargetUrl?.({ type: 'RoutinePeriodEnded' })).toBe('/')
+	})
+
+	it('starts the query string when the subject path has none', () => {
+		// Every intent today lands on a path that already has `?focus=`. This pins the other branch,
+		// so a future intent on a plain path does not produce `/planovac/behy/77&x=77`.
+		globalThis.NOTIFICATION_TYPE_INTENTS!.TestOnlyIntent = 'act'
+		try {
+			expect(
+				globalThis.resolveNotificationSubjectPath?.({ kind: 'scheduledJobRun', id: 77 }, 'TestOnlyIntent'),
+			).toBe('/planovac/behy/77?act=77')
+		} finally {
+			delete globalThis.NOTIFICATION_TYPE_INTENTS!.TestOnlyIntent
 		}
 	})
 
@@ -223,6 +243,7 @@ describe('both deliveries of one event land in the same place', () => {
 		['PlannedBlocksMissed', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
 		['PlannedBlockOverrun', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
 		['RoutinePeriodEndingSoon', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
+		['RoutinePeriodEnded', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77&offerFreeze=77'],
 		['RoutineSuggestedToday', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
 	])('agrees between the bell and the service worker for %s', (type, subject, expected) => {
 		const inApp = notificationRoute(notification(type as string, subject as { kind: string; id: number }))

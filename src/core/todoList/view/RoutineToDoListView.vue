@@ -146,6 +146,7 @@
 	import { useRoutineCelebration } from '@/core/todoList/composable/useRoutineCelebration.ts'
 	import { useRoutineItemActions } from '@/core/todoList/composable/useRoutineItemActions.ts'
 	import { useRoutineDialogs } from '@/core/todoList/composable/useRoutineDialogs.ts'
+	import { useNotificationFreezeOffer } from '@/core/todoList/composable/useNotificationFreezeOffer.ts'
 	import type { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskRequest.ts'
 	import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 
@@ -159,6 +160,7 @@
 	const focusTarget = useQueryFocusTarget({
 		selector: id => `[data-routine-period-id="${CSS.escape(id)}"]`,
 	})
+	const freezeOffer = useNotificationFreezeOffer()
 	const { showFullScreenLoading } = useLoading()
 	const { isNewWeek, ensureLoaded: ensureReviewDismissalLoaded, dismissForThisWeek } = useRoutineWeeklyReview()
 	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
@@ -202,9 +204,29 @@
 
 	onMounted(() => {
 		// Not awaited alongside the review load — the two are independent and used to run concurrently.
-		void getAllRecords().then(revealFocusedPeriod)
+		void getAllRecords().then(arriveFromNotification)
 		ensureReviewDismissalLoaded()
 	})
+
+	/**
+	 * Handles a deep link from a routine notification. It first shows the period, then offers a skip
+	 * when the link asks for one (see `useNotificationFreezeOffer`).
+	 *
+	 * The offer's parameter is taken before the reveal. Each one drops its own parameter with a
+	 * `router.replace` of `{ ...route.query }`. If the two ran together, the later replace would be
+	 * built from the query as it was before the earlier one, and would put the removed parameter
+	 * back.
+	 */
+	async function arriveFromNotification() {
+		const freezePeriodId = await freezeOffer.take()
+		await revealFocusedPeriod()
+		if (freezePeriodId === null) return
+
+		const group = groupedItems.value.find(g => g.timePeriod.id === freezePeriodId)
+		// The server owns the recomputed streak and budget, so reload rather than patch, the same as
+		// the card's own `freezeSpent`.
+		if (await freezeOffer.offer(group?.timePeriod)) await getAllRecords()
+	}
 
 	/**
 	 * `?focus=<timePeriodId>` — arriving from a routine notification, which is about one specific

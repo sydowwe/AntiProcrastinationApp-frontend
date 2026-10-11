@@ -28,7 +28,7 @@ import type { NotificationResponse } from '@/_common/modules/notifications/dto/N
  * notification quietly falls back to its type route instead of throwing at the click site.
  */
 function subjectRoute(notification: NotificationResponse, fallback?: RouteLocationRaw): RouteLocationRaw | undefined {
-	return globalThis.resolveNotificationSubjectPath?.(notification.subject) ?? fallback
+	return globalThis.resolveNotificationSubjectPath?.(notification.subject, notification.type) ?? fallback
 }
 
 export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {

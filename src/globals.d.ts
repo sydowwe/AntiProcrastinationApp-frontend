@@ -19,7 +19,7 @@ declare global {
 	 */
 
 	var resolveNotificationSubjectPath:
-		| ((subject: { kind: string; id: number } | undefined) => string | undefined)
+		| ((subject: { kind: string; id: number } | undefined, type?: string) => string | undefined)
 		| undefined
 
 	/** The Web Push click target — the full `subject → url → '/'` chain. Used by `sw-push.js`. */
@@ -29,6 +29,10 @@ declare global {
 	/** The raw map, exposed for the test that checks each path against the live route table. */
 
 	var NOTIFICATION_SUBJECT_ROUTES: Record<string, (id: number) => string> | undefined
+
+	/** Notification type → the query parameter that asks the destination to act on the subject. */
+
+	var NOTIFICATION_TYPE_INTENTS: Record<string, string> | undefined
 
 	interface ImportMetaEnv {
 		readonly VITE_API_URL: string
