@@ -91,6 +91,8 @@ never ships a call to a route or field that the running API does not have yet.
 ---
 
 ### FO1. Vacation and sick days stop breaking routines, nudging, and suggesting the office
+- **Closed (2026-10-08):** reviewed against this section in both repos and found complete. Only the migration
+  below is left, and it is the owner's.
 - **Status (2026-10-07): built and committed** (backend `ab5f0e7`, frontend `ec4b7a30`). Migration
   `20261006183310_RoutinePeriodCompletionIsExcused` is the owner's to apply; it was not confirmed applied when this line
   was written. What was built (2026-10-06): backend: Core
@@ -195,6 +197,9 @@ never ships a call to a route or field that the running API does not have yet.
   subtly wrong.
 
 ### FO3. A task that keeps slipping is offered a smaller first step, and carrying it over stops counting against you
+- **Closed (2026-10-08):** both phases reviewed and found complete. Every move path (PUT, span patch, re-plan
+  apply, the to-do PUT and `reschedule-overdue`) goes through the two postpone rules. Left: the owner applies
+  `20261007200704`, then `todo-motivation.spec.ts` is re-run against the new route.
 - **Status (2026-10-07): both phases built.** Phase 1 checked live (no migration). Phase 2 (backend `410dced`)
   is built and tested but **not yet live**: it needs migration `20261007200704_PlannerTaskPostponeAndRepeatingSource` applied and
   an API restart. That migration is wave C's single `planner_task` migration, and also carries FO6's two columns.
@@ -336,8 +341,12 @@ never ships a call to a route or field that the running API does not have yet.
   `20261008080300_UserLastActiveAndWelcomeBack` applied.** Frontend card built and committed: `WelcomeBackCard.vue`
   above the now bar, in `src/core/home/`. Checked end to end in the browser against the real API (2026-10-08), at
   desktop and phone widths: the card with the seed's pile, start fresh (7 to-dos spread, 4 tasks closed, 5
-  notifications read), undo from the toast (all restored, card back), and dismiss (stays gone after a reload). The
-  back-off (step 2) is not built. Built: `User.LastActiveAt` (hourly stamp, tracker tokens excluded) and
+  notifications read), undo from the toast (all restored, card back), and dismiss (stays gone after a reload).
+  **Step 2, the back-off, built (backend only, no migration, no frontend):** the framework's notification sender
+  takes an optional `IRecipientEngagementReader` and a host-declared `HeldWhileAwayTypes`. For a user away three
+  days or more, the four routine nudges are written to the bell but not pushed or mailed, and nothing releases
+  them later. Their own reminders, the timer alarm and scheduler alerts still go out. Not committed yet (a framework
+  commit, then the gitlink). Step 1 built: `User.LastActiveAt` (hourly stamp, tracker tokens excluded) and
   `GET /welcome-back`, plus `POST /welcome-back/fresh-start`, `/fresh-start/undo` and `/dismiss`. Also a server-only
   `SkipReasonKey.Away`, which the skip summary ignores. Two departures from the spec below:
   - Host-side with no per-slice seams, as the deletion summary is.
@@ -434,6 +443,7 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, medium. Frontend Sonnet 5.5, low.
 
 ### FO7. Every user can connect the desktop tracker, browser extension or phone app
+- **Closed (2026-10-08):** reviewed and found complete, the hub follow-up included.
 - **Status (2026-10-07): built and committed, no migration.** Backend `bcf8671` deletes the `HasExtensionAccess`
   override; framework `4edb8bd` adds `IsExtensionClient` to `GET /user/sessions`. Frontend `ba3e54ea` adds
   `TrackersCard.vue` under `#integrations` (what each tracker records, in the privacy policy's words, plus a *Sign out*
