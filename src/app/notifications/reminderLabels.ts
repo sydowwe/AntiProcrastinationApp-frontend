@@ -2,18 +2,21 @@ import type { InstallFrameworkOptions } from '@/_common/bootstrap/installFramewo
 
 // This app's map for `installFramework`'s `reminderLabels` option — the seam in
 // `_common/modules/notifications/reminderPreference/utils/reminderLabels.ts` that N9 added next to
-// `notificationTypeMeta.ts`.
+// `notificationTypeMeta.ts`. Values are i18n keys.
 //
-// Deliberately empty. This frontend never creates a reminder under any `ownerModule` other than the
-// reminders engine's own generic `("Portal", "PersonalReminder")` pair — confirmed by grepping
-// `src/core` for `ownerModule`/`ReminderKey` construction, which has zero hits, and by the comment at
-// `core/dayPlanner/view/DayPlannerSettingsView.vue:120-125`, which names that pair as the only
-// delivery switch this app's reminders go through. `reminderLabels.ts` already resolves `Portal` and
-// `PersonalReminder` through the framework's own `reminderPreference.ownerModule`/`kindName` i18n
-// keys, so this app has no identifier of its own to register. Left as an empty, wired map rather than
-// omitted entirely, so the next `ownerModule` this app's backend introduces has an obvious place to
-// land instead of another cold read of this seam.
+// `("Portal", "PersonalReminder")` — the reminders engine's own generic pair for anything a user creates
+// themselves — needs no entry: the framework's `reminderPreference.ownerModule`/`kindName` keys already
+// resolve it. The entries below are the identifiers this app's backend added on top of it:
+//
+//   - P1-03: `("Portal", "PlannedBlockStarting")`, the planner's automatic block reminders. Same owner
+//     as the personal ones, a kind of its own so they can be muted separately.
+//   - P1-02: `("TodoLists", "TodoItemDue")`, a to-do's due-time reminder.
 export const reminderLabels: InstallFrameworkOptions['reminderLabels'] = {
-	ownerModule: {},
-	kind: {},
+	ownerModule: {
+		TodoLists: 'toDoList.dueReminders.ownerModule',
+	},
+	kind: {
+		PlannedBlockStarting: 'planner.autoReminders.kindName',
+		TodoItemDue: 'toDoList.dueReminders.kindName',
+	},
 }

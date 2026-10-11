@@ -3,6 +3,11 @@ import { ref } from 'vue'
 import { usePlannerSettingsApi } from '@/core/dayPlanner/api/plannerSettingsApi.ts'
 import { UserPlannerSettingsRequest } from '@/core/dayPlanner/dto/request/UserPlannerSettingsRequest.ts'
 import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
+import type { AutoReminderMode } from '@/core/dayPlanner/dto/enum/AutoReminderMode.ts'
+import {
+	DEFAULT_AUTO_REMINDER_MIN_IMPORTANCE,
+	DEFAULT_AUTO_REMINDER_MODE,
+} from '@/core/dayPlanner/dto/response/UserPlannerSettings.ts'
 
 export const useDayPlannerSettingsStore = defineStore(
 	'dayPlannerSettings',
@@ -21,6 +26,10 @@ export const useDayPlannerSettingsStore = defineStore(
 		// See `prompts/user/backend/B2-preference-ownership.md` for the full answer.
 		const remindersEnabled = ref(true)
 		const reminderMinutesBefore = ref(10)
+		// P1-03: which new blocks the server gives a reminder of their own, at `reminderMinutesBefore`. Unlike the
+		// two above this does reach delivery — it creates real reminders — and `remindersEnabled` does not gate it.
+		const autoReminderMode = ref<AutoReminderMode>(DEFAULT_AUTO_REMINDER_MODE)
+		const autoReminderMinImportance = ref(DEFAULT_AUTO_REMINDER_MIN_IMPORTANCE)
 		const detailsPanelExpandedByDefault = ref(true)
 		const arrowKeyNavEnabled = ref(true)
 		const predefinedSkipReasons = ref<string[]>([])
@@ -37,6 +46,8 @@ export const useDayPlannerSettingsStore = defineStore(
 			const settings = await fetchSettings()
 			remindersEnabled.value = settings.remindersEnabled
 			reminderMinutesBefore.value = settings.reminderMinutesBefore
+			autoReminderMode.value = settings.autoReminderMode
+			autoReminderMinImportance.value = settings.autoReminderMinImportance
 			detailsPanelExpandedByDefault.value = settings.detailsPanelExpandedByDefault
 			arrowKeyNavEnabled.value = settings.arrowKeyNavEnabled
 			predefinedSkipReasons.value = settings.predefinedSkipReasons
@@ -62,6 +73,8 @@ export const useDayPlannerSettingsStore = defineStore(
 				new UserPlannerSettingsRequest(
 					remindersEnabled.value,
 					reminderMinutesBefore.value,
+					autoReminderMode.value,
+					autoReminderMinImportance.value,
 					detailsPanelExpandedByDefault.value,
 					arrowKeyNavEnabled.value,
 					predefinedSkipReasons.value,
@@ -76,6 +89,8 @@ export const useDayPlannerSettingsStore = defineStore(
 		return {
 			remindersEnabled,
 			reminderMinutesBefore,
+			autoReminderMode,
+			autoReminderMinImportance,
 			detailsPanelExpandedByDefault,
 			arrowKeyNavEnabled,
 			predefinedSkipReasons,

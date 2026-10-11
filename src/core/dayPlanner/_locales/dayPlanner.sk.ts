@@ -21,13 +21,28 @@ const dayPlanner = {
 		// were. They drive the in-tab nudge and the default lead time for task-linked reminders; only
 		// the reminder preferences page can stop a reminder from being delivered.
 		nudges: {
-			tab: `Upozornenia v aplikácii`,
+			tab: `Pripomienky`,
 			enable: `Upozorniť ma pred začiatkom aktivity`,
 			leadLabel: `Predstih`,
 			minutesSuffix: `min`,
 			explainer: `Toto upozornenie sa zobrazí len vtedy, keď máte plánovač otvorený v prehliadači. Rovnaký predstih sa použije aj ako predvolený, keď si k aktivite vytvoríte pripomienku bez zadaného času.`,
 			realRemindersHint: `Pripomienky doručované aj so zavretou aplikáciou — vrátane ich úplného vypnutia a tichých hodín — nastavíte v sekcii`,
 			reminderPreferencesLink: `Predvoľby pripomienok`,
+		},
+		// P1-03: skutočné pripomienky, ktoré plánovač vytvorí novým blokom — na rozdiel od upozornenia vyššie.
+		autoReminders: {
+			title: `Automatické pripomienky pre nové bloky`,
+			modeLabel: `Pripomenúť mi pred`,
+			mode: {
+				off: `Žiadnym blokom — len pripomienky, ktoré pridám sám`,
+				importantOnly: `Len dôležitými blokmi`,
+				all: `Každým blokom`,
+			},
+			minImportanceLabel: `Dôležité od`,
+			minImportanceHint: `Táto úroveň a všetky nad ňou`,
+			notificationType: `Začiatok plánovaného bloku`,
+			kindName: `Automatické pripomienky blokov`,
+			explainer: `Doručia sa aj so zavretou aplikáciou, s predstihom nastaveným vyššie. Dostanú ich len bloky pridané odteraz; bloky na pozadí nikdy. Na bloku ju zmažete alebo upravíte ako každú pripomienku.`,
 		},
 		templateSuggestions: {
 			suggestedForYou: `Odporúčané pre vás`,

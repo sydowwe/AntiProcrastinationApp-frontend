@@ -43,6 +43,26 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 	// through to the list for now; this line needs no change when they gain one.
 	PersonalReminder: { icon: 'bell', color: 'primary', route: n => subjectRoute(n, { name: 'myReminders' }) },
 
+	// P1-03: the reminder the planner creates by itself for a new block, under its own kind so it can be
+	// muted without muting the ones the user wrote. Always carries `plannerTask`, which the subject map
+	// sends through the task redirect to the block on its day.
+	PlannedBlockStarting: {
+		icon: 'bell',
+		color: 'secondary',
+		label: 'planner.autoReminders.notificationType',
+		route: n => subjectRoute(n, { name: 'myReminders' }),
+	},
+
+	// P1-02: a to-do with a due date and time. The subject is `todoListItem`, which has no destination
+	// in this app (an item has no route of its own — see the subject map's table), so it lands on the
+	// lists. Labelled app-side, like the routine types below.
+	TodoItemDue: {
+		icon: 'list-check',
+		color: 'warning',
+		label: 'toDoList.dueReminders.notificationType',
+		route: n => subjectRoute(n, { name: 'toDoList' }),
+	},
+
 	// PERMANENTLY constant, settled in B2: a digest is about N occurrences by construction — its
 	// payload carries a count and a per-kind breakdown, never a single id — so the list IS the
 	// specific target. Not a gap either.

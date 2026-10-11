@@ -106,6 +106,8 @@
 		() => [
 			settingsStore.remindersEnabled,
 			settingsStore.reminderMinutesBefore,
+			settingsStore.autoReminderMode,
+			settingsStore.autoReminderMinImportance,
 			settingsStore.detailsPanelExpandedByDefault,
 			settingsStore.arrowKeyNavEnabled,
 			[...settingsStore.predefinedSkipReasons],

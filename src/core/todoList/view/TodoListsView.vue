@@ -107,6 +107,7 @@
 							:aria-label="$t('general.toggleSortDirection')"
 							@click="toggleListSort"
 						/>
+						<TodoDueReminderSettingsMenu />
 					</div>
 				</div>
 
@@ -189,6 +190,7 @@
 	import TodoListForm from '@/core/todoList/component/normal/TodoListForm.vue'
 	import TodoListCategoryForm from '@/core/todoList/component/normal/TodoListCategoryForm.vue'
 	import TodoListCard from '@/core/todoList/component/normal/TodoListCard.vue'
+	import TodoDueReminderSettingsMenu from '@/core/todoList/component/normal/TodoDueReminderSettingsMenu.vue'
 	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 

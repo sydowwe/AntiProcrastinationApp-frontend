@@ -1,10 +1,17 @@
 import { convertToEnum } from '@/_common/utils/enumHelpers.ts'
 import { ApplyTemplateConflictResolution } from '@/core/dayPlanner/dto/enum/ApplyTemplateConflictResolution.ts'
+import { AutoReminderMode } from '@/core/dayPlanner/dto/enum/AutoReminderMode.ts'
+
+/** The server's defaults for a user with no settings row (`UserPlannerSettings.DefaultAutoReminder*`): Critical only. */
+export const DEFAULT_AUTO_REMINDER_MODE = AutoReminderMode.ImportantOnly
+export const DEFAULT_AUTO_REMINDER_MIN_IMPORTANCE = 999
 
 export class UserPlannerSettings {
 	constructor(
 		public remindersEnabled: boolean,
 		public reminderMinutesBefore: number,
+		public autoReminderMode: AutoReminderMode,
+		public autoReminderMinImportance: number,
 		public detailsPanelExpandedByDefault: boolean,
 		public arrowKeyNavEnabled: boolean,
 		public predefinedSkipReasons: string[],
@@ -23,6 +30,9 @@ export class UserPlannerSettings {
 		return new UserPlannerSettings(
 			json.remindersEnabled ?? true,
 			json.reminderMinutesBefore ?? 10,
+			// The same wire-name-vs-camelCase mapping as defaultConflictResolution below.
+			convertToEnum(AutoReminderMode, json.autoReminderMode) ?? DEFAULT_AUTO_REMINDER_MODE,
+			json.autoReminderMinImportance ?? DEFAULT_AUTO_REMINDER_MIN_IMPORTANCE,
 			json.detailsPanelExpandedByDefault ?? true,
 			json.arrowKeyNavEnabled ?? true,
 			json.predefinedSkipReasons ?? [],

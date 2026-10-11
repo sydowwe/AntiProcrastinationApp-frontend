@@ -19,13 +19,30 @@ const dayPlanner = {
 		},
 		// See the comment in dayPlanner.sk.ts — this block replaced copy that read as a kill switch.
 		nudges: {
-			tab: `In-app nudges`,
+			tab: `Reminders`,
 			enable: `Nudge me before a task starts`,
 			leadLabel: `Lead time`,
 			minutesSuffix: `min`,
 			explainer: `This nudge only appears while the planner is open in your browser. The same lead time is used as the default when you create a reminder for a task without setting one.`,
 			realRemindersHint: `Reminders delivered even with the app closed — including turning them off entirely, and quiet hours — live under`,
 			reminderPreferencesLink: `Reminder preferences`,
+		},
+		// P1-03: real reminders the planner creates for new blocks — unlike the nudge above.
+		autoReminders: {
+			title: `Automatic reminders for new blocks`,
+			modeLabel: `Remind me before`,
+			mode: {
+				off: `No block — only reminders I add myself`,
+				importantOnly: `Important blocks only`,
+				all: `Every block`,
+			},
+			minImportanceLabel: `Important from`,
+			minImportanceHint: `This level and everything above it`,
+			// Inbox type-filter name and notification-settings row for `PlannedBlockStarting`, and its
+			// `("Portal", "PlannedBlockStarting")` row on the reminder preferences page.
+			notificationType: `Planned block starting`,
+			kindName: `Automatic block reminders`,
+			explainer: `Delivered even with the app closed, at the lead time above. Only blocks you add from now on get one; background blocks never do. Delete or edit one on a block like any reminder.`,
 		},
 		templateSuggestions: {
 			suggestedForYou: `Suggested for you`,

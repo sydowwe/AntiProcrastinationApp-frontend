@@ -2,6 +2,18 @@ const todoList = {
 	toDoList: {
 		add: 'Add',
 		toDoList: 'To-do list',
+		// P1-02: the server reminds the owner of a to-do that has a due date AND a due time.
+		dueReminders: {
+			// Inbox type-filter name and notification-settings row for `TodoItemDue`.
+			notificationType: `To-do due`,
+			// The `("TodoLists", "TodoItemDue")` row on the reminder preferences page.
+			ownerModule: `To-do lists`,
+			kindName: `To-do due reminders`,
+			settingsTitle: `Due reminders`,
+			leadLabel: `Remind me before a to-do is due`,
+			minutesSuffix: `min`,
+			explainer: `Only to-dos with both a due date and a due time get a reminder. 0 reminds you at the due time itself.`,
+		},
 		priority: `Priority`,
 		changeOrder: `Change order`,
 		finishReordering: `Finish reordering`,

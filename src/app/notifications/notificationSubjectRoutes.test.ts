@@ -96,6 +96,20 @@ describe('resolving a subject', () => {
 		)
 	})
 
+	it('deep-links an automatic block reminder to its block', () => {
+		// P1-03: always `plannerTask`, through the same task redirect as a task-attached personal reminder.
+		expect(notificationRoute(notification('PlannedBlockStarting', { kind: 'plannerTask', id: 91 }))).toBe(
+			'/day-planner/task/91',
+		)
+	})
+
+	it('lands a to-do due reminder on the lists, since an item has no route of its own', () => {
+		// P1-02: `todoListItem` has no entry in the subject map, so the type route is the destination.
+		expect(notificationRoute(notification('TodoItemDue', { kind: 'todoListItem', id: 12 }))).toEqual({
+			name: 'toDoList',
+		})
+	})
+
 	it('deep-links every routine type to the period it is about', () => {
 		for (const type of [
 			'RoutinePeriodEndingSoon',

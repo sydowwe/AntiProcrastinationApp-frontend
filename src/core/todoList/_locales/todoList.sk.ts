@@ -2,6 +2,16 @@ const todoList = {
 	toDoList: {
 		add: 'Pridať',
 		toDoList: 'To-do list',
+		// P1-02: server pripomenie úlohu, ktorá má termín aj čas.
+		dueReminders: {
+			notificationType: `Termín úlohy`,
+			ownerModule: `Zoznamy úloh`,
+			kindName: `Pripomienky termínov úloh`,
+			settingsTitle: `Pripomienky termínov`,
+			leadLabel: `Pripomenúť mi pred termínom úlohy`,
+			minutesSuffix: `min`,
+			explainer: `Pripomienku dostanú len úlohy, ktoré majú termín aj čas. 0 pripomenie priamo v čase termínu.`,
+		},
 		priority: `Priorita`,
 		changeOrder: `Zmena poradia`,
 		finishReordering: `Dokončiť zoraďovanie`,
