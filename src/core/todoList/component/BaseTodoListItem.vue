@@ -100,7 +100,6 @@
 					v-if="isInChangeOrderMode"
 					class="drag-handle my-1 mr-3"
 					icon="bars"
-					color="white"
 					size="small"
 					style="height: 40px"
 				></VIcon>
@@ -450,6 +449,13 @@
 	.listItem:hover .drag-handle {
 		opacity: 1;
 		transform: scale(1.1);
+	}
+
+	/* A touch screen has no hover, so reorder mode would show nothing to drag (as in TodoListCategoryPanel). */
+	@media (hover: none) {
+		.drag-handle {
+			opacity: 1;
+		}
 	}
 
 	.item-progress-track {

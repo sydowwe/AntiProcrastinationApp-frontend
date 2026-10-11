@@ -17,7 +17,7 @@
 			color="successDark"
 			hideDetails
 		/>
-		<div class="d-flex align-center ga-3 pt-1">
+		<div class="d-flex flex-wrap align-center ga-3 pt-1">
 			<span class="text-body-2">{{ $t('planner.settings.slotSize') }}</span>
 			<MyBtnToggle
 				v-model="settingsStore.slotDurationMinutes"

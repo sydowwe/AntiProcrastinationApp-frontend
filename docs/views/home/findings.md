@@ -326,7 +326,7 @@
   merge; otherwise add the missing key to this app's EN (and SK) locale under the `$vuetify` namespace.
 
 ### P1. The routine widget's group chips are squeezed until their names clip — "Weekl", "Monthl" (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F105`: the chip doesn't shrink and the row wraps, so "+N not due today" drops under the bar. At 390 and 1440 the Verify reads 0 for Daily, Weekly and Monthly)
 - **Severity:** polish
 - **Where:** @390×844 · `/` → `src/core/home/component/RoutineTodoWidget.vue:65-73`. The group row (`d-flex align-center ga-2 mb-1`) holds the period `VChip`, a `VProgressLinear`, the done/total count and "+N not due today".
 - **Expected:** the group's name stays readable. It's the only label telling the user which period's progress bar they're looking at (plain sense).

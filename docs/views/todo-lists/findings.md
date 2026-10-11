@@ -703,7 +703,7 @@ the x4 narrow-viewport pass (2026-10-06): B10, A4, P2, P3, U4.
 - **Suggested fix:** `grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))`, or 4 columns below `sm`.
 
 ### P3. In Change order mode the drag handle never appears on a touch screen — it's hover-only (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F103`: `@media (hover: none)` shows the handle, and it inherits the card's text colour instead of `white`. Under CDP touch emulation every handle is at opacity 1 on `/todo-list/13001` and `/routine-todo-list`. U4, whether touch drag works, is still open)
 - **Severity:** polish
 - **Where:** @390×844 · `src/core/todoList/component/BaseTodoListItem.vue:429-447` (`.drag-handle { opacity: 0 }`, shown only by `.listItem:hover` / `.drag-handle:hover`). Shared by `NormalTodoListItem` and `RoutineTodoListItem`: `/todo-list/:id` → Change order, and `/routine-todo-list` → Reorder.
 - **Expected:** a mode whose whole purpose is dragging shows what to drag. A phone has no hover (template §3). `TodoListCategoryPanel.vue:265-269` already handles this with `@media (hover: none) { opacity: 1 }`.

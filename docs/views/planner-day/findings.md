@@ -448,7 +448,7 @@
 - **Suggested fix:** below `sm`, show a compact `N/M` (or just the progress bar) and drop the clock row.
 
 ### P5. Day Details dialog: the Location field is squeezed to 76 px and shows "L…" (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F100`: Day Type and Location stack below `sm`, and Day Type's 200 px cap applies only from `sm` up. At 390 Location's `.v-field` is 273 px on its own row; at 1440 the pair is unchanged, 200 + 336 px)
 - **Severity:** polish
 - **Where:** @390×844 · `/day-planner?mode=editDetails` → click a day (also the panel's EDIT on `/day-planner/:date`) → Day Details dialog, Day Type / Location row.
 - **Expected:** a field's label and value are readable (plain sense).
@@ -459,7 +459,7 @@
 - **Suggested fix:** stack Day Type and Location below `sm` (`cols="12" sm="6"`).
 
 ### P6. Planner settings hide controls in horizontal scrollers with no cue: the Repeating Tasks "Add" button and the "30 MIN" slot size (390 px)
-- **Status:** open — the *Add* half fixed 2026-10-07 (`FW27`, the pinned actions column); the "30 MIN" half is `F106`
+- **Status:** fixed — the *Add* half 2026-10-07 (`FW27`, the pinned actions column); the "30 MIN" half 2026-10-11 (X4 queue `F106`: the row wraps, so at 390 the group sits under its label and "30 MIN" ends at 340; one row at 1440)
 - **Severity:** polish (both are reachable by scrolling sideways)
 - **Where:** @390×844 · `/day-planner/settings` → Repeating Tasks table header (`v-table__wrapper`, `scrollWidth 458 / clientWidth 372`); `?tab=viewDefaults` → "Time slot size" `MyBtnToggle` (`overflow-x: auto`, ends at 365). **Added by x4 `leisure` (2026-10-06):** the Repeating Tasks "Add" is `BasicTable`'s header button. Its root cause is a dead sticky rule in the framework table, which was meant to pin the actions column. Filed once as `leisure-backlog-picker` B6 [framework], so fix that half there rather than moving the button here.
 - **Expected:** a tab's primary action is visible on landing, above all on an empty table whose only next step is that action (plain sense).
@@ -470,7 +470,7 @@
 - **Suggested fix:** move "Add" out of the table header into the tab's own toolbar. Let the slot-size group wrap, or use shorter labels ("30m") below `sm`.
 
 ### P7. "Task not found" squeezes its message into an 82 px column inside a 684 px-tall alert (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F107`: below `sm` the link sits under the text, and the container no longer stretches the alert, which was the cause of the 684 px height at every width. At 390 the content is 262 px and the alert 149 px; at 1440, 132 px with the link still in `#append`)
 - **Severity:** polish
 - **Where:** @390×844 · `/day-planner/task/999999` → `PlannerTaskLinkView`'s `VAlert` with the "Open the calendar" link in `#append`.
 - **Expected:** the error message reads as a paragraph across the alert (plain sense).

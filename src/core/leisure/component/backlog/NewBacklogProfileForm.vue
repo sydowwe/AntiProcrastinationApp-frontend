@@ -53,7 +53,7 @@
 			:rules="[requiredRule]"
 			:errorMessages="serverErrors.expectedCostTierId"
 		/>
-		<div class="d-flex ga-3">
+		<div class="d-flex flex-column flex-sm-row ga-3">
 			<VNumberInput
 				v-model="model.minParticipants"
 				:label="$t('leisure.fields.minParticipants')"

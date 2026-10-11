@@ -746,6 +746,107 @@
 - **Do not change:** `App.vue`'s `px-3` (`F92`).
 - **Verification:** `auth/P4`'s `Verify:` on all four routes, then `F92`'s routes at 390, then 1440.
 
+> **`F100`, `F103`–`F107` closed together on 2026-10-11 as one sweep**, the way `F80`–`F83` did. They share one commit, one
+> `playwright-cli` session at 390×844 and 1440×900, `vue-tsc --build --force`: 0 and `npm run lint`: 0. `F102` stays open: it is a
+> delete-confirmation change, not layout.
+
+## F100. Two pairs of side-by-side form fields never stack
+> ✅ **FIXED 2026-10-11.** Neither pair was a `VRow`, so *What to change*'s `cols="12" sm="6"` became `flex-column flex-sm-row` on
+> the two `d-flex` rows. In `CalendarDetailsDialog`, Day Type's `maxWidth="200px"` now applies only from `sm` up (`useDisplay`);
+> stacked, it would have sat at 200 px between full-width fields.
+> **Verified** with `playwright-cli`. `leisure-backlog-picker/P2`: at 390 Min and Max people stack at 310 px each, and the "Max
+> people" label is `scrollWidth 74 / clientWidth 74`; at 1440 they stay side by side at 258 px. `planner-day/P5`: at 390 Location's
+> `.v-field` is 273 px on its own row (pass: ≥ 150); at 1440 Day Type is 200 px and Location 336 px on one row, as before.
+> **Not verified:** the edit dialog's Min/Max row (same component).
+
+- **Scope:** app-side: `src/core/leisure/component/backlog/NewBacklogProfileForm.vue:58-67` (Min/Max people),
+  `src/core/dayPlanner/component/normal/CalendarDetailsDialog.vue:35-49` (Day Type / Location).
+- **Closes:** `leisure-backlog-picker/P2`, `planner-day/P5`.
+- **Root cause:** each pair sits side by side at every width. In a 342 px dialog the second field's label truncates: "Max …" (a
+  69 px input behind the number buttons) and "L…".
+- **What to change:** `cols="12" sm="6"` on both pairs.
+- **Verification:** both `Verify:` blocks.
+
+## F103. Reorder mode's drag handle is hover-only, and white on a light card
+> ✅ **FIXED 2026-10-11.** `@media (hover: none) { .drag-handle { opacity: 1 } }` is copied from `TodoListCategoryPanel`. For
+> the colour, `color="white"` is dropped: the icon inherits the card's text colour, `rgba(31, 41, 55, 0.87)` in the light theme.
+> **Verified** with `playwright-cli` on both routes at 390, in reorder mode with the mouse moved to (5, 830): every handle is at
+> opacity 1 under `(hover: none)` (7 on `/routine-todo-list`, 8 on `/todo-list/13001`), and opacity 0 with a hover-capable pointer,
+> so desktop keeps its hover-to-reveal. Both lists exited reorder mode cleanly.
+> **How the media query was reached:** CDP's `Emulation.setEmulatedMedia` with a `hover: none` feature does **not** take in this
+> Chromium (`matchMedia('(hover: none)')` stays `false`). `Emulation.setTouchEmulationEnabled` (`maxTouchPoints: 5`) does, and
+> turns on `(pointer: coarse)` with it. Under touch emulation Playwright's `click()` lands, but then times out on its own
+> post-action wait, so the mode switches were pressed with a DOM `click()` from `evaluate`.
+> **Not verified:** the dark theme, and a real device. `todo-lists/U4` (whether touch drag works at all) is unchanged.
+
+- **Scope:** app-side: `src/core/todoList/component/BaseTodoListItem.vue:429-447`.
+- **Closes:** `todo-lists/P3`. Whether touch dragging works at all is `todo-lists/U4` (*Needs verification*); land this either way.
+- **Root cause:** `.drag-handle` is `opacity: 0` unless hovered, and a phone has no hover. `TodoListCategoryPanel.vue:265-269` already
+  solves the same problem.
+- **What to change:** `@media (hover: none) { .drag-handle { opacity: 1 } }`, copied from the category panel, and a theme-aware
+  colour instead of `white`.
+- **Verification:** `P3`'s `Verify:` on both routes.
+
+## F104. The readiness board shows 1.4 columns on a phone, with no snap
+> ✅ **FIXED 2026-10-11**, the recommended option: below `sm` (`max-width: 599.98px`) `.readiness-board` is
+> `grid-template-columns: 1fr`. `F2`, `F5` and `F78` are untouched.
+> **Verified** with `playwright-cli` on `/leisure/projects`: at 390 all three columns sit at `left` 12, `right` 378 (stacked: within
+> 16 px of the first), the board is `scrollWidth 366 / clientWidth 366`, and the empty columns are 78 px tall. At 1440 the columns
+> stay three across (300–665, 681–1047, 1063–1428) with no scroll.
+
+- **Scope:** app-side: `src/core/leisure/component/project/ProjectReadinessBoard.vue:321-327`.
+- **Closes:** `leisure-projects/P4`.
+- **Root cause:** `grid-template-columns: repeat(3, minmax(260px, 1fr))` with `overflow-x: auto` and no `scroll-snap-type`, so on
+  landing the seed's only card sits cut through its title at the screen edge.
+- **What to change:** recommended: stack the columns below `sm` (`grid-template-columns: 1fr`); empty columns are already short.
+  The alternative is `scroll-snap-type: x mandatory` with columns at `calc(100% - 32px)`.
+- **Do not change:** `F2`, `F5` and `F78` on the same board.
+- **Verification:** `P4`'s `Verify:`.
+
+## F105. The routine widget's group chips shrink until "Weekly" reads "Weekl"
+> ✅ **FIXED 2026-10-11.** The period chip is `flex-shrink-0`, and the group row is `flex-wrap`. The bar takes a zero basis
+> (`flex-1-1-0`, `min-width: 64px`), and the count and the note are `text-no-wrap`, so when the row runs out of room the
+> "+N not due today" note drops whole under the bar instead of taking the chip's width. `F7`'s header is untouched.
+> **Verified** with `playwright-cli` on `/`: `P1`'s `Verify:` reads 0 for Daily, Weekly and Monthly at 390 and at 1440 (pass:
+> ≤ 0). The bars are 138–246 px at 390 and 312–435 px at 1440, and the page doesn't pan at either width.
+> **Seen, not fixed (already noted under `FW37`):** the item titles in this widget are white on the light card.
+
+- **Scope:** app-side: `src/core/home/component/RoutineTodoWidget.vue:65-73`.
+- **Closes:** `home/P1`.
+- **What to change:** `flex-shrink-0` on the period chip, and let the "+N not due today" note wrap under the bar.
+- **Do not change:** `F7`'s header fix in the same widget.
+- **Verification:** `P1`'s `Verify:`.
+
+## F106. The "Time slot size" toggle cuts "30 MIN" at phone width
+> ✅ **FIXED 2026-10-11**, the wrap option. The row holding the "Time slot size" caption and the group is `flex-wrap`, so on a
+> phone the group moves under the caption, keeping its full labels. The group itself isn't wrapped (a broken button group would
+> lose its joined outline). `F90`'s `label` is unchanged.
+> **Verified** with `playwright-cli` on `/day-planner/settings?tab=viewDefaults`: at 390 the buttons run 29–340 and "30 MIN" ends
+> at 340 (pass: every `right <= 390`), and the group is `scrollWidth 311 / clientWidth 311`. At 1440 it stays on the caption's row
+> (418–755).
+
+- **Scope:** app-side: `src/core/dayPlanner/component/settings/ViewDefaultsTab.vue:22-33`.
+- **Closes:** `planner-day/P6`, the slot-size half. Its *Add* half belongs to `FW27` (rule 1).
+- **What to change:** let the group wrap, or use shorter labels ("30m") below `sm`. Keep `F90`'s `label`.
+- **Verification:** `P6`'s `Verify:` step 3.
+
+## F107. "Task not found" squeezes its message into 82 px beside its link
+> ✅ **FIXED 2026-10-11.** Below `sm` the *Open the calendar* link renders in the alert's default slot, under the text and
+> right-aligned; from `sm` up it stays in `#append`.
+> **Also fixed, same view:** the alert's 684 px height was not the narrow column. The `VContainer` fills the viewport (836 px)
+> under `d-flex`, and its default `align-items: stretch` pulled the alert to full height at every width (740 px at 1440, with
+> 100 px of text). `align-start` on the container fixes it. Without it, `P7`'s height condition can't pass.
+> **Verified** with `playwright-cli` on `/day-planner/task/999999`: at 390 `.v-alert__content` is 262 px and the alert 149 px
+> (pass: ≥ 250 and < 250), and the link is at 175–346. At 1440 the alert is 132 px with the link in `#append`.
+> **Note for the next edit here:** `v-else` can't pair with a `v-if` on a named-slot `<template>`, because Vue lifts slot templates
+> out of the sibling chain. The first attempt did that, and the dev server served the view as a 500. The default-slot block
+> carries its own `v-if="!smAndUp"`.
+
+- **Scope:** app-side: `src/core/dayPlanner/view/PlannerTaskLinkView.vue` (the `VAlert` with *Open the calendar* in `#append`).
+- **Closes:** `planner-day/P7`.
+- **What to change:** below `sm`, move the link under the text (default slot, or an actions row) instead of `#append`.
+- **Verification:** `P7`'s `Verify:`.
+
 ## Closed verification items
 
 - **`planner-day/U1`: settled 2026-10-08, confirmed.** It is now `planner-day/B10` (`blocker`) and opens `F108`. Method:

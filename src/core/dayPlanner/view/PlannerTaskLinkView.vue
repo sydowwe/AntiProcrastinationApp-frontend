@@ -1,5 +1,5 @@
 <template>
-	<VContainer class="d-flex justify-center py-12">
+	<VContainer class="d-flex justify-center align-start py-12">
 		<VAlert
 			v-if="failed"
 			type="warning"
@@ -8,7 +8,11 @@
 			:title="$t('planner.taskLink.notFoundTitle')"
 			:text="$t('planner.taskLink.notFoundText')"
 		>
-			<template #append>
+			<!-- Below `sm` the link goes under the text: beside it, the message was left an 82 px column. -->
+			<template
+				v-if="smAndUp"
+				#append
+			>
 				<VBtn
 					variant="text"
 					:to="{ name: 'plannerCalendar' }"
@@ -16,6 +20,17 @@
 					{{ $t('planner.taskLink.toCalendar') }}
 				</VBtn>
 			</template>
+			<div
+				v-if="!smAndUp"
+				class="d-flex justify-end mt-2"
+			>
+				<VBtn
+					variant="text"
+					:to="{ name: 'plannerCalendar' }"
+				>
+					{{ $t('planner.taskLink.toCalendar') }}
+				</VBtn>
+			</div>
 		</VAlert>
 		<VProgressCircular
 			v-else
@@ -45,12 +60,14 @@
 	 */
 	import { onMounted, ref } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
+	import { useDisplay } from 'vuetify'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
 
 	const route = useRoute()
 	const router = useRouter()
+	const { smAndUp } = useDisplay()
 	const { fetchById: fetchTaskById } = useTaskPlannerCrud()
 	const { fetchById: fetchCalendarById } = useCalendarQuery()
 

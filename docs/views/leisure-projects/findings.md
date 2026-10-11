@@ -514,7 +514,7 @@
 ---
 
 ### P4. The board shows 1.4 columns at a time with no snap, so on landing the only card sits half off-screen (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F104`, the stacking option: below `sm` the columns stack. At 390 all three sit at `left` 12 and the board is 366/366; at 1440 they stay three across)
 - **Severity:** polish (every card is reachable by swiping, and reads cleanly once in view)
 - **Where:** @390×844 · `/leisure/projects` (board) → `.readiness-board` ·
   `src/core/leisure/component/project/ProjectReadinessBoard.vue:321-327`

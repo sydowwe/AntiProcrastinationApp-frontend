@@ -62,11 +62,14 @@
 			:key="group.timePeriod.id"
 			class="mb-4"
 		>
-			<div class="d-flex align-center ga-2 mb-1">
+			<!-- The chip never shrinks (at 390 px "Weekly" was cut to "Weekl"); when the row runs out of
+			     room, the "+N not due today" note wraps under the bar instead. -->
+			<div class="d-flex flex-wrap align-center ga-2 mb-1">
 				<VChip
 					:color="group.timePeriod.color || 'primary'"
 					size="small"
 					variant="tonal"
+					class="flex-shrink-0"
 				>
 					{{ group.timePeriod.text }}
 				</VChip>
@@ -76,14 +79,15 @@
 					color="secondary"
 					rounded="sm"
 					height="10"
-					class="flex-grow-1"
+					class="flex-1-1-0"
+					style="min-width: 64px"
 				/>
-				<span class="text-caption text-medium-emphasis">
+				<span class="text-caption text-medium-emphasis text-no-wrap">
 					{{ groupProgress(group).done }}/{{ groupProgress(group).total }}
 				</span>
 				<span
 					v-if="notDueTodayCount(group) > 0"
-					class="text-caption text-medium-emphasis"
+					class="text-caption text-medium-emphasis text-no-wrap"
 				>
 					{{ $t('home.notDueToday', { count: notDueTodayCount(group) }) }}
 				</span>

@@ -326,6 +326,14 @@
 		align-items: start;
 	}
 
+	/* Below `sm` three 260 px columns showed 1.4 at a time and cut a card through its title. Stacked,
+	   every card is whole; an empty column is only its "No projects" line. */
+	@media (max-width: 599.98px) {
+		.readiness-board {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	.readiness-column-cards {
 		display: flex;
 		flex-direction: column;

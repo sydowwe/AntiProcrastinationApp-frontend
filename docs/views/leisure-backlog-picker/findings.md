@@ -500,7 +500,7 @@
 ---
 
 ### P2. Create dialog: "Max people" is squeezed to a 69 px input and its label reads "Max …" (390 px)
-- **Status:** open
+- **Status:** fixed 2026-10-11 (X4 queue `F100`: the pair stacks below `sm`. At 390 both fields are 310 px and the "Max people" label is 74/74; at 1440 they stay side by side, 258 px each)
 - **Severity:** polish
 - **Where:** @390×844 · `/leisure/backlog` → header Add → `NewBacklogProfileForm` Min/Max people row
 - **Expected:** a field's label is readable before you type into it (plain sense).

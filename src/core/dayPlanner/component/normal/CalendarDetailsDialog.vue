@@ -33,13 +33,14 @@
 				/>
 
 				<!-- Day Type, Location & Weather -->
-				<div class="d-flex ga-4 flex-wrap">
+				<!-- Stacked below `sm`: side by side in a phone-width dialog, Location was left 76 px and read "L…". -->
+				<div class="d-flex flex-column flex-sm-row ga-4">
 					<VSelect
 						v-model="data.dayType"
 						:label="$t('planner.calendar.dayTypeLabel')"
 						:items="dayTypeOptions"
 						prependIcon="calendar-day"
-						maxWidth="200px"
+						:maxWidth="smAndUp ? '200px' : undefined"
 						hideDetails
 					/>
 					<VSelect
@@ -96,6 +97,7 @@
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
+	import { useDisplay } from 'vuetify'
 
 	const props = defineProps<{
 		calendar?: Calendar
@@ -107,6 +109,7 @@
 	const { updateWithResponse } = useCalendarQuery()
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
+	const { smAndUp } = useDisplay()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const data = ref<CalendarRequest>(new CalendarRequest())

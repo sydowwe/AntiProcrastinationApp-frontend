@@ -38,6 +38,11 @@
 > option 1 and turned up a setup gap: the app had never imported `framework.css`. It does now, and `base.css` keeps only what's
 > app-specific. Re-measure anything at 390 against this: nested gutter rows moved 4 px inward. Open: `F100`, `F102`–`F107`.
 
+> **2026-10-11, later: the layout sweep `F100`, `F103`–`F107` closed** in one commit and one `playwright-cli` pass at 390 and
+> 1440. Two findings along the way are in the log: `F107`'s alert height came from a stretched container, not from the narrow
+> column, and CDP's `hover: none` media override doesn't take in this Chromium, but touch emulation does (`F103`). **Only
+> `F102` is open now** (the bucket-list delete confirmation, reseed first).
+
 > Closed batches, closed verification items, the pass narrative and the *Contradictions & re-grades* audit trail live in
 > [`_fix-queue-log.md`](_fix-queue-log.md) beside this file. This file holds only open work. **Closing an item is a move, not a
 > mark**, by the four steps at the top of [`../_fix-queue.md`](../_fix-queue.md): the body goes to this folder's log under
@@ -56,14 +61,14 @@
 | F97 | ✅ **FIXED 2026-10-07** (`position: static` below `md`; body in the log) — The dashboard header stays sticky at 269–377 px on a phone | app | `tracking-dashboards/B4` | low |
 | F98 | ✅ **FIXED 2026-10-07** (the panel and the Categories dialog hand focus back to their opener; body in the log) — Two overlays on a phone drop focus to `<body>` when they close (the app half; the drawer is `FW29`) | app (`dayPlanner`, `todoList`) | `planner-day/A2`, `todo-lists/A4` | low |
 | F99 | ✅ **FIXED 2026-10-08** (the alert option: below `md` a "needs a wider screen" alert with links to each pick and the list; body in the log) — The template split view has no narrow layout, and a shared link opens it on a phone anyway | app | `planner-templates/B6` | low–med |
-| F100 | Two pairs of side-by-side form fields never stack: Min/Max people, Day Type/Location | app | `leisure-backlog-picker/P2`, `planner-day/P5` | trivial |
+| F100 | ✅ **FIXED 2026-10-11** (both pairs stack below `sm`; body in the log) — Two pairs of side-by-side form fields never stack: Min/Max people, Day Type/Location | app | `leisure-backlog-picker/P2`, `planner-day/P5` | trivial |
 | F101 | ✅ **FIXED 2026-10-08** (`59ce7415`: below `sm` a bold `N/M` over the bar plus icon markers, with no clock row; every cell fits at 390–1440; body in the log) — Month-grid day cells overflow their 52 px (the app half of `FW33`) | app | `planner-day/P4` | low |
 | F102 | The bucket-list ladder deletes on one tap, with no confirmation (not width-specific) | app | `leisure-bucket-anchors/B4` | low |
-| F103 | Reorder mode's drag handle is hover-only, and white on a light card | app | `todo-lists/P3` | trivial |
-| F104 | The readiness board shows 1.4 columns on a phone, with no snap | app | `leisure-projects/P4` | low |
-| F105 | The routine widget's group chips shrink until "Weekly" reads "Weekl" | app | `home/P1` | trivial |
-| F106 | The "Time slot size" toggle cuts "30 MIN" at phone width | app | `planner-day/P6` (slot-size half) | trivial |
-| F107 | "Task not found" squeezes its message into 82 px beside its link | app | `planner-day/P7` | trivial |
+| F103 | ✅ **FIXED 2026-10-11** (shown under `hover: none`, theme text colour; body in the log) — Reorder mode's drag handle is hover-only, and white on a light card | app | `todo-lists/P3` | trivial |
+| F104 | ✅ **FIXED 2026-10-11** (columns stack below `sm`; body in the log) — The readiness board shows 1.4 columns on a phone, with no snap | app | `leisure-projects/P4` | low |
+| F105 | ✅ **FIXED 2026-10-11** (chip doesn't shrink, the note wraps under the bar; body in the log) — The routine widget's group chips shrink until "Weekly" reads "Weekl" | app | `home/P1` | trivial |
+| F106 | ✅ **FIXED 2026-10-11** (the row wraps, the group drops under its caption; body in the log) — The "Time slot size" toggle cuts "30 MIN" at phone width | app | `planner-day/P6` (slot-size half) | trivial |
+| F107 | ✅ **FIXED 2026-10-11** (link under the text below `sm`; also the full-height stretch; body in the log) — "Task not found" squeezes its message into 82 px beside its link | app | `planner-day/P7` | trivial |
 | F108 | ✅ **FIXED 2026-10-08** (`pan-y` on the column; on touch, drag/create/resize arm only after a 400 ms long press, a tap on a task selects it, and clipboard placement waits for a tap; mouse unchanged; real-device and touch clipboard unverified; body in the log) — A touch swipe on the planner's task column creates or moves a task instead of scrolling (**blocker**, settled from `U1` 2026-10-08) | app (`dayPlanner`) | `planner-day/B10` | med |
 | FW27 | ✅ **FIXED 2026-10-07** (the `actions` header gets Vuetify's `fixed: 'end'`; body in the log) — `DataTable`'s sticky actions column never sticks: the selector looks for a `.v-data-table` *inside* the element that is the `.v-data-table` | **framework** (`dataTable/DataTable.vue`) | `leisure-backlog-picker/B6`, `activity-settings/P3`, `planner-day/P6` (Add half) | low |
 | FW28 | ✅ **FIXED 2026-10-07** (below `md` the actions scroll in a strip, Cancel outside it; body in the log) — `ActionBar` grows to its content on a phone, and both ends, Cancel included, are off-screen | **framework** (`ActionBar.vue`) | `_shell/B2` | med |
@@ -104,14 +109,7 @@
 
 <!-- F99 (the template split view has no narrow layout — planner-templates/B6) fixed 2026-10-08 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F100. Two pairs of side-by-side form fields never stack
-- **Scope:** app-side: `src/core/leisure/component/backlog/NewBacklogProfileForm.vue:58-67` (Min/Max people),
-  `src/core/dayPlanner/component/normal/CalendarDetailsDialog.vue:35-49` (Day Type / Location).
-- **Closes:** `leisure-backlog-picker/P2`, `planner-day/P5`.
-- **Root cause:** each pair sits side by side at every width. In a 342 px dialog the second field's label truncates: "Max …" (a
-  69 px input behind the number buttons) and "L…".
-- **What to change:** `cols="12" sm="6"` on both pairs.
-- **Verification:** both `Verify:` blocks.
+<!-- F100 (two pairs of side-by-side form fields never stack — leisure-backlog-picker/P2, planner-day/P5) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F101 (month-grid day cells overflow their 52 px — planner-day/P4) fixed 2026-10-08 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
@@ -132,43 +130,15 @@
   Bouldering*), the seed's only bucket-list row, and `leisure-bucket-anchors.draft.spec.ts` fails until `POST /api/test/seed`.
 - **Risk:** none beyond the reseed.
 
-## F103. Reorder mode's drag handle is hover-only, and white on a light card
-- **Scope:** app-side: `src/core/todoList/component/BaseTodoListItem.vue:429-447`.
-- **Closes:** `todo-lists/P3`. Whether touch dragging works at all is `todo-lists/U4` (*Needs verification*); land this either way.
-- **Root cause:** `.drag-handle` is `opacity: 0` unless hovered, and a phone has no hover. `TodoListCategoryPanel.vue:265-269` already
-  solves the same problem.
-- **What to change:** `@media (hover: none) { .drag-handle { opacity: 1 } }`, copied from the category panel, and a theme-aware
-  colour instead of `white`.
-- **Verification:** `P3`'s `Verify:` on both routes.
+<!-- F103 (reorder mode's drag handle is hover-only, and white on a light card — todo-lists/P3) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F104. The readiness board shows 1.4 columns on a phone, with no snap
-- **Scope:** app-side: `src/core/leisure/component/project/ProjectReadinessBoard.vue:321-327`.
-- **Closes:** `leisure-projects/P4`.
-- **Root cause:** `grid-template-columns: repeat(3, minmax(260px, 1fr))` with `overflow-x: auto` and no `scroll-snap-type`, so on
-  landing the seed's only card sits cut through its title at the screen edge.
-- **What to change:** recommended: stack the columns below `sm` (`grid-template-columns: 1fr`); empty columns are already short.
-  The alternative is `scroll-snap-type: x mandatory` with columns at `calc(100% - 32px)`.
-- **Do not change:** `F2`, `F5` and `F78` on the same board.
-- **Verification:** `P4`'s `Verify:`.
+<!-- F104 (the readiness board shows 1.4 columns on a phone, with no snap — leisure-projects/P4) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F105. The routine widget's group chips shrink until "Weekly" reads "Weekl"
-- **Scope:** app-side: `src/core/home/component/RoutineTodoWidget.vue:65-73`.
-- **Closes:** `home/P1`.
-- **What to change:** `flex-shrink-0` on the period chip, and let the "+N not due today" note wrap under the bar.
-- **Do not change:** `F7`'s header fix in the same widget.
-- **Verification:** `P1`'s `Verify:`.
+<!-- F105 (the routine widget's group chips shrink until "Weekly" reads "Weekl" — home/P1) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F106. The "Time slot size" toggle cuts "30 MIN" at phone width
-- **Scope:** app-side: `src/core/dayPlanner/component/settings/ViewDefaultsTab.vue:22-33`.
-- **Closes:** `planner-day/P6`, the slot-size half. Its *Add* half belongs to `FW27` (rule 1).
-- **What to change:** let the group wrap, or use shorter labels ("30m") below `sm`. Keep `F90`'s `label`.
-- **Verification:** `P6`'s `Verify:` step 3.
+<!-- F106 (the "Time slot size" toggle cuts "30 MIN" at phone width — planner-day/P6 slot-size half) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F107. "Task not found" squeezes its message into 82 px beside its link
-- **Scope:** app-side: `src/core/dayPlanner/view/PlannerTaskLinkView.vue` (the `VAlert` with *Open the calendar* in `#append`).
-- **Closes:** `planner-day/P7`.
-- **What to change:** below `sm`, move the link under the text (default slot, or an actions row) instead of `#append`.
-- **Verification:** `P7`'s `Verify:`.
+<!-- F107 ("Task not found" squeezes its message into 82 px beside its link — planner-day/P7) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F108 (a touch swipe on the planner's task column creates or moves a task instead of scrolling — planner-day/B10) fixed 2026-10-08 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
