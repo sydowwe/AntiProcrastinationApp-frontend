@@ -58,6 +58,7 @@
 	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
 
 	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
 	// renders it and asks for a refetch.
@@ -76,14 +77,15 @@
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
 
-	const columns: TableColumn[] = [
+	// Computed so the headers follow a locale switch — see BucketListTable.
+	const columns = computed<TableColumn[]>(() => [
 		new TableColumn('activity.name', t('leisure.fields.activity')),
 		new TableColumn('difficultyLevel', t('leisure.fields.difficultyLevel'), false),
 		new TableColumn('readinessStatus', t('leisure.fields.readinessStatus'), false),
 		new TableColumn('projectArea', t('leisure.fields.projectArea'), false),
 		new TableColumn('estimatedHours', t('leisure.fields.estimatedHours')),
 		new TableColumn('isMessy', t('leisure.fields.isMessy'), false),
-	]
+	])
 
 	async function openCreateDialog() {
 		const result = await openDialog({

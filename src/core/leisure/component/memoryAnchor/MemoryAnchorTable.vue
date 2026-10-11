@@ -109,13 +109,14 @@
 
 	const monthFormatter = computed(() => new Intl.DateTimeFormat(locale.value, { month: 'long', year: 'numeric' }))
 
-	const columns: TableColumn[] = [
+	// Computed so the headers follow a locale switch — see BucketListTable.
+	const columns = computed<TableColumn[]>(() => [
 		new TableColumn('periodKey', t('leisure.fields.anchorMonth')),
 		new TableColumn('activity.name', t('leisure.fields.activity')),
 		new TableColumn('rating', t('leisure.fields.rating')),
 		new TableColumn('source', t('leisure.fields.source'), false),
 		new TableColumn('highlightNote', t('leisure.fields.highlightNote'), false),
-	]
+	])
 
 	// Both destinations filter by activity name, which is the handle the two tables already share.
 	function openSource(row: MemoryAnchor, routeName: 'leisureBucketList' | 'leisureBacklog') {

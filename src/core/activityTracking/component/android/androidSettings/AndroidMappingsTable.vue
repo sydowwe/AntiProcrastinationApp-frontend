@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
@@ -88,7 +88,8 @@
 		tableLoading: loading,
 	} = useTrackerAndroidMappingCrud()
 
-	const columns = [
+	// Computed so the headers follow a locale switch — a plain array freezes the boot locale.
+	const columns = computed(() => [
 		new TableColumn('isActive', t('activityTracking.settings.isActive')),
 		new TableColumn('appLabel', t('activityTracking.settings.appLabel')),
 		new TableColumn('appLabelMatchType', t('activityTracking.settings.matchType')),
@@ -96,7 +97,7 @@
 		new TableColumn('packageNameMatchType', t('activityTracking.settings.matchType')),
 		new TableColumn('activity.text', t('activityTracking.settings.mappingTarget')),
 		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
-	]
+	])
 
 	const mappings = ref<TrackerAndroidMappingResponse[]>([])
 	const totalItems = ref(0)

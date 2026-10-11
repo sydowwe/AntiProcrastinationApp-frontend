@@ -862,6 +862,9 @@
 > **Unrelated, seen on the way:** after the reseed, `leisure-bucket-anchors.draft.spec.ts` › *renders the seeded profile with its
 > columns* fails: `#app thead tr` › `getByText('Activity', { exact: true })` isn't found, though the table renders with
 > 17101 in it. The file's other 8 tests pass. This fix doesn't touch the table view, and the failure wasn't investigated.
+> **Follow-up, same day:** the headers were in Slovak, although the page was English. `BucketListTable` built its `TableColumn[]`
+> once at setup, so `t()` froze the boot locale before the account's EN landed. Leisure's four tables (`BucketList`, `Project`,
+> `Backlog`, `MemoryAnchor`) now build `columns` as a `computed`, the way `RoutineSettingsView` does, and the spec passes 9/9 (6 `fixme`s skipped).
 
 - **Scope:** app-side: `src/core/leisure/component/bucketList/BucketListLadder.vue:137-139,236-237`; `CLAUDE.md` (the
   `useDeleteConfirmation` row).

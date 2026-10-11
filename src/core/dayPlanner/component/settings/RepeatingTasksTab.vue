@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
@@ -106,15 +106,17 @@
 	const deleteDialog = ref(false)
 	const pendingDeleteId = ref<number | null>(null)
 
-	const columns: TableColumn[] = [
+	// Computed, not plain arrays: a list built at setup freezes whichever locale was active then — the
+	// boot default, before the account's own locale lands — and the headers never follow.
+	const columns = computed<TableColumn[]>(() => [
 		new TableColumn('activity', t('planner.settings.columns.activity'), false),
 		new TableColumn('time', t('planner.settings.columns.time'), false),
 		new TableColumn('recurrenceType', t('planner.settings.columns.recurrence'), false),
 		new TableColumn('schedule', t('planner.settings.columns.schedule'), false),
 		new TableColumn('isActive', t('planner.settings.columns.active'), false),
-	]
+	])
 
-	const tableActions: TableAction[] = [
+	const tableActions = computed<TableAction[]>(() => [
 		new TableAction('edit', t('general.edit'), 'primaryOutline', 'tonal', 'pen', (item: RepeatingPlannerTask) =>
 			taskDialog.value?.openEditDialog(item),
 		),
@@ -129,7 +131,7 @@
 				deleteDialog.value = true
 			},
 		),
-	]
+	])
 
 	function taskById(id: number) {
 		return tasks.value.find(t => t.id === id)

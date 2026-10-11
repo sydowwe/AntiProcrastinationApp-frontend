@@ -92,6 +92,7 @@
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useWeatherFit, fitsToday } from '@/core/leisure/composable/useWeatherFit.ts'
 	import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
 
 	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
 	// renders it and asks for a refetch.
@@ -115,7 +116,8 @@
 		return fitsToday(item.realWeatherDependencyId, weatherFit.value)
 	}
 
-	const columns: TableColumn[] = [
+	// Computed so the headers follow a locale switch — see BucketListTable.
+	const columns = computed<TableColumn[]>(() => [
 		new TableColumn('activity.name', t('leisure.fields.activity')),
 		new TableColumn('locationType', t('leisure.fields.locationType'), false),
 		new TableColumn('weatherDependency', t('leisure.fields.weatherDependency'), false),
@@ -127,7 +129,7 @@
 		new TableColumn('isRepeatable', t('leisure.fields.isRepeatable'), false),
 		// Not sortable until the API accepts `isAnchored` as a sort key — see BucketListTable.
 		new TableColumn('isAnchored', t('leisure.fields.experienced'), false),
-	]
+	])
 
 	function formatParticipants(item: ActivityBacklogProfile): string {
 		if (item.maxParticipants == null) return `${item.minParticipants}+`

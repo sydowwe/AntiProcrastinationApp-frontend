@@ -74,6 +74,7 @@
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
 	import { useI18n } from 'vue-i18n'
+	import { computed } from 'vue'
 
 	// Paging/sorting/filtering state lives in the view's `useServerTable`; this component only
 	// renders it and asks for a refetch.
@@ -92,7 +93,9 @@
 	const { openDialog } = useDialog()
 	const { t } = useI18n()
 
-	const columns: TableColumn[] = [
+	// Computed, not a plain array: a `TableColumn[]` built at setup freezes whichever locale was active
+	// then — the boot default, before the account's own locale lands — and the headers never follow.
+	const columns = computed<TableColumn[]>(() => [
 		new TableColumn('activity.name', t('leisure.fields.activity')),
 		// Not sortable yet, on purpose. `isAnchored` is not a sort key the API accepts until the B1
 		// backend ask lands, and an unknown key can fail the whole page rather than degrade — a clickable
@@ -104,7 +107,7 @@
 		new TableColumn('requiresTravel', t('leisure.fields.requiresTravel'), false),
 		new TableColumn('financialGoal', t('leisure.fields.financialGoal')),
 		new TableColumn('inspirationSource', t('leisure.fields.inspirationSource'), false),
-	]
+	])
 
 	async function openCreateDialog() {
 		const result = await openDialog({

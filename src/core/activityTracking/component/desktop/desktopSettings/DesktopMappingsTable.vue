@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref, watch } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import BasicTable from '@/_common/component/dataTable/BasicTable.vue'
@@ -88,7 +88,8 @@
 		tableLoading: loading,
 	} = useTrackerDesktopMappingCrud()
 
-	const columns = [
+	// Computed so the headers follow a locale switch — a plain array freezes the boot locale.
+	const columns = computed(() => [
 		new TableColumn('isActive', t('activityTracking.settings.isActive')),
 		new TableColumn('processName', t('activityTracking.settings.processName')),
 		new TableColumn('processNameMatchType', t('activityTracking.settings.matchType')),
@@ -98,7 +99,7 @@
 		new TableColumn('windowTitleMatchType', t('activityTracking.settings.matchType')),
 		new TableColumn('activity.text', t('activityTracking.settings.mappingTarget')),
 		new TableColumn('isIgnored', t('activityTracking.settings.isIgnored')),
-	]
+	])
 
 	const mappings = ref<TrackerDesktopMappingResponse[]>([])
 	const totalItems = ref(0)

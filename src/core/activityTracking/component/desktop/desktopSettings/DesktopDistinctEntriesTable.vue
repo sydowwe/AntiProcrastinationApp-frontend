@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-	import { ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import DataTable from '@/_common/component/dataTable/DataTable.vue'
@@ -80,13 +80,14 @@
 	})
 	const { create } = useTrackerDesktopMappingCrud()
 
-	const columns = [
+	// Computed so the headers follow a locale switch — a plain array freezes the boot locale.
+	const columns = computed(() => [
 		new TableColumn('processName', t('activityTracking.settings.processName')),
 		new TableColumn('productName', t('activityTracking.settings.productName')),
 		new TableColumn('windowTitle', t('activityTracking.settings.windowTitle')),
 		// Computed server-side after the query; sending it as a sort key is a 400 (B24).
 		new TableColumn('coveredBy', t('activityTracking.settings.coverage.column'), false),
-	]
+	])
 
 	const items = ref<TrackerDesktopDistinctEntriesResponse[]>([])
 	const totalItems = ref(0)
