@@ -9,10 +9,13 @@ import dayPlannerRoutesSource from '@/core/dayPlanner/dayPlanner.routes.ts?raw'
 import todoListRoutesSource from '@/core/todoList/todoList.routes.ts?raw'
 import {
 	notificationRoute,
+	notificationTypeKeys,
 	setNotificationTypeMeta,
 } from '@/_common/modules/notifications/utils/notificationTypeMeta.ts'
 import { NotificationResponse } from '@/_common/modules/notifications/dto/NotificationResponse.ts'
 import { notificationTypeMeta } from '@/app/notifications/notificationTypeMeta.ts'
+import SK from '@/locales/SK.ts'
+import EN from '@/locales/EN.ts'
 
 // The shared map is a classic script in public/ — it assigns globals rather than exporting, because
 // the service worker loads it with importScripts and cannot import a module. Importing it here for
@@ -80,6 +83,36 @@ describe('the map stays in step with the route table', () => {
 		// here would deep-link to the wrong row rather than to a list.
 		expect(globalThis.NOTIFICATION_SUBJECT_ROUTES?.reminder).toBeUndefined()
 		expect(globalThis.NOTIFICATION_SUBJECT_ROUTES?.inventoryItem).toBeUndefined()
+		// `todoListItem` (P1-02): the list view is addressed by list id, which the subject does not carry.
+		expect(globalThis.NOTIFICATION_SUBJECT_ROUTES?.todoListItem).toBeUndefined()
+	})
+})
+
+describe('the planner and to-do kinds are registered', () => {
+	// An unregistered type is not an error, which is exactly why it goes unnoticed: a grey bell, no link,
+	// no row in the inbox's type filter, and a raw enum name in the notification settings.
+	const types = ['PlannedBlockStarting', 'PlannedBlocksMissed', 'PlannedBlockOverrun', 'TodoItemDue']
+
+	it.each(types)('%s has an icon, a colour and a label key', type => {
+		const meta = notificationTypeMeta[type]
+		expect(meta).toBeDefined()
+		expect(meta?.icon).toBeTruthy()
+		expect(meta?.color).toBeTruthy()
+		expect(meta?.label).toBeTruthy()
+	})
+
+	it.each(types)('%s is offered in the inbox type filter', type => {
+		expect(notificationTypeKeys()).toContain(type)
+	})
+
+	it.each(types)('%s labels resolve in both locales', type => {
+		const key = notificationTypeMeta[type]!.label!
+		for (const messages of [SK, EN]) {
+			const value = key
+				.split('.')
+				.reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], messages)
+			expect(typeof value, `${key} in ${messages === SK ? 'SK' : 'EN'}`).toBe('string')
+		}
 	})
 })
 
@@ -101,6 +134,20 @@ describe('resolving a subject', () => {
 		expect(notificationRoute(notification('PlannedBlockStarting', { kind: 'plannerTask', id: 91 }))).toBe(
 			'/day-planner/task/91',
 		)
+	})
+
+	it('deep-links both slip nudges to their block', () => {
+		// P1-04. A missed-blocks nudge names the earliest slipped block; the day it lands on shows the
+		// re-plan banner whenever that day is today and a movable block has passed unstarted.
+		for (const type of ['PlannedBlocksMissed', 'PlannedBlockOverrun']) {
+			expect(notificationRoute(notification(type, { kind: 'plannerTask', id: 91 }))).toBe('/day-planner/task/91')
+		}
+	})
+
+	it('lands every planner kind on the planner when it has no subject', () => {
+		for (const type of ['PlannedBlockStarting', 'PlannedBlocksMissed', 'PlannedBlockOverrun']) {
+			expect(notificationRoute(notification(type))).toEqual({ name: 'plannerCalendar' })
+		}
 	})
 
 	it('lands a to-do due reminder on the lists, since an item has no route of its own', () => {
@@ -172,6 +219,9 @@ describe('both deliveries of one event land in the same place', () => {
 	it.each([
 		['ScheduledJobFailed', { kind: 'scheduledJobRun', id: 77 }, '/planovac/behy/77'],
 		['PersonalReminder', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
+		['PlannedBlockStarting', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
+		['PlannedBlocksMissed', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
+		['PlannedBlockOverrun', { kind: 'plannerTask', id: 91 }, '/day-planner/task/91'],
 		['RoutinePeriodEndingSoon', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
 		['RoutineSuggestedToday', { kind: 'routinePeriod', id: 77 }, '/routine-todo-list?focus=77'],
 	])('agrees between the bell and the service worker for %s', (type, subject, expected) => {

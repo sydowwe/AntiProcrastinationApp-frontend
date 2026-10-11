@@ -5,7 +5,7 @@ const todoList = {
 		// P1-02: the server reminds the owner of a to-do that has a due date AND a due time.
 		dueReminders: {
 			// Inbox type-filter name and notification-settings row for `TodoItemDue`.
-			notificationType: `To-do due`,
+			notificationType: `To-do due soon`,
 			// The `("TodoLists", "TodoItemDue")` row on the reminder preferences page.
 			ownerModule: `To-do lists`,
 			kindName: `To-do due reminders`,

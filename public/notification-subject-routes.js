@@ -104,7 +104,12 @@ globalThis.resolveNotificationTargetUrl = function (data) {
  *                   space — pointing there would deep-link to the wrong row, not merely to a list.
  *                   `/pripomienky/register/:id` is that definition detail; do not point here.
  *                   Falls back to the reminders list, which is where it already went.
- *   inventoryItem   Not this app; listed in B2's vocabulary for the other app on this framework.
+ *   todoListItem    `TodoItemDue` (P1-02). An item has no route of its own: the list view is
+ *                   `/todo-list/:id` by LIST id, which the subject does not carry, and it has no
+ *                   `?focus=` handling to find the row once there. Giving it one means the same
+ *                   shape as `plannerTask` — a `/todo-list/item/:id` redirect that reads the item's
+ *                   list, plus focus support in TodoListView. Until then it falls back to the lists.
+ *   inventoryItem  Not this app; listed in B2's vocabulary for the other app on this framework.
  *
  * Adding one is a two-line change here plus whatever the destination view needs to focus the row.
  */

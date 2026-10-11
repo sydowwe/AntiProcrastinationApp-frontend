@@ -39,18 +39,42 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 
 	// Two kinds from one type — `plannerTask` when the reminder names a task, `reminder` when it is
 	// standalone. Resolving on the notification rather than the type is exactly what the seam is for.
-	// Neither kind has a destination in this app yet (see the table in the map file), so both fall
-	// through to the list for now; this line needs no change when they gain one.
+	// `plannerTask` opens the task on its planner day (through the task redirect in the map file);
+	// `reminder` still has no destination in this app (see the table there), so a standalone reminder
+	// falls through to the list. This line needs no change if `reminder` ever gains one.
 	PersonalReminder: { icon: 'bell', color: 'primary', route: n => subjectRoute(n, { name: 'myReminders' }) },
 
+	// The planner's kinds. All three carry `plannerTask` whenever the server has a block id, which the
+	// subject map sends through the task redirect to `/day-planner/<date>?focus=<id>`; without one they
+	// land on the planner itself rather than on a list of a different entity.
+	//
 	// P1-03: the reminder the planner creates by itself for a new block, under its own kind so it can be
-	// muted without muting the ones the user wrote. Always carries `plannerTask`, which the subject map
-	// sends through the task redirect to the block on its day.
+	// muted without muting the ones the user wrote.
 	PlannedBlockStarting: {
 		icon: 'bell',
 		color: 'secondary',
 		label: 'planner.autoReminders.notificationType',
-		route: n => subjectRoute(n, { name: 'myReminders' }),
+		route: n => subjectRoute(n, { name: 'plannerCalendar' }),
+	},
+	// P1-04, the slip sweep: today's blocks came and went unstarted — "re-plan the rest of today?". The
+	// subject is the earliest slipped block. Needs no re-plan flag of its own: the day view shows the
+	// re-plan banner (`ReplanTodayBanner`) on today whenever a movable block has passed unstarted, which
+	// is the server's same missed rule, so the task redirect already lands on the banner. Its icon, too.
+	PlannedBlocksMissed: {
+		icon: 'shuffle',
+		color: 'warning',
+		label: 'planner.slipNudges.missedNotificationType',
+		route: n => subjectRoute(n, { name: 'plannerCalendar' }),
+	},
+	// P1-04: a started block still in progress five minutes past its planned end — "wrap up or extend?".
+	// Lands on the block's day, where `OverrunBanner` asks the same question with one-tap "Done" and "+15 min"
+	// (the same rule and the same 5-min grace, so it is up whenever this can have been sent). Action buttons on
+	// the push itself are backend P2-03.
+	PlannedBlockOverrun: {
+		icon: 'stopwatch',
+		color: 'warning',
+		label: 'planner.slipNudges.overrunNotificationType',
+		route: n => subjectRoute(n, { name: 'plannerCalendar' }),
 	},
 
 	// P1-02: a to-do with a due date and time. The subject is `todoListItem`, which has no destination

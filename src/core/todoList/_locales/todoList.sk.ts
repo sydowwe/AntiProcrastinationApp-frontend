@@ -4,7 +4,7 @@ const todoList = {
 		toDoList: 'To-do list',
 		// P1-02: server pripomenie úlohu, ktorá má termín aj čas.
 		dueReminders: {
-			notificationType: `Termín úlohy`,
+			notificationType: `Termín úlohy sa blíži`,
 			ownerModule: `Zoznamy úloh`,
 			kindName: `Pripomienky termínov úloh`,
 			settingsTitle: `Pripomienky termínov`,

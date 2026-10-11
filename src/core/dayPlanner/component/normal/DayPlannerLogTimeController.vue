@@ -15,7 +15,7 @@
 	import { useActivityHistoryCrud, type TrackedTime } from '@/core/activityHistory/api/activityHistoryApi.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
-	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { minutesOfDayInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 	import router from '@/router.ts'
@@ -67,14 +67,36 @@
 		const task = store.tasks.find(t => t.id === taskId) as PlannerTask
 		currentPlannerTaskId.value = taskId
 		currentActivityId.value = task.activity.id
+		const { startTime, length } = manual ? manualPrefill(task) : plannedSpan(task)
+		inner.value?.open(task.activity.id, task.activity.name, manual, startTime, length)
+	}
+
+	function plannedSpan(task: PlannerTask): { startTime: Time; length: Time } {
 		const durationMins = (task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440
-		inner.value?.open(
-			task.activity.id,
-			task.activity.name,
-			manual,
-			new Time(task.startTime.hours, task.startTime.minutes),
-			Time.fromMinutes(durationMins),
-		)
+		return {
+			startTime: new Time(task.startTime.hours, task.startTime.minutes),
+			length: Time.fromMinutes(durationMins),
+		}
+	}
+
+	/**
+	 * What the manual dialog proposes as "when this was done". The plan, for a block nobody started. For a started
+	 * one, what actually happened: its recorded start, running until now. Proposing the planned slot there was
+	 * wrong in both fields for exactly the block most likely to be completed late — one that ran over. Only the
+	 * manual path: elsewhere `length` seeds the timer, where the planned duration is the right answer.
+	 *
+	 * A started block may have no recorded start — the status menu sent none until `DayPlannerView.statusRequest`,
+	 * and older rows keep that gap — so the planned start stands in for it. The end is still now: that much is known.
+	 */
+	function manualPrefill(task: PlannerTask): { startTime: Time; length: Time } {
+		if (task.status !== PlannerTaskStatus.InProgress) return plannedSpan(task)
+		const start = task.actualStartTime ?? task.startTime
+		const elapsed = (minutesOfDayInUserZone() - start.getInMinutes + 1440) % 1440
+		return {
+			startTime: new Time(start.hours, start.minutes),
+			// At least a minute: completing in the minute it was started would otherwise propose an empty length.
+			length: Time.fromMinutes(Math.max(1, elapsed)),
+		}
 	}
 
 	function openFromSelection() {

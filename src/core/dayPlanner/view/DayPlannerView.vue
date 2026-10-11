@@ -58,6 +58,8 @@
 					/>
 					<!-- FO4: today only, once a movable block has passed unstarted -->
 					<ReplanTodayBanner @replanned="loadTasks" />
+					<!-- P1-04: today only, once a started block runs 5+ min past its end -->
+					<OverrunBanner @logTime="logTimeController?.openManual" />
 				</template>
 			</template>
 
@@ -112,13 +114,14 @@
 	import CalendarDetailsDialog from '@/core/dayPlanner/component/normal/CalendarDetailsDialog.vue'
 	import PlannerSelectionActions from '@/core/dayPlanner/component/normal/PlannerSelectionActions.vue'
 	import ReplanTodayBanner from '@/core/dayPlanner/component/normal/ReplanTodayBanner.vue'
+	import OverrunBanner from '@/core/dayPlanner/component/normal/OverrunBanner.vue'
 	import {
 		formatToDateWithDay,
 		parseDateFromApi,
 		urlStringToUTCDate,
 		usStringToUrlString,
 	} from '@/_common/utils/DateTimeHelper.ts'
-	import { isoDateInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { PLANNER_STORE_KEY } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
@@ -358,20 +361,38 @@
 		const task = store.tasks.find(e => e.id === taskId)
 		if (!task) return
 		const previousStatus = task.status
+		const previousActualStart = task.actualStartTime
 		if (status !== PlannerTaskStatus.Completed) {
 			task.status = status
-			const request = new PatchPlannerTaskStatusRequest(status)
+			const request = statusRequest(task, status)
+			task.actualStartTime = request.actualStartTime ?? task.actualStartTime
 			if (status === PlannerTaskStatus.Cancelled || status === PlannerTaskStatus.NotStarted) {
 				task.actualStartTime = null
 				task.actualEndTime = null
 			}
 			await patchStatus(taskId, request, { _silent: true }).catch(() => {
 				task.status = previousStatus
+				task.actualStartTime = previousActualStart
 				showErrorSnackbar(t('planner.feedback.taskStatusUpdateFailed'))
 			})
 		} else {
 			logTimeController.value?.openManual(taskId)
 		}
+	}
+
+	/**
+	 * The status patch for any change except *Completed*, which goes through log time.
+	 *
+	 * *In progress* carries the actual start, the way the timer path (`markInProgress`) always did. Without it a
+	 * block started from the status menu or the selection bar had no record of when it began, and everything that
+	 * reads one had to fall back to the planned start: the overrun banner's one-tap Done, the log-time dialog's
+	 * pre-fill, plan-vs-actual. Now, on the user's clock — unless the block already has one, i.e. it is being
+	 * resumed from *On hold*, which must not move its start to the moment of resuming.
+	 */
+	function statusRequest(task: PlannerTask, status: PlannerTaskStatus): PatchPlannerTaskStatusRequest {
+		const actualStartTime =
+			status === PlannerTaskStatus.InProgress && !task.actualStartTime ? timeInUserZone() : null
+		return new PatchPlannerTaskStatusRequest(status, actualStartTime)
 	}
 
 	/**
@@ -409,15 +430,19 @@
 				const task = store.tasks.find(e => e.id === taskId)
 				if (!task) return
 				const previousStatus = task.status
+				const previousActualStart = task.actualStartTime
+				const request = statusRequest(task, status)
 				task.status = status
+				task.actualStartTime = request.actualStartTime ?? task.actualStartTime
 				if (status === PlannerTaskStatus.NotStarted) {
 					task.actualStartTime = null
 					task.actualEndTime = null
 				}
 				try {
-					await patchStatus(taskId, new PatchPlannerTaskStatusRequest(status), { _silent: true })
+					await patchStatus(taskId, request, { _silent: true })
 				} catch (error) {
 					task.status = previousStatus
+					task.actualStartTime = previousActualStart
 					throw error
 				}
 			},

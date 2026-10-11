@@ -40,9 +40,14 @@ const dayPlanner = {
 			},
 			minImportanceLabel: `Dôležité od`,
 			minImportanceHint: `Táto úroveň a všetky nad ňou`,
-			notificationType: `Začiatok plánovaného bloku`,
+			notificationType: `Plánovaný blok čoskoro začína`,
 			kindName: `Automatické pripomienky blokov`,
 			explainer: `Doručia sa aj so zavretou aplikáciou, s predstihom nastaveným vyššie. Dostanú ich len bloky pridané odteraz; bloky na pozadí nikdy. Na bloku ju zmažete alebo upravíte ako každú pripomienku.`,
+		},
+		// P1-04: upozornenia serverovej kontroly sklzu — s rovnakým podstatným menom ako ich titulky.
+		slipNudges: {
+			missedNotificationType: `Plán sa posunul`,
+			overrunNotificationType: `Čas plánovaného bloku vypršal`,
 		},
 		templateSuggestions: {
 			suggestedForYou: `Odporúčané pre vás`,
@@ -117,6 +122,7 @@ const dayPlanner = {
 			calendarUpdateFailed: `Nepodarilo sa aktualizovať kalendár`,
 			taskMarkedDone: `Úloha označená ako hotová`,
 			taskMarkedCompleted: `Úloha označená ako dokončená`,
+			taskExtended: `Predĺžené o {minutes} min`,
 			timeLogged: `Čas zaznamenaný`,
 			tasksCarriedOver: `Úlohy prenesené`,
 		},
@@ -328,6 +334,7 @@ const dayPlanner = {
 			taskDeleted: `Vymazanie úlohy`,
 			taskSplit: `Rozdelenie úlohy`,
 			tasksDuplicated: `Duplikovanie úloh`,
+			taskExtended: `Predĺženie úlohy`,
 		},
 		logTime: {
 			startTimeLabel: `Čas začiatku`,
@@ -437,6 +444,14 @@ const dayPlanner = {
 			noEnergy: `Nemal som energiu`,
 			// FO5: zavreté kartou „Vitaj späť“, nikdy sa neponúka v menu.
 			away: `Bol som preč`,
+		},
+		// P1-04: spustený blok po plánovanom konci — znenie serverového upozornenia, bez otázky.
+		overrun: {
+			text: `Čas na „{name}“ vypršal pred {duration}`,
+			minutes: `{count} min`,
+			done: `Hotovo`,
+			doneEllipsis: `Hotovo…`,
+			extend: `+{minutes} min`,
 		},
 		nowNext: {
 			now: `Teraz: {name}`,

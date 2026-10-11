@@ -40,9 +40,15 @@ const dayPlanner = {
 			minImportanceHint: `This level and everything above it`,
 			// Inbox type-filter name and notification-settings row for `PlannedBlockStarting`, and its
 			// `("Portal", "PlannedBlockStarting")` row on the reminder preferences page.
-			notificationType: `Planned block starting`,
+			notificationType: `Planned block starting soon`,
 			kindName: `Automatic block reminders`,
 			explainer: `Delivered even with the app closed, at the lead time above. Only blocks you add from now on get one; background blocks never do. Delete or edit one on a block like any reminder.`,
+		},
+		// The server's slip sweep (P1-04): inbox type-filter names and notification-settings rows. Each shares
+		// the noun of the server's own title ("Your plan slipped", "Time's up").
+		slipNudges: {
+			missedNotificationType: `Plan slipped`,
+			overrunNotificationType: `Time's up for a planned block`,
 		},
 		templateSuggestions: {
 			suggestedForYou: `Suggested for you`,
@@ -109,6 +115,7 @@ const dayPlanner = {
 			calendarUpdateFailed: `Failed to update calendar`,
 			taskMarkedDone: `Task marked done`,
 			taskMarkedCompleted: `Task marked completed`,
+			taskExtended: `Extended by {minutes} min`,
 			timeLogged: `Time logged`,
 			tasksCarriedOver: `Tasks carried over`,
 		},
@@ -320,6 +327,7 @@ const dayPlanner = {
 			taskDeleted: `Task deleted`,
 			taskSplit: `Task split`,
 			tasksDuplicated: `Tasks duplicated`,
+			taskExtended: `Task extended`,
 		},
 		logTime: {
 			startTimeLabel: `Start time`,
@@ -428,6 +436,15 @@ const dayPlanner = {
 			noEnergy: `No energy for it`,
 			// FO5: closed by the welcome-back card, never offered in the menu.
 			away: `I was away`,
+		},
+		// P1-04: a started block past its planned end. The server's own "wrap up or extend?" wording, minus the question.
+		overrun: {
+			text: `Time for “{name}” ran out {duration} ago`,
+			minutes: `{count} min`,
+			done: `Done`,
+			// Past the hour: opens the log-time dialog rather than recording an end of now. The ellipsis says so.
+			doneEllipsis: `Done…`,
+			extend: `+{minutes} min`,
 		},
 		nowNext: {
 			now: `Now: {name}`,
