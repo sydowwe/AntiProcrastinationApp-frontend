@@ -83,8 +83,8 @@ never ships a call to a route or field that the running API does not have yet.
 |---|---|---|---|
 | **A. Away means away** ✅ (2026-10-11) — FO1, FO11 built and browser-checked | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes. **Status (2026-10-11):** steps 1–2 built, migration `20261006183310` applied locally. Step 3 (FO11) built and browser-checked 2026-10-11. Step 4 waits on F4 open question 5 |
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
-| **C. Recover the day** — FO3/FO4/FO6 ✅, FO10 built, waits on its migration (2026-10-11) | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9); **left: the owner applies `20261011212220_UserDefaultSleepWindow` and restarts the API, then FO10's settings card gets its browser check** |
-| **D. Coming back** | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-11):** step 1 committed (`874ee396`); step 2 built backend-side, not committed |
+| **C. Recover the day** ✅ (2026-10-12) — FO3/FO4/FO6/FO10 built, migrated and checked live. FO4 and FO6 keep the open questions in `feature-opportunities-effort.md` | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9). Its migration `20261011212220` was applied on 2026-10-12, and the settings card was then checked live (FO10's status) |
+| **D. Coming back** ✅ (2026-10-12) — FO5 both steps committed | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-12):** step 1 committed (backend `8863158`, frontend `874ee396`, browser-checked); step 2 committed (framework `5646e89`, backend `1aa7f2b`, no frontend). The 2026-10-11 "not committed" note was stale |
 | **E. Learn from what happened** | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first |
 | **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
 
@@ -342,6 +342,14 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high, for both.
 
 ### FO5. Coming back after a gap: one card turns the pile into three decisions, and the app goes quiet while you're gone
+- **Closed (2026-10-12):** reviewed against *Backend logic needed* and *Frontend surface* below, in both repos, and
+  found complete. Step 2 is committed after all: framework `5646e89` (the seam, `HeldWhileAwayTypes`, the hold in
+  the live send and in the quiet-hours flush) and backend `1aa7f2b` (`RecipientEngagementReader`, pinned by
+  `ModuleWiringTests`). The hold list has since grown with the planner's missed-block and overrun kinds (P1-04)
+  and the automatic block reminders (P1-03); reminders the user wrote, to-do due reminders, the timer alarm and
+  scheduler alerts still go out. The shared away check is `WasMarkedAway` on `GET /welcome-back` (FO1's
+  half-the-days rule), which picks the card's "welcome back from your break" title. `WelcomeBackTests`,
+  `NotificationAwayHoldTests` and `ModuleWiringTests` re-run green on 2026-10-12 (51 tests). Nothing is left.
 - **Status (2026-10-08): step 1 (the greeting) built and on backend `dev` (`8863158`), migration
   `20261008080300_UserLastActiveAndWelcomeBack` applied.** Frontend card built and committed: `WelcomeBackCard.vue`
   above the now bar, in `src/core/home/`. Checked end to end in the browser against the real API (2026-10-08), at
@@ -600,8 +608,16 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high.
 
 ### FO10. Mornings start when yours do
-- **Status (2026-10-11): built, not yet live.** Needs migration `20261011212220_UserDefaultSleepWindow` applied and
-  an API restart; until then the running API ignores the two new preference fields.
+- **Browser-checked (2026-10-12) against the real API**, after the owner applied `20261011212220_UserDefaultSleepWindow`
+  and restarted. As the seed's primary user (all 730 days at 08:00 / 00:00, none marked):
+  - Wake up → 09:30 in Settings: one `PUT /user/preferences` (204) carrying only `defaultWakeUpTime`, and the
+    *Preference saved* snackbar. All 446 days from today on moved to 09:30, and the 284 past days stayed at 08:00. The
+    value survives a reload, and the day view's *Start* reads 09:30.
+  - 14 Oct given its own start in the day dialog (07:20, since the picker rounds to 5 min): `PUT /calendar/{id}` 200, and
+    the row is marked `has_custom_sleep_window`. Bed time → 23:30 in Settings then moved the other 445 days and left
+    14 Oct at 07:20 / 00:00.
+  - Restored to 08:00 / 00:00 afterwards, with no console errors. 14 Oct stays marked until the next e2e seed.
+- **Status (2026-10-11): built.** It went live on 2026-10-12, once the migration was applied and the API restarted.
   - **Backend:** `User.DefaultWakeUpTime` / `DefaultBedTime` (Core, default 08:00 / 00:00, read through
     `UserSleepWindow`), on `PUT /user/preferences` and `GET /user/data` as `TimeDto`, and in the GDPR export.
     `CalendarDayFactory` stamps them on every new day, from both the seeder and the lazy provisioner. The
@@ -615,7 +631,7 @@ never ships a call to a route or field that the running API does not have yet.
   - **Frontend:** `SleepWindowField.vue` in Settings → Preferences, with two `TimePicker`s that save one field
     per PUT after an 800 ms debounce, read through `useUserPreferences`. The privacy policy's account-data
     list names the new preference (SK + EN).
-  - **Not done:** the browser check (it needs the migration). Users with no calendar row on a day still get
+  - **Not done:** users with no calendar row on a day still get
     the generic 08:00 window in the re-plan *preview's* reported window end. A day with no row has no
     tasks, so nothing moves differently.
 - **Source:** F2-10.
