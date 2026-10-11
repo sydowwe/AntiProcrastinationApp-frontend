@@ -474,7 +474,7 @@ only for continuity with round 1.
 ---
 
 ### B4. The ladder's trash button deletes the entry on one tap, with no confirmation, unlike the table's Delete in the same view
-- **Status:** open
+- **Status:** fixed 2026-10-11 (`F102`: `useDeleteConfirmation` + `confirm()`; verified, see `_x4/_fix-queue-log.md`)
 - **Severity:** bug
 - **Where:** `/leisure/bucket-list?view=ladder` → `getByRole('button', { name: 'Delete: <activity>' })` on a
   rung card · `src/core/leisure/component/bucketList/BucketListLadder.vue:137-139` (button),

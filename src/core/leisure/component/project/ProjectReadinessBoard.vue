@@ -200,6 +200,7 @@
 	import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
 	import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 	const {
 		items,
@@ -226,6 +227,7 @@
 	const { t } = useI18n()
 	const { update, deleteEntity } = useActivityProjectProfileCrud()
 	const { openDialog, confirm } = useDialog()
+	const { shouldConfirm } = useDeleteConfirmation()
 
 	// Cards being written back to the server — disables their status buttons and shows the card's
 	// own loading state so a slow status change doesn't look like a missed click.
@@ -291,13 +293,16 @@
 		})
 	}
 
+	// A leaf with no undo, so the user's `askBeforeDelete` decides — the same call as the ladder's.
 	async function onDelete(item: ActivityProjectProfile) {
-		const confirmed = await confirm({
-			title: t('general.deleteConfirmationTitle'),
-			text: t('general.deleteConfirmationText', { name: item.activity.name }),
-			confirmBtnColor: 'error',
-		})
-		if (!confirmed) return
+		if (shouldConfirm({ cascades: false, undoable: false })) {
+			const confirmed = await confirm({
+				title: t('general.deleteConfirmationTitle'),
+				text: t('general.deleteConfirmationText', { name: item.activity.name }),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
+		}
 		await deleteEntity(item.id)
 		emit('onReload')
 	}

@@ -168,6 +168,7 @@
 	import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
 	import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
 	import { useDialog } from '@/_common/composable/general/useDialog.ts'
+	import { useDeleteConfirmation } from '@/core/user/composable/useDeleteConfirmation.ts'
 
 	const {
 		items,
@@ -188,7 +189,8 @@
 
 	const { t } = useI18n()
 	const { deleteEntity } = useActivityBucketListProfileCrud()
-	const { openDialog } = useDialog()
+	const { openDialog, confirm } = useDialog()
+	const { shouldConfirm } = useDeleteConfirmation()
 
 	const isEmpty = computed(() => items.length === 0)
 
@@ -233,7 +235,17 @@
 		if (result) emit('onReload')
 	}
 
+	// The table confirms inside `BasicTable`; the ladder sits outside it, so it asks here (F102). A leaf
+	// with no undo, so the user's `askBeforeDelete` decides — the same call as the projects board's.
 	async function onDelete(item: ActivityBucketListProfile) {
+		if (shouldConfirm({ cascades: false, undoable: false })) {
+			const confirmed = await confirm({
+				title: t('general.deleteConfirmationTitle'),
+				text: t('general.deleteConfirmationText', { name: item.activity.name }),
+				confirmBtnColor: 'error',
+			})
+			if (!confirmed) return
+		}
 		await deleteEntity(item.id)
 		emit('onReload')
 	}

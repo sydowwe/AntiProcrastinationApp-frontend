@@ -43,6 +43,9 @@
 > column, and CDP's `hover: none` media override doesn't take in this Chromium, but touch emulation does (`F103`). **Only
 > `F102` is open now** (the bucket-list delete confirmation, reseed first).
 
+> **2026-10-11, last: `F102` closed. Every batch in this queue is now done.** The ladder confirms through
+> `useDeleteConfirmation`, and so does the projects board. Only the *Needs verification* rows below remain.
+
 > Closed batches, closed verification items, the pass narrative and the *Contradictions & re-grades* audit trail live in
 > [`_fix-queue-log.md`](_fix-queue-log.md) beside this file. This file holds only open work. **Closing an item is a move, not a
 > mark**, by the four steps at the top of [`../_fix-queue.md`](../_fix-queue.md): the body goes to this folder's log under
@@ -63,7 +66,7 @@
 | F99 | ✅ **FIXED 2026-10-08** (the alert option: below `md` a "needs a wider screen" alert with links to each pick and the list; body in the log) — The template split view has no narrow layout, and a shared link opens it on a phone anyway | app | `planner-templates/B6` | low–med |
 | F100 | ✅ **FIXED 2026-10-11** (both pairs stack below `sm`; body in the log) — Two pairs of side-by-side form fields never stack: Min/Max people, Day Type/Location | app | `leisure-backlog-picker/P2`, `planner-day/P5` | trivial |
 | F101 | ✅ **FIXED 2026-10-08** (`59ce7415`: below `sm` a bold `N/M` over the bar plus icon markers, with no clock row; every cell fits at 390–1440; body in the log) — Month-grid day cells overflow their 52 px (the app half of `FW33`) | app | `planner-day/P4` | low |
-| F102 | The bucket-list ladder deletes on one tap, with no confirmation (not width-specific) | app | `leisure-bucket-anchors/B4` | low |
+| F102 | ✅ **FIXED 2026-10-11** (the ladder and the projects board both ask `useDeleteConfirmation`, then `confirm()` naming the activity; body in the log) — The bucket-list ladder deletes on one tap, with no confirmation (not width-specific) | app | `leisure-bucket-anchors/B4` | low |
 | F103 | ✅ **FIXED 2026-10-11** (shown under `hover: none`, theme text colour; body in the log) — Reorder mode's drag handle is hover-only, and white on a light card | app | `todo-lists/P3` | trivial |
 | F104 | ✅ **FIXED 2026-10-11** (columns stack below `sm`; body in the log) — The readiness board shows 1.4 columns on a phone, with no snap | app | `leisure-projects/P4` | low |
 | F105 | ✅ **FIXED 2026-10-11** (chip doesn't shrink, the note wraps under the bar; body in the log) — The routine widget's group chips shrink until "Weekly" reads "Weekl" | app | `home/P1` | trivial |
@@ -113,22 +116,7 @@
 
 <!-- F101 (month-grid day cells overflow their 52 px — planner-day/P4) fixed 2026-10-08 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## F102. The bucket-list ladder deletes on one tap, with no confirmation
-- **Scope:** app-side: `src/core/leisure/component/bucketList/BucketListLadder.vue:137-139,236-237`; `CLAUDE.md` (the
-  `useDeleteConfirmation` row).
-- **Closes:** `leisure-bucket-anchors/B4`. It isn't width-specific; the x4 pass found it by accident.
-- **Root cause:** `onDelete` calls `deleteEntity(item.id)` and nothing else. The table's delete confirms inside the framework's
-  `BasicTable`, and the projects board confirms through `confirm()` (`ProjectReadinessBoard.vue:295-301`). The ladder sits outside the
-  table and never asks. Confirmed by reading the source this pass.
-- **What to change:** route `onDelete` through `useDeleteConfirmation().shouldConfirm({ cascades: false, undoable: false })`, then
-  `confirm()` with the board's title and `general.deleteConfirmationText` naming the activity. Move the board's delete onto the same
-  call in the same edit, so leisure's two hand-written deletes agree. Add `leisure` to the composable's "Imported by" cell in
-  `CLAUDE.md`, which is a sanctioned-import list.
-- **Do not change:** `BasicTable`'s built-in delete dialog. It is framework code and always confirms, the same as in every other module.
-- **Verification:** `B4`'s `Verify:`, with `askBeforeDelete` at its default (`true`, `ASK_BEFORE_DELETE_DEFAULT`). The finding's
-  pass condition only holds while that preference is on (§133). **Reseed first.** The x4 pass deleted fixture row 17101 (*Learn
-  Bouldering*), the seed's only bucket-list row, and `leisure-bucket-anchors.draft.spec.ts` fails until `POST /api/test/seed`.
-- **Risk:** none beyond the reseed.
+<!-- F102 (the bucket-list ladder deletes on one tap, with no confirmation — leisure-bucket-anchors/B4) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 <!-- F103 (reorder mode's drag handle is hover-only, and white on a light card — todo-lists/P3) fixed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 

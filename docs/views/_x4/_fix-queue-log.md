@@ -847,6 +847,38 @@
 - **What to change:** below `sm`, move the link under the text (default slot, or an actions row) instead of `#append`.
 - **Verification:** `P7`'s `Verify:`.
 
+## F102. The bucket-list ladder deletes on one tap, with no confirmation
+> ✅ **FIXED 2026-10-11.** `BucketListLadder`'s `onDelete` asks `useDeleteConfirmation().shouldConfirm({ cascades: false,
+> undoable: false })`. When that's true it calls `confirm()` with `general.deleteConfirmationTitle` and
+> `general.deleteConfirmationText`, which names the activity. `ProjectReadinessBoard`'s delete used to confirm unconditionally and
+> now goes through the same call, so leisure's two hand-written deletes agree and both respect `askBeforeDelete`. CLAUDE.md's
+> `useDeleteConfirmation` row lists `leisure`.
+> **Verified** with `playwright-cli` at 390 after a reseed (the e2e global setup). A throwaway activity and bucket-list entry were
+> created through the API (row 17102), and 17101 was left alone. The throwaway's trash icon on `?view=ladder` opened *Delete confirmation*,
+> "Are you sure you want to delete F102 Throwaway?". Cancel left the card, and `requests` showed no `DELETE`. Confirm sent
+> `DELETE …/activity-bucket-list-profile/17102` → 204 and removed only that card; *Learn Bouldering* stayed. The throwaway
+> activity was deleted afterwards. The board's delete wasn't driven: with `askBeforeDelete` at its default it takes the same path as
+> before. `vue-tsc --build --force` is clean, and so is ESLint on both files.
+> **Unrelated, seen on the way:** after the reseed, `leisure-bucket-anchors.draft.spec.ts` › *renders the seeded profile with its
+> columns* fails: `#app thead tr` › `getByText('Activity', { exact: true })` isn't found, though the table renders with
+> 17101 in it. The file's other 8 tests pass. This fix doesn't touch the table view, and the failure wasn't investigated.
+
+- **Scope:** app-side: `src/core/leisure/component/bucketList/BucketListLadder.vue:137-139,236-237`; `CLAUDE.md` (the
+  `useDeleteConfirmation` row).
+- **Closes:** `leisure-bucket-anchors/B4`. It isn't width-specific; the x4 pass found it by accident.
+- **Root cause:** `onDelete` calls `deleteEntity(item.id)` and nothing else. The table's delete confirms inside the framework's
+  `BasicTable`, and the projects board confirms through `confirm()` (`ProjectReadinessBoard.vue:295-301`). The ladder sits outside the
+  table and never asks. Confirmed by reading the source this pass.
+- **What to change:** route `onDelete` through `useDeleteConfirmation().shouldConfirm({ cascades: false, undoable: false })`, then
+  `confirm()` with the board's title and `general.deleteConfirmationText` naming the activity. Move the board's delete onto the same
+  call in the same edit, so leisure's two hand-written deletes agree. Add `leisure` to the composable's "Imported by" cell in
+  `CLAUDE.md`, which is a sanctioned-import list.
+- **Do not change:** `BasicTable`'s built-in delete dialog. It is framework code and always confirms, the same as in every other module.
+- **Verification:** `B4`'s `Verify:`, with `askBeforeDelete` at its default (`true`, `ASK_BEFORE_DELETE_DEFAULT`). The finding's
+  pass condition only holds while that preference is on (§133). **Reseed first.** The x4 pass deleted fixture row 17101 (*Learn
+  Bouldering*), the seed's only bucket-list row, and `leisure-bucket-anchors.draft.spec.ts` fails until `POST /api/test/seed`.
+- **Risk:** none beyond the reseed.
+
 ## Closed verification items
 
 - **`planner-day/U1`: settled 2026-10-08, confirmed.** It is now `planner-day/B10` (`blocker`) and opens `F108`. Method:
