@@ -16,7 +16,14 @@
 // convention is asymmetric: the response carries `null` when unset, but the request treats `null`
 // (or an absent key) as "leave unchanged" and `''` as "clear", so the request side is `string` only.
 //
-// All three are **optional on the response side**, and that is load-bearing rather than defensive.
+// `defaultWakeUpTime` / `defaultBedTime` (FO10) are the user's usual day: every calendar day the
+// server creates starts with them, and changing them moves every future day the user has not given a
+// window of its own. Set from `SleepWindowField.vue`. On the wire they are `{hours, minutes}`; the
+// response side is typed as that plain shape rather than `Time`, because `User.fromJson` copies them
+// through as-is and the persisted store rehydrates them as plain objects, so no method is guaranteed
+// to exist. `useUserPreferences` turns them into `Time`.
+//
+// All of them are **optional on the response side**, and that is load-bearing rather than defensive.
 // Interface merging declares a type; it cannot create a value, so neither field exists on a fresh
 // `new User()` — which is what the store holds until `hydrateFromServer()` resolves (from `login()`
 // on sign-in, from `installFramework({ hydrateOnBoot: true })` on reload; neither is awaited).
@@ -33,6 +40,8 @@ declare module '@/_common/modules/user/dto/response/User.ts' {
 		firstDayOfWeek?: 0 | 1
 		askBeforeDelete?: boolean
 		weatherLocation?: string | null
+		defaultWakeUpTime?: { hours: number; minutes: number }
+		defaultBedTime?: { hours: number; minutes: number }
 	}
 }
 
@@ -41,6 +50,8 @@ declare module '@/_common/modules/user/dto/request/UserPreferencesRequest.ts' {
 		firstDayOfWeek?: 0 | 1
 		askBeforeDelete?: boolean
 		weatherLocation?: string
+		defaultWakeUpTime?: { hours: number; minutes: number }
+		defaultBedTime?: { hours: number; minutes: number }
 	}
 }
 

@@ -30,6 +30,9 @@
 			</MyBtnToggle>
 		</div>
 		<div class="mt-5">
+			<SleepWindowField />
+		</div>
+		<div class="mt-5">
 			<WeatherLocationField />
 		</div>
 	</SettingsSection>
@@ -45,6 +48,7 @@
 	import { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import SettingsSection from '@/core/user/component/settings/SettingsSection.vue'
 	import WeatherLocationField from '@/core/user/component/settings/WeatherLocationField.vue'
+	import SleepWindowField from '@/core/user/component/settings/SleepWindowField.vue'
 
 	const i18n = useI18n()
 	const userStore = useUserStore()

@@ -15,6 +15,14 @@ const user = {
 		weatherLocation: `Vaše mesto (pre počasie)`,
 		weatherLocationHint: `Výber voľnočasových aktivít tu zohľadní dnešné počasie. Zadajte názov mesta, prípadne za ním krajinu po anglicky.`,
 		weatherLocationPlaceholder: `napr. Bratislava alebo Bratislava, Slovakia`,
+		// FO10 — obvyklý deň používateľa. Nápoveda hovorí, čoho sa zmena dotkne, lebo prepisuje dni, ktoré
+		// používateľ vidí v plánovači.
+		sleepWindow: {
+			title: `Váš obvyklý deň`,
+			wakeUp: `Vstávanie`,
+			bedTime: `Spánok`,
+			hint: `Každý deň v plánovači začína s týmito časmi a „preplánovať zvyšok dňa“ končí pri čase spánku. Zmena upraví dnešok a ďalšie dni, okrem dní, kde ste si časy nastavili sami.`,
+		},
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
 			title: `Nastavenia jednotlivých častí`,
@@ -202,7 +210,7 @@ Kedykoľvek si ho môžete stiahnuť (Nastavenia → Exportovať moje dáta). Ak
 					},
 					{
 						heading: `2. Údaje o účte`,
-						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa, či sa vás máme pýtať pred mazaním a — ak ho zadáte — mesto, ktoré ste nastavili pre počasie.`,
+						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa, kedy zvyčajne vstávate a chodíte spať, či sa vás máme pýtať pred mazaním a — ak ho zadáte — mesto, ktoré ste nastavili pre počasie.`,
 					},
 					{
 						heading: `3. Obsah, ktorý do aplikácie vložíte`,

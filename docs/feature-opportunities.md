@@ -83,7 +83,7 @@ never ships a call to a route or field that the running API does not have yet.
 |---|---|---|---|
 | **A. Away means away** ✅ (2026-10-11) — FO1, FO11 built and browser-checked | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes. **Status (2026-10-11):** steps 1–2 built, migration `20261006183310` applied locally. Step 3 (FO11) built and browser-checked 2026-10-11. Step 4 waits on F4 open question 5 |
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
-| **C. Recover the day** — FO3/FO4/FO6 ✅, FO10 open (2026-10-11) | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. Left: FO10, FO4's live check against the real routes (it was checked with mocks), and the `todo-motivation.spec.ts` re-run for FO3 |
+| **C. Recover the day** — FO3/FO4/FO6 ✅, FO10 built, waits on its migration (2026-10-11) | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9); **left: the owner applies `20261011212220_UserDefaultSleepWindow` and restarts the API, then FO10's settings card gets its browser check** |
 | **D. Coming back** | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-11):** step 1 committed (`874ee396`); step 2 built backend-side, not committed |
 | **E. Learn from what happened** | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first |
 | **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
@@ -198,8 +198,8 @@ never ships a call to a route or field that the running API does not have yet.
 
 ### FO3. A task that keeps slipping is offered a smaller first step, and carrying it over stops counting against you
 - **Closed (2026-10-08):** both phases reviewed and found complete. Every move path (PUT, span patch, re-plan
-  apply, the to-do PUT and `reschedule-overdue`) goes through the two postpone rules. Left: the owner applies
-  `20261007200704`, then `todo-motivation.spec.ts` is re-run against the new route.
+  apply, the to-do PUT and `reschedule-overdue`) goes through the two postpone rules. `20261007200704` is
+  applied, and `todo-motivation.spec.ts` was re-run against the new route on 2026-10-11: 12/12 green.
 - **Status (2026-10-07): both phases built.** Phase 1 checked live (no migration). Phase 2 (backend `410dced`)
   is built and tested but **not yet live**: it needs migration `20261007200704_PlannerTaskPostponeAndRepeatingSource` applied and
   an API restart. That migration is wave C's single `planner_task` migration, and also carries FO6's two columns.
@@ -275,6 +275,11 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high, for both. The framing (offer help, never a score) is the hard part.
 
 ### FO4. "Re-plan the rest of today": one tap moves what slipped into the time that's left
+- **Checked live (2026-10-11)** against the running API, with no mocks. A block missed at 22:00 was offered at
+  23:33–23:43 by `ReplanTodayBanner` → `POST …/replan` (200). The seed's 11:00 block came up under *No room
+  left today*, defaulting to *Tomorrow*. `…/replan/apply` returned 200, and the stored task read 23:33–23:43.
+  `next-free-slot` answered the slot after the block, the "now" slot with `excludeTaskId`, tomorrow's
+  wake-up, and 400 for a past day.
 - **Status (2026-10-07): built, no migration; live check waits on an API restart.** Backend `565f3e6`, frontend
   the commit after `0fd7e874`. The running API predated it, so the UI was checked with mocked `replan` /
   `apply` routes, and *Move later* falls back to its old shift until the restart.
@@ -595,6 +600,24 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high.
 
 ### FO10. Mornings start when yours do
+- **Status (2026-10-11): built, not yet live.** Needs migration `20261011212220_UserDefaultSleepWindow` applied and
+  an API restart; until then the running API ignores the two new preference fields.
+  - **Backend:** `User.DefaultWakeUpTime` / `DefaultBedTime` (Core, default 08:00 / 00:00, read through
+    `UserSleepWindow`), on `PUT /user/preferences` and `GET /user/data` as `TimeDto`, and in the GDPR export.
+    `CalendarDayFactory` stamps them on every new day, from both the seeder and the lazy provisioner. The
+    override marker is `Calendar.HasCustomSleepWindow`, set by `Calendar.MarkSleepWindow` when the day dialog or
+    a template apply actually changes a day's window. A changed default is pushed onto every unmarked day from
+    the user's today on (`CalendarSleepWindowSync`, one `ExecuteUpdate`); past days are never touched. The
+    migration marks every existing row that is not 08:00 / 00:00. The fallbacks for a day with no row
+    (next-free-slot, the two routine sweeps) read the user's default instead of a hardcoded 08:00.
+  - **What FO4 gets:** nothing new in code. The re-plan already packs to the day's `BedTime`, and that is now
+    the user's.
+  - **Frontend:** `SleepWindowField.vue` in Settings → Preferences, with two `TimePicker`s that save one field
+    per PUT after an 800 ms debounce, read through `useUserPreferences`. The privacy policy's account-data
+    list names the new preference (SK + EN).
+  - **Not done:** the browser check (it needs the migration). Users with no calendar row on a day still get
+    the generic 08:00 window in the re-plan *preview's* reported window end. A day with no row has no
+    tasks, so nothing moves differently.
 - **Source:** F2-10.
 - **Moment:** a user who wakes at 10:30 gets the 08:00 routine push. Every future morning sweep (N2, N4) and FO4's
   window inherit the same defaults.

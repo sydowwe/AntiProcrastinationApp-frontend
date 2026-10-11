@@ -1,5 +1,6 @@
 import { computed, type ComputedRef } from 'vue'
 import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
+import { Time } from '@/_common/dto/dto/Time.ts'
 
 // The single read path for this app's own user preferences (`src/core/user/dto/userAugmentation.ts`).
 //
@@ -29,11 +30,16 @@ import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 export const ASK_BEFORE_DELETE_DEFAULT = true
 /** Monday, matching `getWeekStart`'s own default in `_common/utils/DateTimeHelper.ts`. */
 export const FIRST_DAY_OF_WEEK_DEFAULT: 0 | 1 = 1
+/** 08:00 and midnight: the server's own defaults (`UserSleepWindow.Fallback`), so an unhydrated read agrees with it. */
+export const DEFAULT_WAKE_UP_TIME_DEFAULT = { hours: 8, minutes: 0 }
+export const DEFAULT_BED_TIME_DEFAULT = { hours: 0, minutes: 0 }
 
 export function useUserPreferences(): {
 	askBeforeDelete: ComputedRef<boolean>
 	firstDayOfWeek: ComputedRef<0 | 1>
 	weatherLocation: ComputedRef<string | null>
+	defaultWakeUpTime: ComputedRef<Time>
+	defaultBedTime: ComputedRef<Time>
 } {
 	const userStore = useUserStore()
 
@@ -45,6 +51,14 @@ export function useUserPreferences(): {
 	// into it because the store's optimistic `Object.assign` leaves `''` behind after a clear, while
 	// the server stores that same clear as `null`.
 	const weatherLocation = computed(() => userStore.currentUser.weatherLocation?.trim() || null)
+	// FO10. Through `Time.fromJson` because the stored value is a plain `{hours, minutes}` after a reload
+	// (the store persists to localStorage) and a `Time` after an optimistic `setPreferences`.
+	const defaultWakeUpTime = computed(() =>
+		Time.fromJson(userStore.currentUser.defaultWakeUpTime ?? DEFAULT_WAKE_UP_TIME_DEFAULT),
+	)
+	const defaultBedTime = computed(() =>
+		Time.fromJson(userStore.currentUser.defaultBedTime ?? DEFAULT_BED_TIME_DEFAULT),
+	)
 
-	return { askBeforeDelete, firstDayOfWeek, weatherLocation }
+	return { askBeforeDelete, firstDayOfWeek, weatherLocation, defaultWakeUpTime, defaultBedTime }
 }
