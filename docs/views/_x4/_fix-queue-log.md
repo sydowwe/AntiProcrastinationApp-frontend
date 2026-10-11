@@ -672,6 +672,80 @@
 - **What to change:** below `sm`, show a compact `N/M` (or only the progress bar) and drop the clock row.
 - **Verification:** `P4`'s `Verify:`.
 
+## FW34. The icon picker keeps 7 columns at any width
+> ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`, pointer bumped in the app's `6472b288` together with
+> `FW29`–`FW31`). The fix landed on 2026-10-08, but the queue wasn't closed or browser-verified until 2026-10-11. It doesn't
+> follow *What to change*: the grid is virtualised one row per item, so `auto-fill` would wrap a row onto two lines. Instead,
+> tiles per row are computed from the scroller's measured width (72 px minimum, 8 px gap, capped at 7), and each name carries a
+> `title`. Documented in `components.md` → `IconPickerDialog`.
+> **Verified** with `playwright-cli` at 390 on `/todo-list` → *New list* → Icon: 3 columns, every name whole, nothing past the
+> dialog (screenshot checked).
+> **Not verified:** the 7-column cap at 1440. The measuring selector matched nothing, and it wasn't re-run.
+
+- **Scope:** **[framework]** `src/_common/component/inputs/IconPickerDialog.vue:251-256`.
+- **Closes:** `todo-lists/P2`.
+- **What to change:** `grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))`.
+- **Verification:** `P2`'s `Verify:`. At 1440 the grid is unchanged.
+
+## FW35. The password show/hide toggle is a 20×20 tap target
+> ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`, app `6472b288`). The fix is the recommended one: `density="compact"`
+> is gone from the `#append-inner` button. The accessible name (`FW7`) is unchanged.
+> **Verified** with `playwright-cli` at 390 on `/login`, signed out: the button is 40×40, "Show password".
+> **Not verified:** the Change password and Change e-mail dialogs and `/registration`. They render the same component.
+
+- **Scope:** **[framework]** `src/_common/modules/user/component/MyPasswordInput.vue:11-19`.
+- **Closes:** `user-settings/A2` (`/login`, `/registration`, the change-password and change-e-mail dialogs).
+- **What to change:** drop `density="compact"` (or set `size="default"`) on the `#append-inner` button. The 56 px field has room for a
+  36–40 px button.
+- **Do not change:** `FW7`'s accessible name.
+- **Verification:** `A2`'s `Verify:`.
+
+## FW36. Active-session rows clamp their subtitle to one line, hiding "Last used"
+> ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`, app `6472b288`). It took the third option: the metadata moved
+> from `#subtitle`, which `VListItem` clamps, to the default slot, so it wraps. The uncommitted chip edit this body warned about was
+> no longer in the submodule on 2026-10-11 (clean `git status`).
+> **Verified** with `playwright-cli` at 390 on `/user/settings`: the row reads "… · Signed in: … · Last used: 3 minutes ago" in
+> full, 230 px wide, with `scrollWidth <= clientWidth`.
+
+- **Scope:** **[framework]** `src/_common/modules/user/component/settings/SessionsSection.vue:51-58`. At the x4 run the submodule held
+  an uncommitted edit to this file (a chip), so check the submodule's own `git status` first.
+- **Closes:** `user-settings/P2`.
+- **What to change:** `lines="two"` on the `VList` (or `text-wrap` on the subtitle), or split the metadata so "Last used" gets its own
+  line below `sm`.
+- **Verification:** `P2`'s `Verify:`.
+
+## FW37. The `VCol` default is `pa-2`, but `VRow` keeps −12 px gutters: every row nested in a column overruns it by 4 px
+> ✅ **FIXED 2026-10-11** (framework and app, uncommitted at the time of writing). Option 1: `framework.css` gets
+> `.v-row:not(.v-row--no-gutters):not(.v-row--dense) { margin-inline: -8px }`, with a comment, and `createAppVuetify.ts`'s `VCol`
+> default points at it. `SETUP.md` §6 documents the pairing (and now says five corrections, not four). `ActivitySelectionForm`'s
+> `mx-n2` from `F92` is gone, now redundant.
+> **Found here: this app never imported `framework.css`.** `main.ts` loaded only `src/assets/main.css` → `base.css`, an older
+> hand-copy of part of it. So the rule alone would have reached nothing, and the app had also been missing four other framework
+> corrections: the `--v-field-*` colours, the autofill repaint, three-line list-item alignment and the fixed-header rule. The
+> operator chose to adopt it. `main.ts` now imports `@/_common/assets/framework.css` before `main.css`, as `SETUP.md` says, and
+> `base.css` is down to what's app-specific: `body`'s `color: white !important` and font stack, `--v-list-prepend-gap` and
+> `.is-hidden`.
+> **Verified** with `playwright-cli`. At 390, `main .v-container` has `scrollWidth == clientWidth` on `/login`, `/registration`,
+> `/forgotten-password`, `/user/settings`, `/` and all of `F92`'s routes (`/activity-tracking/{unified,desktop,android}`,
+> `/activity-history`, `…/pomodoro`, `…/stopwatch`, `…/timer`, `…/manual`). `/login` and `/registration` went from 394/390 with
+> controls at 8–382 to 390/390 with controls at 12–378. `/` and `/activity-history/manual` were screenshot-checked at 1440 in the
+> light and dark themes; fields read correctly in both, with no console errors. `vue-tsc --build --force`: 0; eslint clean on
+> the touched files.
+> **Not verified:** a dense grid of cards at 1440 measured edge to edge (only screenshot-checked), and Safari.
+> **Seen, not fixed, unfiled:** on `/` in the light theme, the routine widget's item titles are white on a light card. That comes
+> from a hard-coded `text-white` class, not from this change: the colour is the same with `framework.css` disabled.
+
+- **Scope:** **[framework]** `src/_common/bootstrap/createAppVuetify.ts:48` (`VCol: { class: 'pa-2' }`) and, depending on the option,
+  `src/_common/modules/user/view/LoginView.vue:31` and `RegistrationView.vue:62`.
+- **Closes:** `auth/P4`, the remainder `F92` left. At 390 `/login` and `/registration` measure 394/390, with controls at 8–382.
+- **Root cause:** found by `F92`'s re-measure on 2026-10-08. The framework's component default gives every `VCol` 8 px of padding, but
+  `VRow` keeps Vuetify's −12 px margins, which are sized for a 12 px column. A row nested inside a column overruns that column by
+  4 px per level, and the scroller turns it into a sideways pan.
+- **What to change:** option 1 (chosen) was one framework style rule sizing the default gutter to the default padding. Option 2 was
+  dropping `pa-2` (too broad). Option 3 was fixing only the two `modules/user/view/` rows (leaves the trap armed).
+- **Do not change:** `App.vue`'s `px-3` (`F92`).
+- **Verification:** `auth/P4`'s `Verify:` on all four routes, then `F92`'s routes at 390, then 1440.
+
 ## Closed verification items
 
 - **`planner-day/U1`: settled 2026-10-08, confirmed.** It is now `planner-day/B10` (`blocker`) and opens `F108`. Method:

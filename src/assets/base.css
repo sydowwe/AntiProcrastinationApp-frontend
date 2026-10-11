@@ -1,18 +1,8 @@
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
-	margin: 0;
-	font-weight: normal;
-}
+/* Only what this app does differently. The reset, the shell defaults and the Vuetify corrections
+   are the framework's (`@/_common/assets/framework.css`, imported first in `main.ts`). */
 
 body {
-	min-height: 100vh;
 	color: white !important;
-	transition:
-		color 0.5s,
-		background-color 0.5s;
-	line-height: 1.6;
 	font-family:
 		Inter,
 		-apple-system,
@@ -26,36 +16,13 @@ body {
 		'Droid Sans',
 		'Helvetica Neue',
 		sans-serif;
-	font-size: 15px;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
 }
 
 :root {
 	--v-list-prepend-gap: 20px;
 }
 
-html {
-	overflow-y: hidden !important;
-}
-
-@media (max-width: 768px) {
-	html {
-		font-size: 14px !important; /* Mobile base */
-	}
-}
-
-.bg-info,
-.bg-warning {
-	color: #ffffff !important;
-}
-
 .is-hidden {
 	visibility: hidden;
 	opacity: 0; /* Often paired with visibility for smooth transitions */
-}
-
-.v-tabs-window > .v-window__container {
-	height: 100% !important;
 }

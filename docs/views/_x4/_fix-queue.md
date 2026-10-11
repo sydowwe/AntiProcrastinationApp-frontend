@@ -33,6 +33,11 @@
 > `POST /api/planner-task/filter` still returned 500 and the day had no tasks. `F91`'s log entry also records an unfiled FO4 crash:
 > `/day-planner/:date` can load blank once `viewedDate` has been persisted.
 
+> **2026-10-11: `FW34`–`FW37` closed; every framework batch in this queue is now done.** `FW34`–`FW36` had shipped on 2026-10-08
+> (framework `8816d7f`, pointer `6472b288`) without the queue being closed. They were browser-verified and moved today. `FW37` took
+> option 1 and turned up a setup gap: the app had never imported `framework.css`. It does now, and `base.css` keeps only what's
+> app-specific. Re-measure anything at 390 against this: nested gutter rows moved 4 px inward. Open: `F100`, `F102`–`F107`.
+
 > Closed batches, closed verification items, the pass narrative and the *Contradictions & re-grades* audit trail live in
 > [`_fix-queue-log.md`](_fix-queue-log.md) beside this file. This file holds only open work. **Closing an item is a move, not a
 > mark**, by the four steps at the top of [`../_fix-queue.md`](../_fix-queue.md): the body goes to this folder's log under
@@ -67,10 +72,10 @@
 | FW31 | ✅ **FIXED 2026-10-07** (below `md` parent + current only; every crumb one line, ellipsised with `title`; body in the log) — Breadcrumbs wrap to two or three lines inside the top bar | **framework** (`nav/AppBreadcrumbs.vue`), decision | `_shell/P4` | low |
 | FW32 | ✅ **FIXED 2026-10-07** (error toasts are closable by default, placement stays top; `P3`'s literal `Verify:` still fails, see the log) — The top-placed snackbar covers the page's first action for 3 s on a phone | **framework** (`feedback/Snackbar.vue`), framework-wide default | `_shell/P3` | low |
 | FW33 | ✅ **FIXED 2026-10-08** (framework `8cf8079`: headers are a sticky row of the scroller with short names below `md`, the toolbar wraps, and the cell header shows the day number below `sm`; it also fixed *Workdays* drawing 7 columns; body in the log) — `CalendarGrid` at phone width: full weekday names misalign the headers, and the toolbar row doesn't wrap | **framework** (`calendar/CalendarGrid.vue`) | `planner-day/P3` (+ `/activity-history/calendar`) | low |
-| FW34 | The icon picker keeps 7 columns at any width | **framework** (`inputs/IconPickerDialog.vue`) | `todo-lists/P2` | trivial |
-| FW35 | The password show/hide toggle is a 20×20 tap target | **framework** (`modules/user/component/MyPasswordInput.vue`) | `user-settings/A2` | trivial |
-| FW36 | Active-session rows clamp their subtitle to one line, hiding "Last used" | **framework** (`modules/user/component/settings/SessionsSection.vue`) | `user-settings/P2` | trivial |
-| FW37 | The `VCol` default is `pa-2` (8 px) but `VRow` keeps −12 px gutters, so every row nested in a column overruns by 4 px | **framework** (`bootstrap/createAppVuetify.ts:48`, `modules/user/view/`), decision | `auth/P4` (the `/login` + `/registration` remainder) | low |
+| FW34 | ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`: columns from the measured width, 3 at 390; body in the log) — The icon picker keeps 7 columns at any width | **framework** (`inputs/IconPickerDialog.vue`) | `todo-lists/P2` | trivial |
+| FW35 | ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`: 40×40; body in the log) — The password show/hide toggle is a 20×20 tap target | **framework** (`modules/user/component/MyPasswordInput.vue`) | `user-settings/A2` | trivial |
+| FW36 | ✅ **FIXED 2026-10-08, closed 2026-10-11** (framework `8816d7f`: metadata in the default slot, wraps; body in the log) — Active-session rows clamp their subtitle to one line, hiding "Last used" | **framework** (`modules/user/component/settings/SessionsSection.vue`) | `user-settings/P2` | trivial |
+| FW37 | ✅ **FIXED 2026-10-11** (option 1: a −8 px gutter rule in `framework.css`; the app now imports `framework.css`, which it never had; 390/390 on all 14 routes; body in the log) — The `VCol` default is `pa-2` (8 px) but `VRow` keeps −12 px gutters, so every row nested in a column overruns by 4 px | **framework** (`bootstrap/createAppVuetify.ts:48`, `modules/user/view/`), decision | `auth/P4` (the `/login` + `/registration` remainder) | low |
 
 **Seventeenth pass (2026-10-07):** 17 app batches opened (`F91`–`F107`) and 10 framework batches (`FW27`–`FW36`), all of them open. No escalation was added.
 
@@ -181,52 +186,13 @@
 
 <!-- FW33 (CalendarGrid at phone width: misaligned headers, a toolbar that doesn't wrap — planner-day/P3) fixed 2026-10-08 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW34. The icon picker keeps 7 columns at any width
-- **Scope:** **[framework]** `src/_common/component/inputs/IconPickerDialog.vue:251-256`.
-- **Closes:** `todo-lists/P2`.
-- **What to change:** `grid-template-columns: repeat(auto-fill, minmax(72px, 1fr))`.
-- **Verification:** `P2`'s `Verify:`. At 1440 the grid is unchanged.
+<!-- FW34 (the icon picker keeps 7 columns at any width — todo-lists/P2) fixed 2026-10-08 (framework 8816d7f), closed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW35. The password show/hide toggle is a 20×20 tap target
-- **Scope:** **[framework]** `src/_common/modules/user/component/MyPasswordInput.vue:11-19`.
-- **Closes:** `user-settings/A2` (`/login`, `/registration`, the change-password and change-e-mail dialogs).
-- **What to change:** drop `density="compact"` (or set `size="default"`) on the `#append-inner` button. The 56 px field has room for a
-  36–40 px button.
-- **Do not change:** `FW7`'s accessible name.
-- **Verification:** `A2`'s `Verify:`.
+<!-- FW35 (the password show/hide toggle is a 20×20 tap target — user-settings/A2) fixed 2026-10-08 (framework 8816d7f), closed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW36. Active-session rows clamp their subtitle to one line, hiding "Last used"
-- **Scope:** **[framework]** `src/_common/modules/user/component/settings/SessionsSection.vue:51-58`. At the x4 run the submodule held
-  an uncommitted edit to this file (a chip), so check the submodule's own `git status` first.
-- **Closes:** `user-settings/P2`.
-- **What to change:** `lines="two"` on the `VList` (or `text-wrap` on the subtitle), or split the metadata so "Last used" gets its own
-  line below `sm`.
-- **Verification:** `P2`'s `Verify:`.
+<!-- FW36 (active-session rows clamp their subtitle, hiding "Last used" — user-settings/P2) fixed 2026-10-08 (framework 8816d7f), closed 2026-10-11 — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
-## FW37. The `VCol` default is `pa-2`, but `VRow` keeps −12 px gutters: every row nested in a column overruns it by 4 px
-- **Scope:** **[framework]** `src/_common/bootstrap/createAppVuetify.ts:48` (`VCol: { class: 'pa-2' }`) and, depending on the option,
-  `src/_common/modules/user/view/LoginView.vue:31` and `RegistrationView.vue:62`.
-- **Closes:** `auth/P4`, the remainder `F92` left. At 390 `/login` and `/registration` measure 394/390, with controls at 8–382.
-- **Root cause:** found by `F92`'s re-measure on 2026-10-08. The framework's component default gives every `VCol` 8 px of padding, but
-  `VRow` keeps Vuetify's −12 px margins, which are sized for a 12 px column. A row at the top level is covered by the scroller's
-  `px-3`. A row nested inside a column overruns that column by 4 px per level, and the scroller turns it into a sideways pan. That is
-  the "4 px more than the arithmetic predicts" `auth/P4` couldn't explain. The same shape was in `ActivitySelectionForm.vue:45`, which
-  `F92` fixed app-side with `mx-n2`. Any other nested gutter row in any app has it too.
-- **What to change:** a decision, made once:
-  1. **Recommended:** one framework style rule that sizes the default gutter to the default padding,
-     `.v-row:not(.v-row--no-gutters):not(.v-row--dense) { margin-inline: -8px; }`, so rows match the columns the framework already
-     shrank, in every app and at every nesting level. **Not** a `VRow: { class: 'mx-n2' }` default: Vuetify's spacing classes are
-     `!important`, so that would also give `noGutters` rows −8 px around 0-padding columns. A row's own `mx-*` / `ma-*` class still wins
-     over the rule. Then drop `ActivitySelectionForm`'s `mx-n2`, which becomes redundant.
-  2. Drop `pa-2` from `VCol`. This changes every column's spacing in every app, so it's too broad.
-  3. Fix only the two `modules/user/view/` rows (`mx-n2` or `noGutters`), the way `F92` fixed `ActivitySelectionForm`. This leaves
-     the trap armed for the next nested row.
-- **Do not change:** `App.vue`'s `px-3` (`F92`).
-- **Verification:** `auth/P4`'s `Verify:` on all four routes. Then at 390 the `F92` routes (four dashboards, three capture views,
-  `/user/settings`) still measure `scrollWidth == clientWidth`. At 1440 a gutter row's columns sit 4 px further out than before, which is
-  expected. Spot-check one dense grid of cards (the home widgets) for anything that now touches.
-- **Risk:** option 1 ships to every app and moves every top-level gutter row's edges 4 px outward. Record it in `components.md` or
-  `SETUP.md` beside the `VCol` default.
+<!-- FW37 (the VCol pa-2 default vs VRow's −12 px gutters — auth/P4) fixed 2026-10-11 (option 1, plus the app now imports framework.css) — body moved to _fix-queue-log.md → Closed batches. Number retired, not reused; the summary table keeps its ✅ row. -->
 
 ## Needs verification (unverified findings, and what would settle each)
 

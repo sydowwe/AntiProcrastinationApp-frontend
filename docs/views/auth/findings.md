@@ -764,7 +764,8 @@ duplicated, so the tally isn't double-counted.
   either view's error path) is real regardless of whether four fast-localhost attempts happened to catch it.
 
 ### P4. Login and Registration pan 8 px sideways on a phone, and their controls start at the screen edge (390 px)
-- **Status:** open, **partly fixed 2026-10-08** (`F92`: `App.vue`'s scroller is `px-3`). `/forgotten-password` and `/user/settings`
+- **Status:** fixed and verified (2026-10-11, `FW37`, live): at 390 `/login` and `/registration` are 390/390 with controls at
+  12–378, and `/forgotten-password` and `/user/settings` stay 390/390. The history below is kept as it was. Previously: **partly fixed 2026-10-08** (`F92`: `App.vue`'s scroller is `px-3`). `/forgotten-password` and `/user/settings`
   now pass (`scrollWidth` 390/390, controls from 24). `/login` and `/registration` still pan **4 px** (394/390, controls 8–382). The
   "4 px more than the arithmetic predicts" is traced: the framework defaults `VCol` to `pa-2` (8 px, `createAppVuetify.ts:48`) while
   `VRow` keeps −12 px gutters, so the nested row at `LoginView.vue:31` / `RegistrationView.vue:62` overruns its column by 4 px. That

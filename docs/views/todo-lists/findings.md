@@ -691,7 +691,8 @@ the x4 narrow-viewport pass (2026-10-06): B10, A4, P2, P3, U4.
 - **Suggested fix:** pass the Categories button as the dialog's `activator` (template ref or `activator="parent"`), or refocus it in a `@afterLeave` handler.
 
 ### P2. The icon picker keeps 7 columns at any width, clipping every icon name to 2–3 letters — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed and verified (2026-10-11, `FW34`, framework `8816d7f`, live): at 390 *New list* → Icon opens a picker with
+  3 columns of whole names ("Dollar sign", "Dog", "Truck moving"), and nothing past the dialog. 1440 not re-measured.
 - **Severity:** polish — **[framework]**
 - **Where:** @390×844 · `src/_common/component/inputs/IconPickerDialog.vue:251-256` (`.icon-grid { grid-template-columns: repeat(7, 1fr) }`) and `:278-287` (`.icon-name`, 2-line clamp). Opened from `/todo-list` → New list → Icon (also New category → Icon, same component). Any app view using `IconPicker` will match.
 - **Expected:** the label under each icon is readable, or not shown when it can't be (plain sense: the label exists to tell look-alike icons apart).

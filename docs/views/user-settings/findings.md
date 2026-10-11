@@ -264,7 +264,8 @@
   extra care to revert immediately afterward.
 
 ### A2. The password show/hide toggle is a 20×20 tap target pressed against its field — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed and verified (2026-10-11, `FW35`, framework `8816d7f`, live): on `/login` at 390 the toggle measures 40×40
+  ("Show password"). The Change password dialog wasn't re-measured; it renders the same component.
 - **Severity:** a11y — **[framework]**
 - **Where:** @390×844 · `src/_common/modules/user/component/MyPasswordInput.vue:11-19` (`VIconBtn` with `size="small" density="compact"` in `#append-inner`). Every password field built on it: `/user/settings` → Password change dialog (×3) and Email change dialog (×1), `/login` (×1), `/registration` (×2).
 - **Expected:** a tap target is at least 24×24 CSS px, or has 24 px clear of other targets (WCAG 2.5.8; template §3). Login is the view most likely to be used on a phone.
@@ -276,7 +277,9 @@
 - **Suggested fix:** framework: drop `density="compact"` (or set `size="default"`) on the append button. The 56 px field has room for a 36–40 px button.
 
 ### P2. Active-session rows cut off their "Last used" time — the subtitle is clamped to one line — [framework] (390 px)
-- **Status:** open
+- **Status:** fixed and verified (2026-10-11, `FW36`, framework `8816d7f`, live): at 390 on `/user/settings` the session row's
+  metadata reads in full, "… · Signed in: 10/11/2026 8:28 PM · Last used: 3 minutes ago", wrapped and not clipped
+  (`scrollWidth <= clientWidth`).
 - **Severity:** polish — **[framework]**
 - **Where:** @390×844 · `/user/settings` → Active sessions · `src/_common/modules/user/component/settings/SessionsSection.vue:51-58` (working-tree line numbers; the uncommitted edit to this file adds a chip and doesn't touch the subtitle). The `#subtitle` slot of `VListItem` gets Vuetify's default one-line clamp.
 - **Expected:** the session row shows when each session was last used. That's the field a user reads to decide which row to Revoke, especially when every row has the same device string, as all eight did here ("Windows · Chrome 154").

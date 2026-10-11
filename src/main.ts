@@ -11,6 +11,8 @@ import './core/user/dto/userAugmentation.ts'
 import { navItems } from './app/nav/navItems.ts'
 import { notificationTypeMeta } from './app/notifications/notificationTypeMeta.ts'
 import { reminderLabels } from './app/notifications/reminderLabels.ts'
+// The framework's base styles first, so this app's stylesheet wins every tie (`_common/SETUP.md` §6).
+import './_common/assets/framework.css'
 import './assets/main.css'
 
 const app = createApp(App)
