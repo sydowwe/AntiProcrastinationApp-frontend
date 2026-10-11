@@ -13,12 +13,15 @@
 				color="primaryOutline"
 				variant="tonal"
 			>
-				{{ tasks.length }}
+				{{ visibleTasks.length }}
 			</VChip>
 		</div>
-		<div class="d-flex flex-column ga-2">
+		<div
+			v-auto-animate
+			class="d-flex flex-column ga-2"
+		>
 			<VCard
-				v-for="task in tasks"
+				v-for="task in visibleTasks"
 				:key="task.key"
 				class="pa-3"
 				variant="outlined"
@@ -89,6 +92,23 @@
 							{{ task.importance.text }}
 						</VChip>
 					</div>
+					<!-- FO11: a pattern the user no longer follows. Never on a user-set row — that is their own rule. -->
+					<VTooltip
+						v-if="task.isAutomatic && !addedIds?.has(task.key)"
+						location="top"
+						:text="$t('planner.misc.notAnyMore')"
+					>
+						<template #activator="{ props: tooltipProps }">
+							<VIconBtn
+								v-bind="tooltipProps"
+								icon="xmark"
+								size="small"
+								variant="text"
+								:aria-label="$t('planner.misc.dismissSuggestion', { name: task.activity.name })"
+								@click="dismiss(task)"
+							/>
+						</template>
+					</VTooltip>
 					<VIconBtn
 						v-if="!addedIds?.has(task.key)"
 						icon="plus"
@@ -110,9 +130,13 @@
 </template>
 
 <script setup lang="ts">
+	import { computed, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import type { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
+	import { DismissSuggestionRequest } from '@/core/dayPlanner/dto/request/DismissSuggestionRequest.ts'
 	import { useRecurrenceSummary } from '@/core/dayPlanner/composable/useRecurrenceSummary.ts'
+	import { useRepeatingPlannerTaskApi } from '@/core/dayPlanner/api/repeatingPlannerTaskApi.ts'
+	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 
 	const { tasks, addedIds } = defineProps<{
 		tasks: SuggestionResponse[]
@@ -125,6 +149,45 @@
 
 	const { t } = useI18n()
 	const { describeRule } = useRecurrenceSummary()
+	const { dismissSuggestion, undoDismissSuggestion } = useRepeatingPlannerTaskApi()
+	const { showSuccessSnackbar } = useSnackbar()
+
+	// Rows dismissed while this list is on screen. The server already leaves them out of the next fetch, so this
+	// only spares the user a reload; a failed dismissal or an undo takes the key back out.
+	const dismissedKeys = ref(new Set<string>())
+	const visibleTasks = computed(() => tasks.filter(task => !dismissedKeys.value.has(task.key)))
+
+	async function dismiss(task: SuggestionResponse) {
+		const request = DismissSuggestionRequest.fromSuggestion(task)
+		if (!request) {
+			return
+		}
+		dismissedKeys.value.add(task.key)
+		try {
+			await dismissSuggestion(request)
+		} catch {
+			// The interceptor has already said why; the row comes back.
+			dismissedKeys.value.delete(task.key)
+			return
+		}
+		// A dismissal hides the pattern for weeks, so a stray tap needs a way back that is not a settings page.
+		showSuccessSnackbar(
+			t('planner.misc.suggestionDismissed', { name: task.activity.name, rule: describeRule(task) }),
+			{
+				actionLabel: t('planner.a11y.undo'),
+				actionCallback: () => void undoDismiss(task, request),
+			},
+		)
+	}
+
+	async function undoDismiss(task: SuggestionResponse, request: DismissSuggestionRequest) {
+		try {
+			await undoDismissSuggestion(request)
+			dismissedKeys.value.delete(task.key)
+		} catch {
+			// The interceptor has already said why; the row stays hidden, as it is on the server.
+		}
+	}
 
 	function whyCaption(task: SuggestionResponse): string {
 		const parts = [describeRule(task)]

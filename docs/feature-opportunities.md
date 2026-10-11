@@ -81,10 +81,10 @@ never ships a call to a route or field that the running API does not have yet.
 
 | Wave | FOs | Shared backend change | Order inside the wave |
 |---|---|---|---|
-| **A. Away means away** | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes |
+| **A. Away means away** ✅ (2026-10-11) — FO1, FO11 built and browser-checked | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes. **Status (2026-10-11):** steps 1–2 built, migration `20261006183310` applied locally. Step 3 (FO11) built and browser-checked 2026-10-11. Step 4 waits on F4 open question 5 |
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
-| **C. Recover the day** | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time |
-| **D. Coming back** | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step |
+| **C. Recover the day** — FO3/FO4/FO6 ✅, FO10 open (2026-10-11) | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. Left: FO10, FO4's live check against the real routes (it was checked with mocks), and the `todo-motivation.spec.ts` re-run for FO3 |
+| **D. Coming back** | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-11):** step 1 committed (`874ee396`); step 2 built backend-side, not committed |
 | **E. Learn from what happened** | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first |
 | **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
 
@@ -603,6 +603,35 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, medium.
 
 ### FO11. Planner suggestions that follow what you do now, not what you did once
+- **Status (2026-10-11): built, committed and browser-checked against the real API** (backend `ae81381`,
+  frontend the commit after `5f682c87`). The owner applied
+  the migration and restarted the API, and the view stamp matches the new script.
+  - **Setup:** six planner tasks were created through the app's API (Morning Exercise and Read a Novel, three
+    past Mondays each). Monday 12 October then showed both as "every Mon · seen 3×" rows.
+  - **Results:** × dismissed one (`dismiss` 204, row gone, snackbar with Undo). Undo on the other brought it
+    back (`dismiss/undo` 204). After a reload the server still hid the dismissed one. Exactly one row is in
+    `planner_suggestion_dismissal`.
+  - **Found on the way:** `ReplanTodayBanner.vue` (FO4) blanked the whole day view on any full page load. The
+    store persists `viewedDate` to sessionStorage as a string, and `formatDateForApi` threw on it. It is now
+    wrapped in `new Date(...)`. FO4's own check had used mocked routes and in-app navigation, so it never
+    reloaded.
+
+  What was built:
+  - **Window:** both views count only recent sittings. A weekday pattern needs 3+ in 12 weeks and one in the
+    last 4. A day-of-month pattern needs 3+ in 12 months and one in the last 3. The numbers live in
+    `SuggestionPatternWindow` and are repeated literally in both SQL scripts, because a view takes no
+    parameters. `SuggestionPatternRefreshQueue` marks both views dirty once per UTC date, so the window moves
+    even when nothing is written.
+  - **Dismissal:** a `PlannerSuggestionDismissal` table and `POST /repeating-planner-task/suggestions/dismiss`.
+    One row hides both pattern tiers, never a user-set rule. It lapses after one window length, and by then
+    a pattern can only come back by re-forming from sittings made after the dismissal. A merge carries it.
+  - **Undo, beyond the spec:** `POST …/dismiss/undo`, because a dismissal hides a pattern for weeks and the
+    app pairs one-tap removals with an Undo snackbar.
+  - **Frontend:** a "Not any more" × on pattern rows in `RepeatingTasksSection.vue`. The row hides
+    immediately, and an Undo snackbar follows.
+  - **Tests:** the existing suggestion tests moved off fixed 2027 dates onto dates relative to today. The
+    window is measured from the database clock, so they would have started failing on their own around
+    August 2027.
 - **Source:** F2-08.
 - **Moment:** scrolling past "Tuesday: Swimming 18:00" from a course dropped last spring.
 - **Today:** both pattern views keep any pattern seen 3 times over **all** history (`mv_activity_history_pattern.sql:57,73`,

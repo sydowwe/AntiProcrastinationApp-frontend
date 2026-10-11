@@ -318,6 +318,10 @@ const dayPlanner = {
 			autoPlanned: `Auto • Planned`,
 			autoTracked: `Auto • Tracked`,
 			seenCount: `seen {count}×`,
+			// FO11 — "×, not any more" on a pattern suggestion. The rule is the row's own "every Mon" caption.
+			notAnyMore: `Not any more`,
+			dismissSuggestion: `Stop suggesting {name}`,
+			suggestionDismissed: `Stopped suggesting {name} · {rule}`,
 			dayTemplateLabel: `Day Template`,
 			chooseTemplateLabel: `Choose template`,
 			previewTemplate: `Preview Template`,

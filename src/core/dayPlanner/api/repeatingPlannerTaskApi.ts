@@ -3,6 +3,7 @@ import { useEntityCommand } from '@/_common/api/useEntityCommand.ts'
 import { RepeatingPlannerTask } from '@/core/dayPlanner/dto/response/RepeatingPlannerTask.ts'
 import { RepeatingPlannerTaskRequest } from '@/core/dayPlanner/dto/request/RepeatingPlannerTaskRequest.ts'
 import { SuggestionResponse } from '@/core/dayPlanner/dto/response/SuggestionResponse.ts'
+import type { DismissSuggestionRequest } from '@/core/dayPlanner/dto/request/DismissSuggestionRequest.ts'
 import { API } from '@/_common/axiosConfig.ts'
 
 export function useRepeatingPlannerTaskApi() {
@@ -36,10 +37,25 @@ export function useRepeatingPlannerTaskApi() {
 		return SuggestionResponse.listFromObjects(response.data)
 	}
 
+	/**
+	 * FO11 — "×, not any more" on a pattern suggestion. The server hides that pattern from both pattern tiers
+	 * until the dismissal lapses (12 weeks for a weekday, 12 months for a day of the month).
+	 */
+	async function dismissSuggestion(request: DismissSuggestionRequest): Promise<void> {
+		await API.post(`${url}/suggestions/dismiss`, request)
+	}
+
+	/** The snackbar's Undo for {@link dismissSuggestion}; same body, idempotent. */
+	async function undoDismissSuggestion(request: DismissSuggestionRequest): Promise<void> {
+		await API.post(`${url}/suggestions/dismiss/undo`, request)
+	}
+
 	return {
 		fetchById,
 		fetchAll,
 		fetchSuggestionsForCalendar,
+		dismissSuggestion,
+		undoDismissSuggestion,
 		createWithResponse,
 		update,
 		deleteEntity,

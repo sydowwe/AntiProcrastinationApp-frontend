@@ -47,7 +47,9 @@
 	const dismissed = ref(false)
 
 	// A calendar day on the left, "what day is it now" in the user's zone on the right; see `useUserClock`.
-	const viewedIsoDate = computed(() => formatDateForApi(store.viewedDate))
+	// Re-wrapped because the store persists to sessionStorage: after a reload `viewedDate` is an ISO string, and
+	// `formatDateForApi` on it threw inside this computed — which blanked the whole day view.
+	const viewedIsoDate = computed(() => formatDateForApi(new Date(store.viewedDate)))
 	const isToday = computed(() => viewedIsoDate.value === isoDateInUserZone(currentTime.value))
 
 	const shown = computed(() => {

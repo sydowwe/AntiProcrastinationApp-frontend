@@ -328,6 +328,10 @@ const dayPlanner = {
 			autoPlanned: `Auto • Naplánované`,
 			autoTracked: `Auto • Zaznamenané`,
 			seenCount: `videné {count}×`,
+			// FO11 — „×, už nie" pri návrhu zo vzoru. Pravidlo je vlastný popis riadku („každý po").
+			notAnyMore: `Už nie`,
+			dismissSuggestion: `Prestať navrhovať {name}`,
+			suggestionDismissed: `{name} sa už nebude navrhovať · {rule}`,
 			dayTemplateLabel: `Šablóna dňa`,
 			chooseTemplateLabel: `Vybrať šablónu`,
 			previewTemplate: `Náhľad šablóny`,
