@@ -42,8 +42,17 @@ cheap.
 | **F4 Q3:** does `Special` count as away? | **No.** Only `Vacation` and `SickDay` do. |
 | **FO5:** thresholds | **Greet after 4 days away, go quiet after 3**, as proposed. |
 
-Still open: F4 questions 4–10 (holidays, the named stretch and its follow-ons, item streaks). None of them blocks
-FO1's first two steps.
+### Owner decisions (2026-10-12), closing what was built but open
+
+| Question | Decision |
+|---|---|
+| **FO2:** what does timed work do to a step-counted ("4×") item? | **The server owns the step.** A sitting logged *from the item* carries `countsAsRepetition` and ticks it once; time alone never finishes a counted item. Only the to-do timer sends the flag: home's planner-block timer links its time for the recap and its block decides the item. (The first proposal, "every linked sitting ticks", was withdrawn: the server cannot tell those two surfaces apart without the flag.) |
+| **FO6:** a destructive conflict mode on auto-placement | **Never destructive from a read**: `Overwrite` → `Ignore`, `MergeOverwrite` → `MergeIgnore`. Showing both blocks side by side ("lanes", two foreground + two background) is wanted, but **later** (`prompts/fo-close/04-planner-lanes.md`). |
+| **FO7:** tracker pairing codes | **Rejected.** A Google-only account sets a password through *Forgot password*. The unread column is dropped. |
+| **F4 Q5:** is a named stretch wanted? | **Yes, the full `TimeAway` entity (option C).** |
+| **F4 Q6–Q9** | The recommendations: the name is `TimeAway`; deleting a stretch keeps the cycles it excused excused; its template is only suggested first, never applied; existing labels are not converted. |
+
+Still open: F4 question 4 (holiday weekdays). Q10 (item streaks while away) was answered in F4-01: they are held.
 
 ## Top picks
 
@@ -81,7 +90,7 @@ never ships a call to a route or field that the running API does not have yet.
 
 | Wave | FOs | Shared backend change | Order inside the wave |
 |---|---|---|---|
-| **A. Away means away** ✅ (2026-10-11) — FO1, FO11 built and browser-checked | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes. **Status (2026-10-11):** steps 1–2 built, migration `20261006183310` applied locally. Step 3 (FO11) built and browser-checked 2026-10-11. Step 4 waits on F4 open question 5 |
+| **A. Away means away** ✅ (2026-10-11) — FO1, FO11 built and browser-checked | FO1, FO11 (then F4-02 if wanted) | Core `DayType.IsAway()` + `CalendarDayTypesChangedEvent`, and both Planning suggestion endpoints (`GetSuggestionsTaskPlannerDayTemplateEndpoint`, `GetSuggestionsRepeatingPlannerTaskEndpoint`) | 1. FO1's no-migration step: `IsAway`, suggestion ranking, J2/J3 skips. 2. FO1's `is_excused` migration + reset sites + event handler. 3. FO11 in the same repeating-suggestions endpoint. Its window is a SQL edit; its dismissal table is the only migration. 4. F4-02 only if the owner answers F4 open question 5 with yes. **Status (2026-10-11):** steps 1–2 built, migration `20261006183310` applied locally. Step 3 (FO11) built and browser-checked 2026-10-11. **Step 4 (2026-10-12): wanted** (Q5 = option C); not built yet, prompts `prompts/fo-close/02-…` (backend) and `03-…` (frontend) |
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
 | **C. Recover the day** ✅ (2026-10-12) — FO3/FO4/FO6/FO10 built, migrated and checked live. FO4 and FO6 keep the open questions in `feature-opportunities-effort.md` | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9). Its migration `20261011212220` was applied on 2026-10-12, and the settings card was then checked live (FO10's status) |
 | **D. Coming back** ✅ (2026-10-12) — FO5 both steps committed | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-12):** step 1 committed (backend `8863158`, frontend `874ee396`, browser-checked); step 2 committed (framework `5646e89`, backend `1aa7f2b`, no frontend). The 2026-10-11 "not committed" note was stale |
@@ -96,8 +105,9 @@ never ships a call to a route or field that the running API does not have yet.
 ---
 
 ### FO1. Vacation and sick days stop breaking routines, nudging, and suggesting the office
-- **Closed (2026-10-08):** reviewed against this section in both repos and found complete. Only the migration
-  below is left, and it is the owner's.
+- **Closed (2026-10-08):** reviewed against this section in both repos and found complete. The migration below
+  was applied on 2026-10-11 (wave A's row), so nothing is left. No e2e spec yet:
+  `prompts/fo-close/e2e-fo1-away-days.md`.
 - **Status (2026-10-07): built and committed** (backend `ab5f0e7`, frontend `ec4b7a30`). Migration
   `20261006183310_RoutinePeriodCompletionIsExcused` is the owner's to apply; it was not confirmed applied when this line
   was written. What was built (2026-10-06): backend: Core
@@ -153,6 +163,20 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, high. Frontend Sonnet 5.5, medium.
 
 ### FO2. Time logged anywhere ticks off the plan, not only desktop-tracked time
+- **Closed (2026-10-12)** (backend `882cdf5`, frontend `0317e802`, no migration; needs an API restart). The open
+  question was that a linked pomodoro finished a "4×" item in one go: the fallback set `DoneCount = TotalCount`
+  once the day total reached the suggested time. Now:
+  - Time alone never finishes a step-counted item; the threshold fallback is for plain items only.
+  - `POST /activity-history` and `/activity-history/session` take `countsAsRepetition` (needs a link, not
+    stored). The handler ticks the linked item once per such sitting: one repetition of a counted item, done for a
+    plain one. It skips the tick when the same event completed a block that already decides the item. The
+    publisher flags only the first event, so a sitting across midnight is one repetition.
+  - The to-do timer sends the flag and no longer toggles the item itself. Home's planner-block timer does not
+    send it: there the link is recap credit, and the block decides the item.
+  - The planner-block → to-do fan-out stays absolute (a linked block done means the item done), because the sync is
+    two-way and `CompletionFanOutTests` pins it.
+  - Tests: six new cases in `HistoryTicksOffThePlanTests`. No e2e spec yet:
+    `prompts/fo-close/e2e-fo2-time-ticks-the-plan.md`.
 - **Status (2026-10-06): built and checked live (backend `9058535`), no migration.**
   Backend: History's `ActivityTimeRecordedPublisher` (behind `IActivityTimeRecordedPublisher`) runs after both
   creates commit and before the 201. It publishes one event per (local day, activity), with the window clipped at
@@ -307,7 +331,10 @@ never ships a call to a route or field that the running API does not have yet.
     - Entry points: the now bar (missed mode), the planner card header, and `ReplanTodayBanner` on today's day
       view. All three are offered only when `isMissedAndMovable` matches a block.
     - Home's *Move later* asks `next-free-slot`.
-  - **Not done:** the leisure "Do it now" and to-do handoff callers of `next-free-slot`; the N5 notification.
+  - **Not done:** the leisure and to-do handoff callers of `next-free-slot`; the N5 notification. **2026-10-12:**
+    the callers are leisure *Plan it for later* and the to-do → planner handoff. *Do it now* stays "now" on
+    purpose, because it records that the user started at this minute. Prompt:
+    `prompts/fo-close/01-fo4-next-free-slot-callers.md`. No e2e spec yet: `prompts/fo-close/e2e-fo4-replan-today.md`.
 - **Source:** F1-01. It can later read FO10's bed time and F3-04's typical-load figure (both noted in *Rejected* /
   FO10).
 - **Moment:** 11:30, after the 10:00 and 11:00 blocks both slipped.
@@ -412,6 +439,17 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, high. Frontend Sonnet 5.5, high.
 
 ### FO6. Recurring commitments put themselves on the plan (opt-in, today and tomorrow only)
+- **Closed (2026-10-12)** (backend `bd3faa9`, no migration; needs an API restart). Both migrations below were applied
+  by 2026-10-11 (wave C). The two open gaps:
+  - **A destructive conflict mode from a read.** The materialiser now reads `Overwrite` as `Ignore` and
+    `MergeOverwrite` as `MergeIgnore`, so a GET never deletes or carves a block the user placed. Template apply
+    still honours the setting.
+  - **A day marked away after placement.** `AwayDayOccurrenceWithdrawalHandler` (Planning) takes
+    `CalendarDayTypesChangedEvent` and removes **untouched** occurrences from away days, today on. The day stays
+    decided, so un-marking it brings nothing back. A moved, started or linked occurrence is the user's and stays.
+  - Tests: three new cases in `RepeatingTaskMaterialisationTests`. Showing two overlapping blocks side by side is
+    a later item (`prompts/fo-close/04-planner-lanes.md`). No e2e spec yet:
+    `prompts/fo-close/e2e-fo6-auto-placed-repeats.md`.
 - **Status (2026-10-07): built and committed (backend `5c17788`, frontend the commit after it); two migrations to
   apply,** FO3 phase 2's `20261007200704` first. Backend: `RepeatingTaskMaterialiser` (Planning)
   runs from `GET /calendar/day-plan/{date}` (home) and `GET /calendar/by-Date/{date}` (the day planner) for the user's
@@ -461,7 +499,11 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, medium. Frontend Sonnet 5.5, low.
 
 ### FO7. Every user can connect the desktop tracker, browser extension or phone app
-- **Closed (2026-10-08):** reviewed and found complete, the hub follow-up included.
+- **Closed (2026-10-08):** reviewed and found complete, the hub follow-up included. **2026-10-12:** the unread
+  `User.HasExtensionAccess` column is dropped (backend `8a2e0e4`, migration
+  `20261012161330_DropUserHasExtensionAccess`, the owner's to apply). **Pairing codes are rejected**, no longer
+  deferred: a Google-only account sets a password through *Forgot password*. No e2e spec yet:
+  `prompts/fo-close/e2e-fo7-trackers-card.md`.
 - **Status (2026-10-07): built and committed, no migration.** Backend `bcf8671` deletes the `HasExtensionAccess`
   override; framework `4edb8bd` adds `IsExtensionClient` to `GET /user/sessions`. Frontend `ba3e54ea` adds
   `TrackersCard.vue` under `#integrations` (what each tracker records, in the privacy policy's words, plus a *Sign out*

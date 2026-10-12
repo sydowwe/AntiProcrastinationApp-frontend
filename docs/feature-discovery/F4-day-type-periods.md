@@ -472,7 +472,15 @@ must not ship a call to a route or a field that does not exist yet.
 > 2. At least half of the cycle's days.
 > 3. `Special` is not away.
 >
-> The rest are still open. See `docs/feature-opportunities.md` § *Owner decisions*.
+> **Answered 2026-10-12 (questions 5–9):**
+> 5. Yes: build the full stretch entity, option C.
+> 6. `TimeAway`.
+> 7. Deleting a stretch keeps the cycles it excused excused.
+> 8. Float the template as the first suggestion only; the stretch never applies it.
+> 9. No conversion of existing labels.
+>
+> Question 10 was answered in F4-01 (item streaks are held). Question 4 is still open. See
+> `docs/feature-opportunities.md` § *Owner decisions*. The build prompts are `prompts/fo-close/02-…` and `03-…`.
 
 1. **Automatic or offered?** Should away days excuse routine cycles automatically (recommended: it removes a decision,
    and the user is the only person the streak is for), or should the app offer it on return?
