@@ -32,6 +32,7 @@ export function useActivityHistoryCrud() {
 			activityId ?? -1,
 			link.todoListItemId ?? null,
 			link.routineTodoListId ?? null,
+			link.countsAsRepetition ?? false,
 		)
 		return baseCreate(request)
 	}
@@ -53,6 +54,7 @@ export function useActivityHistoryCrud() {
 			...tracked.session,
 			todoListItemId: link.todoListItemId ?? null,
 			routineTodoListId: link.routineTodoListId ?? null,
+			countsAsRepetition: link.countsAsRepetition ?? false,
 		})
 		return data.recordIds ?? []
 	}
@@ -73,6 +75,11 @@ export interface TrackedTime {
 export interface HistoryItemLink {
 	todoListItemId?: number | null
 	routineTodoListId?: number | null
+	/**
+	 * The log is one sitting of the item, so the server ticks it once (FO2). Only where the user logged it from the
+	 * item itself; a link that is just recap credit (a planner block's timer) leaves it off and lets the block decide.
+	 */
+	countsAsRepetition?: boolean
 }
 
 /**

@@ -42,5 +42,7 @@ export class ActivityHistorySessionRequest {
 		 */
 		public todoListItemId: number | null = null,
 		public routineTodoListId: number | null = null,
+		/** The session is one sitting of the linked item — see `ActivityHistoryRequest.countsAsRepetition`. */
+		public countsAsRepetition = false,
 	) {}
 }

@@ -13,6 +13,12 @@ export class ActivityHistoryRequest {
 		public todoListItemId: number | null = null,
 		/** Same, for a routine item. */
 		public routineTodoListId: number | null = null,
+		/**
+		 * This log is one sitting of the linked item, logged from the item itself, so the server ticks the item
+		 * once: one repetition of a counted item, done for a plain one (FO2). Needs a link; the API refuses it alone.
+		 * Leave it false where the link is only recap credit, as home's planner-block timer does.
+		 */
+		public countsAsRepetition = false,
 	) {}
 
 	static fromJson(object: any) {
@@ -22,8 +28,16 @@ export class ActivityHistoryRequest {
 			activityId = 0,
 			todoListItemId = null,
 			routineTodoListId = null,
+			countsAsRepetition = false,
 		} = object
-		return new ActivityHistoryRequest(startTimestamp, length, activityId, todoListItemId, routineTodoListId)
+		return new ActivityHistoryRequest(
+			startTimestamp,
+			length,
+			activityId,
+			todoListItemId,
+			routineTodoListId,
+			countsAsRepetition,
+		)
 	}
 
 	static listFromObjects(objects: any[]) {

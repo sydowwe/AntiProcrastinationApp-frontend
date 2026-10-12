@@ -9,7 +9,6 @@
 <script setup lang="ts">
 	import { ref } from 'vue'
 	import LogTimeController from '@/core/dayPlanner/component/normal/LogTimeController.vue'
-	import { API } from '@/_common/axiosConfig.ts'
 	import {
 		useActivityHistoryCrud,
 		type HistoryItemLink,
@@ -35,8 +34,6 @@
 	const inner = ref<InstanceType<typeof LogTimeController>>()
 	const currentItemId = ref<number | null>(null)
 	const currentActivityId = ref<number | null>(null)
-
-	const url = kind === ToDoListKind.ROUTINE ? 'routine-todo-list' : 'todo-list-item'
 
 	function open(
 		activityId: number,
@@ -72,15 +69,14 @@
 	}
 
 	/** After the write: `historyRecordIds` is every row it made — one, or a timer session's several. */
-	async function finalize(historyRecordIds: number[]) {
+	function finalize(historyRecordIds: number[]) {
 		showSuccessSnackbar(t('toDoList.timeLogged'))
 		const itemId = currentItemId.value ?? undefined
 		let itemWasCompleted = false
 		if (currentItemId.value !== null) {
-			// `forceValue: true`, never a bare toggle: the write above may already have ticked the item off on
-			// the server (logged time completes an item whose suggested time it reaches — FO2), and a toggle
-			// would then un-complete it. Forced, a done item stays done; a counted one steps up by one as before.
-			await API.patch(`/${url}/toggle-is-done`, { ids: [currentItemId.value], forceValue: true })
+			// The write ticked the item on the server, before it answered (`countsAsRepetition` — FO2): one
+			// repetition of a counted item, done for a plain one. The client used to send its own toggle here, and
+			// together with the server's time rule one pomodoro could finish a "4×" item. Only the refetch is left.
 			itemWasCompleted = true
 			emit('itemsChanged', [currentItemId.value])
 		}
@@ -92,21 +88,24 @@
 	async function handleConfirm(startTime: Time, length: Time) {
 		const startTimestamp = new Date()
 		startTimestamp.setHours(startTime.hours, startTime.minutes, 0, 0)
-		await finalize([await createActivityHistory(startTimestamp, length, currentActivityId.value!, itemLink())])
+		finalize([await createActivityHistory(startTimestamp, length, currentActivityId.value!, itemLink())])
 	}
 
 	async function handleTrackingDone(tracked: TrackedTime) {
-		await finalize(await createTracked(tracked, currentActivityId.value!, itemLink()))
+		finalize(await createTracked(tracked, currentActivityId.value!, itemLink()))
 	}
 
 	/**
-	 * The item being logged, as the link the daily recap credits it by. Without it the recap showed every
-	 * item at zero however long its timer ran. A leisure reward has no item, so no link.
+	 * The item being logged, as the link the daily recap credits it by — without it the recap showed every
+	 * item at zero however long its timer ran — and as one sitting of it, which is what ticks it. A leisure
+	 * reward has no item, so no link.
 	 */
 	function itemLink(): HistoryItemLink {
 		const itemId = currentItemId.value
 		if (itemId === null) return {}
-		return kind === ToDoListKind.ROUTINE ? { routineTodoListId: itemId } : { todoListItemId: itemId }
+		return kind === ToDoListKind.ROUTINE
+			? { routineTodoListId: itemId, countsAsRepetition: true }
+			: { todoListItemId: itemId, countsAsRepetition: true }
 	}
 
 	defineExpose({ open, openLeisureReward })
