@@ -7,6 +7,8 @@
 		:isDragging
 		:color="toDoListItem.taskPriority.color"
 		:additionalActions
+		:actualTime="loggedTime"
+		:actualTooltip="loggedTooltip"
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
 		@isDoneChanged="(id: number, forceValue?: boolean) => emits('isDoneChanged', id, forceValue)"
@@ -113,12 +115,15 @@
 		isInChangeOrderMode = false,
 		isDragging = false,
 		isFocused = false,
+		loggedTime = null,
 	} = defineProps<{
 		toDoListItem: TodoListItemEntity
 		isInChangeOrderMode?: boolean
 		listId: number
 		isDragging?: boolean
 		isFocused?: boolean
+		/** Time logged against this item across all days (F3-01). The list view reads it; other hosts pass nothing. */
+		loggedTime?: Time | null
 	}>()
 
 	const emits = defineEmits<{
@@ -137,6 +142,13 @@
 	}>()
 
 	const i18n = useI18n()
+
+	const loggedTooltip = computed(() => {
+		if (!loggedTime) return null
+		return toDoListItem.isDone
+			? i18n.t('toDoList.estimateFit.loggedTotal', { time: loggedTime.getNice.trim() })
+			: i18n.t('toDoList.estimateFit.loggedSoFar', { time: loggedTime.getNice.trim() })
+	})
 
 	// FO3. The server decides the item is stuck; this device decides whether the offer is on screen now.
 	const { isPlanHelpDismissed, dismissPlanHelp } = usePlanHelpDismissal()

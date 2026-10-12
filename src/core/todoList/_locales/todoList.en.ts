@@ -161,6 +161,16 @@ const todoList = {
 			usuallyTooltip: `You usually spend {time} on this`,
 			header: `Tasks take about {ratio}x your estimate`,
 		},
+		// F3-01. Describes the estimate, never the person. The server sends no group under five items, so
+		// {count} is always 5 or more and needs no plural forms.
+		estimateFit: {
+			logged: `Tasks on this list took about {ratio}× the estimate ({count} tasks)`,
+			loggedAsEstimated: `Tasks on this list took about as long as estimated ({count} tasks)`,
+			planned: `Their planned blocks were about {ratio}× the estimate ({count} tasks)`,
+			plannedAsEstimated: `Their planned blocks matched the estimate ({count} tasks)`,
+			loggedSoFar: `{time} logged on this task so far`,
+			loggedTotal: `{time} logged on this task`,
+		},
 		recap: {
 			summary: `{count} thing finished today — {time} logged | {count} things finished today — {time} logged`,
 			showMore: `+ {count} more`,

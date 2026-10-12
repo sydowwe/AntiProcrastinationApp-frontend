@@ -6,6 +6,10 @@
 		:isInChangeOrderMode
 		:isDragging
 		:color="toDoListItem.color"
+		:actualTime="averageActual"
+		:actualTooltip="
+			averageActual ? $t('toDoList.calibration.usuallyTooltip', { time: averageActual.getNice }) : null
+		"
 		@edit="emits('edit', $event)"
 		@delete="emits('delete', $event)"
 		@isDoneChanged="(id: number, forceValue?: boolean) => emits('isDoneChanged', id, forceValue)"
@@ -96,6 +100,7 @@
 	import BaseTodoListItem from '@/core/todoList/component/BaseTodoListItem.vue'
 	import type { DayOfWeek } from '@/_common/dto/enum/DayOfWeek.ts'
 	import { useDayOfWeekOptions } from '@/_common/composable/general/useDayOfWeekOptions.ts'
+	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 
 	const {
 		toDoListItem,
@@ -123,6 +128,11 @@
 		quickStartTimer: [toDoListItem: RoutineTodoListItemEntity]
 		itemClicked: [toDoListItem: RoutineTodoListItemEntity]
 	}>()
+
+	// Still the activity-keyed figure (todo-motivation S3) until F2-06 gives routine items their own. The list view
+	// loads every visible activity in one batched request; this only reads the shared cache.
+	const { averageActualFor } = useEstimateCalibration()
+	const averageActual = computed(() => averageActualFor(toDoListItem.activity.id))
 
 	// Localized short day names, keyed by the `DayOfWeek` the API sends. `DAY_OF_WEEK_SHORT_LABELS`
 	// is hardcoded English and is only a non-display fallback — see CLAUDE.md.

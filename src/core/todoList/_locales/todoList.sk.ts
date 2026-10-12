@@ -170,6 +170,16 @@ const todoList = {
 			usuallyTooltip: `Toto ti zvyčajne trvá {time}`,
 			header: `Úlohy trvajú približne {ratio}x tvojho odhadu`,
 		},
+		// F3-01. Opisuje odhad, nie človeka. Server nepošle skupinu pod päť úloh, takže {count} je vždy 5 a viac
+		// a tvar „úloh" platí vždy.
+		estimateFit: {
+			logged: `Úlohy v tomto zozname trvali približne {ratio}× odhadu ({count} úloh)`,
+			loggedAsEstimated: `Úlohy v tomto zozname trvali zhruba podľa odhadu ({count} úloh)`,
+			planned: `Ich naplánované bloky mali približne {ratio}× odhadu ({count} úloh)`,
+			plannedAsEstimated: `Ich naplánované bloky zodpovedali odhadu ({count} úloh)`,
+			loggedSoFar: `Na tejto úlohe zatiaľ zaznamenané: {time}`,
+			loggedTotal: `Na tejto úlohe zaznamenané: {time}`,
+		},
 		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
 		recap: {
 			summary: `Dnes si dokončil {count} vec — {time} zaznamenaných | Dnes si dokončil {count} veci — {time} zaznamenaných | Dnes si dokončil {count} vecí — {time} zaznamenaných`,

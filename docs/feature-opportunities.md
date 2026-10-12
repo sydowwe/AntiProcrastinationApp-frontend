@@ -85,7 +85,7 @@ never ships a call to a route or field that the running API does not have yet.
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
 | **C. Recover the day** ✅ (2026-10-12) — FO3/FO4/FO6/FO10 built, migrated and checked live. FO4 and FO6 keep the open questions in `feature-opportunities-effort.md` | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9). Its migration `20261011212220` was applied on 2026-10-12, and the settings card was then checked live (FO10's status) |
 | **D. Coming back** ✅ (2026-10-12) — FO5 both steps committed | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-12):** step 1 committed (backend `8863158`, frontend `874ee396`, browser-checked); step 2 committed (framework `5646e89`, backend `1aa7f2b`, no frontend). The 2026-10-11 "not committed" note was stale |
-| **E. Learn from what happened** | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first |
+| **E. Learn from what happened** — F3-01 built (2026-10-12) | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first. **Status (2026-10-12):** F3-01 built ahead of the data, since it stays silent below its threshold; browser-checked against the restarted API and the `todo-motivation.spec.ts` estimate-fit block is green; not committed. **Left:** F2-06, F2-07; re-check the 5-sample threshold and the 90-day window against the real distribution in early November |
 | **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
 
 ---
@@ -505,6 +505,19 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Sonnet 5.5, medium.
 
 ### FO8. Estimates that learn from what happened, per item and per timer
+- **Status (2026-10-12): F3-01 built, not committed; F2-06 and F2-07 not started.**
+  - Backend:
+    - The shared rule is Core's `EstimateFitRule`: a median, and nothing below the threshold.
+    - `GET /todo-list-item/estimate-fit?groupBy=list|category|priority`, plus `ITodoListItemPlanSource.FirstPlannedSecondsAsync`.
+    - Samples are items completed in the last 90 days, with an estimate and some time logged against the item.
+    - Open items are reported with their logged-so-far, but never sampled.
+    - `TodoListItemEstimateFitTests` (10) and `EstimateFitRuleTests` (3) pass, along with the seam, plan-help and recap suites (44 in all).
+  - Frontend:
+    - `useEstimateFit` / `useEstimateFitWording` drive the `TodoListView` header, with the planned-block figure in its tooltip.
+    - The item chip shows "~estimate / logged" for to-do items.
+    - The routine list keeps the activity-keyed `useEstimateCalibration` until F2-06.
+    - `todo-motivation.spec.ts`'s calibration block is rewritten to build its own list through the API: the fixture's linked items are all open, so no group can form. It logs 60 days back, because a log on the seed day completed the fixture's own planner block (FO2's automation). Both tests pass against the restarted API.
+  - Browser check (2026-10-12): on the fixture's "Focus" list the chips read e.g. "~1h 15m / 1h 30m", with the tooltip "1h 30m logged on this task so far". The header line rendered in the e2e run.
 - **Source:** F3-01 (to-do items, lead) + F2-06 (routine items) + F2-07 (timer lengths). They share one rule for
   medians, sample thresholds and wording.
 - **Moment:** typing "30 min" into an *Admin* to-do when the last eight *Admin* items took about twice that; starting

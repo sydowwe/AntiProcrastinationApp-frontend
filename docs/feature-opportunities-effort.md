@@ -32,7 +32,7 @@ None of FO1, FO2, FO4, FO6 or FO7 has an e2e spec. Only FO3 phase 1 does (`todo-
 
 | FO | Step | Opus effort | Why |
 |---|---|---|---|
-| **FO8** | F3-01 (to-dos) | **high** | It sets the shared rule (medians, sample thresholds, wording). The wording must describe the estimate, never the person. |
+| **FO8** | ~~F3-01 (to-dos)~~ built 2026-10-12 | **high** | It sets the shared rule (medians, sample thresholds, wording). The wording must describe the estimate, never the person. |
 | | F2-06 (routines), F2-07 (timers) | **medium** | Both reuse the rule; the reads only add data. |
 | **FO9** | backend agent | **xhigh** | Ingest must attribute idempotently, and it needs a policy for time counted twice by desktop and Android. A wrong rule is silent and permanent. |
 | **FO11** | one session | **medium** | A SQL view edit plus one table that only adds data. |

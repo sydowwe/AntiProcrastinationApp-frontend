@@ -68,7 +68,7 @@
 					v-model:hideDone="hideDone"
 					:isInChangeOrderMode
 					:listEntity
-					:calibration
+					:estimateFit
 					:totalProgress
 					:sortMode
 					@toggleSortMode="toggleSortMode"
@@ -99,6 +99,7 @@
 							:listId="todoListId"
 							:isDragging="isDragging"
 							:isFocused="isFocusItem((item as TodoListItemEntity).id)"
+							:loggedTime="loggedTimeFor((item as TodoListItemEntity).id)"
 							@delete="deleteItem"
 							@edit="toDoListDialog?.openEdit"
 							@isDoneChanged="handleIsDoneChange"
@@ -174,7 +175,7 @@
 	import { useSetBreadcrumbExtra } from '@/_common/composable/general/useBreadcrumbs.ts'
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
-	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
+	import { useEstimateFit } from '@/core/todoList/composable/useEstimateFit.ts'
 	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
 	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
 	import { SHORT_START_MINUTES } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
@@ -209,7 +210,7 @@
 	const { showFullScreenLoading, hideFullScreenLoading } = useLoading()
 	const { openDialog } = useDialog()
 	const { ensureLoaded: ensureLeisurePairingLoaded, pairingFor } = useLeisurePairing()
-	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
+	const { reload: reloadEstimateFit, groupForList, loggedTimeFor } = useEstimateFit()
 
 	const toDoListDialog = ref<InstanceType<typeof ToDoListItemDialog>>()
 	const logTimeController = ref<InstanceType<typeof BaseTodoListLogTimeController>>()
@@ -287,7 +288,7 @@
 			// loading items for once it has.
 			listEntity.value = await fetchByIdNamedList(todoListId)
 			items.value = await fetchAll()
-			void ensureCalibrationLoaded(items.value.map(item => item.activity.id))
+			void reloadEstimateFit()
 		} catch {
 			// The axios interceptor has already surfaced the status as a snackbar; this only decides
 			// what stays on screen instead of letting the rejection escape the mounted hook.
@@ -304,24 +305,18 @@
 		total: items.value.length,
 	}))
 
-	const calibration = computed(() =>
-		calibrationRatio(
-			items.value
-				.filter(item => item.suggestedTime?.isNotZero())
-				.map(item => ({ activityId: item.activity.id, suggestedSeconds: item.suggestedTime!.getInSeconds })),
-		),
-	)
+	// F3-01: this list's own group, keyed on items rather than activities. Absent until five of the list's
+	// finished items have an estimate and time logged against them.
+	const estimateFit = computed(() => groupForList(todoListId))
 
 	async function add(toDoListItem: ToDoListItemRequest) {
-		const created = await listCrud.add(toDoListItem)
-		void ensureCalibrationLoaded([created.activity.id])
+		await listCrud.add(toDoListItem)
 	}
 
 	async function quickEditedActivity(id: number) {
 		const toDoList = items.value[items.value.findIndex(item => item.id === id)]
 		if (toDoList) {
 			toDoList.activity = await fetchByIdActivity(id)
-			void ensureCalibrationLoaded([toDoList.activity.id])
 		}
 	}
 
@@ -345,7 +340,6 @@
 
 	async function updateAfterEdit(id: number) {
 		const updatedItem = await fetchById(id)
-		void ensureCalibrationLoaded([updatedItem.activity.id])
 		const index = items.value.findIndex(item => item.id === id)
 		if (index === -1) return
 		items.value[index] = updatedItem
@@ -448,13 +442,18 @@
 		// A saved reward is a history row the recap now counts as taken. An item's own log needs no
 		// call here: it toggles the item, and the completion watcher re-reads the recap for that.
 		if (itemId === undefined) void earnedRewardsStore.resync()
+		else void reloadEstimateFit()
 		pushLogTimeUndo(
 			item?.activity.name ?? leisureName ?? '',
 			historyRecordIds,
-			itemWasCompleted && itemId !== undefined
+			itemId !== undefined
 				? async () => {
-						await toggleIsDone(itemId, false)
-						await itemsChanged([itemId])
+						if (itemWasCompleted) {
+							await toggleIsDone(itemId, false)
+							await itemsChanged([itemId])
+						}
+						// The deleted rows were this item's logged time; its chip must drop them too.
+						void reloadEstimateFit()
 					}
 				: undefined,
 		)
@@ -482,6 +481,8 @@
 
 	async function handleIsDoneChange(id: number, forceValue?: boolean) {
 		await listCrud.handleIsDoneChange(id, forceValue)
+		// A timed item finishing (or reopening) moves it in or out of the list's sample. An untimed one cannot.
+		if (loggedTimeFor(id)) void reloadEstimateFit()
 		offerPairedLeisure(id)
 	}
 

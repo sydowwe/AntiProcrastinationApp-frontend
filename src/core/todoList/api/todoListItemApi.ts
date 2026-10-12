@@ -7,6 +7,7 @@ import { API } from '@/_common/axiosConfig.ts'
 import type { AxiosRequestConfig } from 'axios'
 import { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 import { RescheduleOverdueResult } from '@/core/todoList/dto/response/RescheduleOverdueResult.ts'
+import { EstimateFit, type EstimateFitGroupBy } from '@/core/todoList/dto/response/EstimateFit.ts'
 
 /**
  * `todoListId` is required, and deliberately not optional: the backend rejects the unfiltered call with a 400
@@ -39,6 +40,20 @@ export async function fetchDailyRecap(isoDate: string): Promise<DailyRecap | nul
 			_silent: true,
 		})
 		return DailyRecap.fromJson(data)
+	} catch {
+		return null
+	}
+}
+
+/**
+ * How estimates compared with logged and planned time, per list, category or priority (F3-01), plus each timed
+ * item's logged-so-far. `_silent` plus the catch for the same reason as the recap: it is decoration, so a
+ * failure leaves the figures off rather than raising a toast. `null` means the read failed.
+ */
+export async function fetchEstimateFit(groupBy: EstimateFitGroupBy): Promise<EstimateFit | null> {
+	try {
+		const { data } = await API.get('todo-list-item/estimate-fit', { params: { groupBy }, _silent: true })
+		return EstimateFit.fromJson(data)
 	} catch {
 		return null
 	}

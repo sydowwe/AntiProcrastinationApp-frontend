@@ -9,6 +9,10 @@ import type { ActivityLoggedTimeAggregate } from '@/core/activityHistory/dto/res
  * neutral, never scolding: this tells the user how their estimates compare to reality, nothing more.
  *
  * Cross-module contact is limited to activityHistory's `api/` and `dto/`, per CLAUDE.md.
+ *
+ * **Routine list only, and on its way out.** It is keyed on the activity and compares a per-sitting mean with a
+ * per-item estimate (F3 *Out of scope* #2). The normal list moved to the item-keyed `useEstimateFit` (F3-01);
+ * routine items move in F2-06, and this file goes with them.
  */
 
 const MIN_COMPARABLE_ITEMS = 5

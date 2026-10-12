@@ -50,7 +50,7 @@
 					/>
 					<VTooltip
 						v-if="toDoListItem.suggestedTime?.isNotZero()"
-						:disabled="!averageActual"
+						:disabled="!actualTooltip"
 						location="top"
 					>
 						<template #activator="{ props: tooltipProps }">
@@ -62,12 +62,10 @@
 								prependIcon="clock"
 							>
 								~{{ toDoListItem.suggestedTime!.getNice }}
-								<template v-if="averageActual">&nbsp;/ {{ averageActual.getNice }}</template>
+								<template v-if="actualTime">&nbsp;/ {{ actualTime.getNice }}</template>
 							</VChip>
 						</template>
-						<span v-if="averageActual">
-							{{ i18n.t('toDoList.calibration.usuallyTooltip', { time: averageActual.getNice }) }}
-						</span>
+						<span v-if="actualTooltip">{{ actualTooltip }}</span>
 					</VTooltip>
 					<slot name="post-chips" />
 					<VListItemTitle
@@ -202,7 +200,7 @@
 	import BaseTodoListItemSteps from '@/core/todoList/component/BaseTodoListItemSteps.vue'
 	import TodoListItemCounter from '@/core/todoList/component/TodoListItemCounter.vue'
 	import { useTodoItemDraggable } from '@/core/todoList/composable/dragAndDrop/useTodoItemDraggable.ts'
-	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
+	import type { Time } from '@/_common/dto/dto/Time.ts'
 
 	const {
 		toDoListItem,
@@ -212,6 +210,8 @@
 		listId,
 		isDragging = false,
 		additionalActions = [],
+		actualTime = null,
+		actualTooltip = null,
 	} = defineProps<{
 		toDoListItem: TItem
 		color?: string | null
@@ -220,6 +220,13 @@
 		listId: number
 		isDragging?: boolean
 		additionalActions?: MenuItem[]
+		/**
+		 * Shown after the estimate on its chip ("~30m / 45m"). What it means is the wrapper's call: time logged
+		 * against a to-do item, or the activity's usual sitting for a routine item until F2-06.
+		 */
+		actualTime?: Time | null
+		/** The estimate chip's tooltip, saying what `actualTime` is. No tooltip without it. */
+		actualTooltip?: string | null
 	}>()
 
 	const emits = defineEmits<{
@@ -237,11 +244,6 @@
 	const { getBgColor } = useColor()
 
 	const accentColor = computed(() => (color ? getBgColor(color) : undefined))
-
-	// The parent list view loads the aggregate for every visible activity in one batched request
-	// (`ensureLoaded`); this only reads the shared cache, so no per-item request is made here.
-	const { averageActualFor } = useEstimateCalibration()
-	const averageActual = computed(() => averageActualFor(toDoListItem.activity.id))
 
 	const itemProgress = computed(() => {
 		if (toDoListItem.isMultipleCount && toDoListItem.totalCount) {

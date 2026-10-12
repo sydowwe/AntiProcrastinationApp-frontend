@@ -1,14 +1,13 @@
 import type { Page } from '@playwright/test'
-import { expect, seedDateParam, test, type SeedResponse } from '../fixtures/auth'
+import { apiUrl, expect, seedDateParam, test, type SeedResponse } from '../fixtures/auth'
 
 // Specs for the todoList surfaces that had no seed data to render before `POST /api/test/seed` existed.
 // Driven in the browser via `playwright-cli` against the `e2e-v1` fixture before writing any assertion
 // here — see docs/views/todo-lists/findings.md's round 3 entry for what that walk-through found.
 //
-// The estimate-vs-actual chip and the header calibration ratio were unwritable under `e2e-v1`:
-// `GET /api/todo-list-item` returned no `suggestedTime` field at all, so there was nothing to assert
-// against (findings.md O1/U3, round 3). **`e2e-v2` delivers it** — re-confirmed 2026-09-12 by reading the
-// response body, not just the UI — and both surfaces are covered at the bottom of this file.
+// The estimate chip and the header's estimate line are covered at the bottom of this file. Since F3-01 they
+// read time logged against each item. The header needs five finished timed items, which the fixture lacks,
+// so that block builds its own list.
 //
 // The "Focus" list is seed id 13001 (8 items), "Errands" is 13002 (7 items, including the 6 overdue ones).
 
@@ -161,61 +160,120 @@ test.describe('Multi-count item counter (/todo-list/:id — "Focus")', () => {
 	})
 })
 
-// Settles findings.md O1 and U3, both of which were open only because `e2e-v1` shipped no estimates.
-// Every number below is the fixture's, read off `GET /api/todo-list-item?todoListId=13001`:
-//
-//   `withEstimate`         id 14002, "Feature Development", estimate 2h,  history average 2h 26m
-//   `withEstimateAndSteps` id 14001, "Bug Fixing",          estimate 45m, history average 1h 1m
-//
-// The chip renders BOTH sides ("~2h / 2h 26m") — the estimate alone is not calibration. It renders the
-// estimate on its own when the activity has no history, which is why the assertions below name the
-// average explicitly rather than matching on "~".
-test.describe('Estimate-vs-actual calibration (/todo-list/:id — "Focus")', () => {
-	test.beforeEach(async ({ authenticatedPage }) => {
-		await authenticatedPage.goto('/todo-list/13001')
-		await authenticatedPage.locator('#app').getByText('Feature Development').first().waitFor({ state: 'visible' })
-	})
+// F3-01 replaced the activity-keyed calibration on this view: the figures are now read off time logged
+// against each ITEM (`GET /todo-list-item/estimate-fit`), not off the activity's whole history. The fixture
+// does link history to the "Focus" items (14001–14006), but every one of them is open, so no group can form,
+// and the header needs five finished items. So these tests build their own:
+// a fresh list (CLAUDE.md, *Mutating specs* 1) whose items reuse the "Focus" list's activities — the unique
+// index is per list — with 30-minute estimates and 45 minutes logged against each through the app's own API.
+// Every row created is deleted afterwards, history first, because deleting the list only unlinks it.
+interface FitFixture {
+	listId: number
+	historyIds: number[]
+}
 
-	/**
-	 * The estimate chip of the row for `title`.
-	 *
-	 * Two things need narrowing, and both cost a failure to find out: two nested `.v-list-item`s match
-	 * each row (the outer is the drag/selection wrapper), and a row carries a SECOND `.v-chip` — the
-	 * due-date one ("Tomorrow"). The estimate chip is the one that opens with `~`.
-	 */
-	function estimateChip(page: import('@playwright/test').Page, title: string) {
-		return page
-			.locator('.v-list-item')
-			.filter({ hasText: title })
-			.first()
-			.locator('.v-chip')
-			.filter({ hasText: '~' })
+const FIT_LIST = 'E2E estimate fit'
+
+async function postId(page: Page, path: string, data: unknown): Promise<number> {
+	const response = await page.request.post(`${apiUrl()}/api/${path}`, { data })
+	expect(response.ok(), `POST ${path}: ${response.status()} ${await response.text()}`).toBe(true)
+	return Number(await response.json())
+}
+
+/**
+ * Five finished items at 1.5× their estimate, and one open item with 50 minutes logged against a 1-hour estimate.
+ *
+ * Two things here exist because logging time is not inert (FO2). Each log publishes `ActivityTimeRecordedEvent`
+ * for its day, which completes a planner block on that day for the activity, or else the linked item once the
+ * total reaches its estimate. So the logs go 60 days back, where the fixture has no blocks for these activities
+ * to complete. Logged on the seed day, they marked the fixture's own blocks done. And the open item's estimate
+ * stays above its logged time, or the fallback finishes it.
+ */
+async function createFitFixture(page: Page, seed: SeedResponse): Promise<FitFixture> {
+	const focus = await page.request.get(`${apiUrl()}/api/todo-list-item`, { params: { todoListId: 13001 } })
+	expect(focus.ok()).toBe(true)
+	const sources = (await focus.json()) as { activity: { id: number }; taskPriority: { id: number } }[]
+	expect(sources.length).toBeGreaterThanOrEqual(6)
+
+	const fixture: FitFixture = { listId: await postId(page, 'todo-list', { name: FIT_LIST }), historyIds: [] }
+	const logDay = new Date(`${seed.seedDateUtc}T09:00:00Z`)
+	logDay.setUTCDate(logDay.getUTCDate() - 60)
+	const startTimestamp = logDay.toISOString()
+
+	for (const [index, source] of sources.slice(0, 6).entries()) {
+		const isOpen = index === 5
+		const itemId = await postId(page, 'todo-list-item', {
+			activityId: source.activity.id,
+			taskPriorityId: source.taskPriority.id,
+			todoListId: fixture.listId,
+			suggestedTime: isOpen ? { hours: 1, minutes: 0 } : { hours: 0, minutes: 30 },
+		})
+		fixture.historyIds.push(
+			await postId(page, 'activity-history', {
+				activityId: source.activity.id,
+				startTimestamp,
+				length: { hours: 0, minutes: isOpen ? 50 : 45 },
+				todoListItemId: itemId,
+			}),
+		)
+		if (!isOpen) {
+			const done = await page.request.patch(`${apiUrl()}/api/todo-list-item/toggle-is-done`, {
+				data: { ids: [itemId], forceValue: true },
+			})
+			expect(done.ok(), `toggle ${itemId}: ${done.status()}`).toBe(true)
+		}
 	}
+	return fixture
+}
 
-	test('an item with an estimate shows its estimate and its actual average side by side', async ({
-		authenticatedPage,
-	}) => {
-		await expect(estimateChip(authenticatedPage, 'Feature Development')).toContainText('2h 26m')
-		await expect(estimateChip(authenticatedPage, 'Bug Fixing')).toContainText('1h 1m')
+async function removeFitFixture(page: Page, fixture: FitFixture) {
+	const paths = [
+		...fixture.historyIds.map(id => `activity-history/${id}`),
+		...(fixture.listId ? [`todo-list/${fixture.listId}`] : []),
+	]
+	for (const path of paths) {
+		const response = await page.request.delete(`${apiUrl()}/api/${path}`)
+		expect(response.ok(), `cleanup DELETE ${path}: ${response.status()} ${await response.text()}`).toBe(true)
+	}
+}
+
+test.describe('Estimate fit (/todo-list/:id — a list built for the test)', () => {
+	let fixture: FitFixture = { listId: 0, historyIds: [] }
+
+	test.beforeEach(async ({ authenticatedPage, seed }, testInfo) => {
+		testInfo.setTimeout(60_000)
+		fixture = await createFitFixture(authenticatedPage, seed)
+		await authenticatedPage.goto(`/todo-list/${fixture.listId}`)
+		await authenticatedPage.locator('#app').getByText(FIT_LIST).first().waitFor({ state: 'visible' })
 	})
 
-	test('hovering the chip explains the average in words', async ({ authenticatedPage }) => {
-		// The wording is the product decision this surface exists for — neutral, never scolding
-		// (`toDoList.calibration.usuallyTooltip`). It lives in a Vuetify tooltip, so it is only in the
-		// DOM after a hover, and it is teleported OUTSIDE `#app`.
-		await estimateChip(authenticatedPage, 'Feature Development').hover()
-		await expect(authenticatedPage.getByText('You usually spend 2h 26m on this')).toBeVisible()
+	test.afterEach(async ({ authenticatedPage }) => {
+		await removeFitFixture(authenticatedPage, fixture)
+		fixture = { listId: 0, historyIds: [] }
 	})
 
-	test('the header states the calibration ratio once enough items are comparable', async ({
+	test('the header describes the estimate once five finished items were timed', async ({ authenticatedPage }) => {
+		// Median of five 45m ÷ 30m ratios. The open item is not a sample: its figure is not final.
+		await expect(
+			authenticatedPage.getByText('Tasks on this list took about 1.5× the estimate (5 tasks)'),
+		).toBeVisible()
+	})
+
+	test('an open item shows the time logged against it so far, and says so on hover', async ({
 		authenticatedPage,
-		seed,
 	}) => {
-		// Gated on MIN_COMPARABLE_ITEMS = 5 in useEstimateCalibration.ts; the seed reports 6, so this
-		// clears the threshold by exactly one. If the fixture ever drops below 6 the line disappears
-		// entirely rather than showing a different number — assert the seed's own count so that failure
-		// says which of the two happened.
-		expect(seed.counts.calibrationTodoListItems).toBeGreaterThanOrEqual(5)
-		await expect(authenticatedPage.getByText(/Tasks take about [\d.]+x your estimate/)).toBeVisible()
+		// The estimate chip opens with `~`; a row also carries other chips. Two nested `.v-list-item`s
+		// match each row (the outer is the drag wrapper), hence `.first()`.
+		const openRow = authenticatedPage
+			.locator('.v-list-item')
+			.filter({ has: authenticatedPage.locator('.v-chip', { hasText: '50m' }) })
+			.first()
+		const chip = openRow.locator('.v-chip').filter({ hasText: '~' })
+		await expect(chip).toContainText('1h')
+		await expect(chip).toContainText('50m')
+
+		// The tooltip is teleported outside `#app` and only exists after a hover.
+		await chip.hover()
+		await expect(authenticatedPage.getByText('50m logged on this task so far')).toBeVisible()
 	})
 })

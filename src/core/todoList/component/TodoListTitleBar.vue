@@ -27,12 +27,21 @@
 				/>
 				<span>{{ listEntity?.name }}</span>
 			</VCardTitle>
-			<span
-				v-if="calibration"
-				class="text-caption text-medium-emphasis"
+			<VTooltip
+				v-if="estimateFit"
+				:disabled="!plannedLine"
+				:text="plannedLine ?? undefined"
+				location="bottom"
 			>
-				{{ $t('toDoList.calibration.header', { ratio: calibration.ratio.toFixed(1) }) }}
-			</span>
+				<template #activator="{ props: tooltipProps }">
+					<span
+						v-bind="tooltipProps"
+						class="text-caption text-medium-emphasis text-center"
+					>
+						{{ describeLogged(estimateFit) }}
+					</span>
+				</template>
+			</VTooltip>
 			<div
 				v-if="totalProgress.total > 0"
 				class="d-flex align-center ga-2 w-100"
@@ -76,12 +85,16 @@
 
 <script setup lang="ts">
 	import type { SortMode } from '@/core/todoList/composable/useTodoListFilters.ts'
+	import { computed } from 'vue'
 	import type { TodoListEntity } from '@/core/todoList/dto/response/TodoListEntity.ts'
+	import type { EstimateFitGroup } from '@/core/todoList/dto/response/EstimateFit.ts'
+	import { useEstimateFitWording } from '@/core/todoList/composable/useEstimateFit.ts'
 
-	defineProps<{
+	const { estimateFit } = defineProps<{
 		isInChangeOrderMode: boolean
 		listEntity: TodoListEntity | null
-		calibration: { ratio: number; comparableCount: number } | null
+		/** This list's group from the estimate fit (F3-01); `null` until the list has five timed, finished items. */
+		estimateFit: EstimateFitGroup | null
 		totalProgress: { done: number; total: number }
 		sortMode: SortMode
 	}>()
@@ -89,6 +102,7 @@
 	const emit = defineEmits<{
 		toggleSortMode: []
 	}>()
-
 	const hideDone = defineModel<boolean>('hideDone', { default: false })
+	const { describeLogged, describePlanned } = useEstimateFitWording()
+	const plannedLine = computed(() => (estimateFit ? describePlanned(estimateFit) : null))
 </script>
