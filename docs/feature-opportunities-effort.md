@@ -11,7 +11,7 @@ What remains is the owner's (migrations, restart) or a re-run.
 
 | FO | Backend | Frontend | Left |
 |---|---|---|---|
-| FO1 | `ab5f0e7` | `ec4b7a30` | Nothing. Migration `20261006183310_RoutinePeriodCompletionIsExcused` was applied on 2026-10-11 (wave A's row in `feature-opportunities.md`). |
+| FO1 | `ab5f0e7` | `ec4b7a30` | Nothing. Migration `20261006183310_RoutinePeriodCompletionIsExcused` was applied on 2026-10-11 (wave A's row in `feature-opportunities.md`). e2e: `routine-away-days.spec.ts`, 4/4 twice on 2026-10-12. |
 | FO2 (closed 2026-10-12) | `9058535`, `882cdf5` | `4e16f51a`, `0317e802` | Nothing. The API was restarted on 2026-10-12. |
 | FO6 (closed 2026-10-12) | `5c17788`, `bd3faa9` | `0e2c9bcf` | Nothing; the API was restarted on 2026-10-12. Lanes (two overlapping blocks side by side) are a separate, later item: `prompts/fo-close/04-planner-lanes.md`. |
 | FO7 (re-closed 2026-10-12) | + `8a2e0e4` | — | Nothing. Migration `20261012161330_DropUserHasExtensionAccess` was applied on 2026-10-12. Pairing codes are **rejected**, no longer deferred. |
@@ -34,8 +34,9 @@ is never destructive from a read, and a day marked away later loses its untouche
 to-do fan-out stays absolute: a linked block done means the item done, and the two-way sync and
 `CompletionFanOutTests` depend on that.
 
-None of FO1, FO2, FO4, FO6 or FO7 has an e2e spec yet. Only FO3 phase 1 does (`todo-stuck-item-offer.spec.ts`). One
-prompt per spec is in `prompts/fo-close/` (`e2e-*.md`); run them **one at a time** (that folder's README says why).
+FO1 has an e2e spec since 2026-10-12 (`routine-away-days.spec.ts`), and so does FO3 phase 1
+(`todo-stuck-item-offer.spec.ts`). None of FO2, FO4, FO6 or FO7 has one yet. One prompt per spec is in
+`prompts/fo-close/` (`e2e-*.md`); run them **one at a time** (that folder's README says why).
 
 ## Remaining steps
 

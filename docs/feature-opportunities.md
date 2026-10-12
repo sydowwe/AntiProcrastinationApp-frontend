@@ -106,8 +106,13 @@ never ships a call to a route or field that the running API does not have yet.
 
 ### FO1. Vacation and sick days stop breaking routines, nudging, and suggesting the office
 - **Closed (2026-10-08):** reviewed against this section in both repos and found complete. The migration below
-  was applied on 2026-10-11 (wave A's row), so nothing is left. No e2e spec yet:
-  `prompts/fo-close/e2e-fo1-away-days.md`.
+  was applied on 2026-10-11 (wave A's row), so nothing is left.
+- **e2e (2026-10-12):** `e2e/tests/routine-away-days.spec.ts`, 4/4 on two runs in a row. Marking four days of
+  Weekly's latest unfrozen miss `SickDay` through the batch turns that cell away (umbrella, dashed, neutral), with no
+  *Cover the miss* and a 400 from the freeze endpoint. The freeze budget is untouched, and the period streak the API
+  reports goes up and shows on the card. A Vacation today puts the away line in home's *About today*, and Day
+  Details shows the hint for Vacation and Sick day but not Special. It drives Weekly rather than the prompt's Daily
+  miss, because that one is twelve cycles back and outside the card's heatmap strip.
 - **Status (2026-10-07): built and committed** (backend `ab5f0e7`, frontend `ec4b7a30`). Migration
   `20261006183310_RoutinePeriodCompletionIsExcused` is the owner's to apply; it was not confirmed applied when this line
   was written. What was built (2026-10-06): backend: Core
