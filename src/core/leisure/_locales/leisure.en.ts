@@ -69,6 +69,8 @@ const leisure = {
 			stepsPreview: `Steps ({count})`,
 			note: `Shopping for {project}`,
 			added: `Added to {list}`,
+			addedLinked: `Added to {list}. Tick it off there and {project} moves to Ready to start.`,
+			onList: `Shopping is on your to-do list. Ticking it off moves this to Ready to start.`,
 			alreadyOnList: `{project} is already on that list`,
 		},
 		ladder: {

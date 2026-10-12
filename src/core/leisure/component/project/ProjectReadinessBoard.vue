@@ -125,10 +125,24 @@
 										/>
 										<span class="text-caption">{{ blockerLine(item.requiredTools) }}</span>
 									</div>
+									<!-- FO13: once the shopping is on a list, ticking it there moves this card, so say that
+									     instead of offering a second handoff. Deleting the item clears the link server-side and
+									     brings the button back. -->
+									<div
+										v-if="item.shoppingTodoListItemId != null"
+										class="d-flex align-start ga-1 mt-1 text-caption text-medium-emphasis"
+									>
+										<VIcon
+											icon="list-check"
+											size="12"
+											class="mt-1"
+										/>
+										<span>{{ $t('leisure.shoppingHandoff.onList') }}</span>
+									</div>
 									<!-- `.stop` because the card is itself a button: Enter on this one fires a click that
 									     would otherwise bubble into the card's edit dialog (the card's keydown is `.self`). -->
 									<div
-										v-if="item.materialsNeeded.length || item.requiredTools.length"
+										v-else-if="item.materialsNeeded.length || item.requiredTools.length"
 										class="mt-1"
 									>
 										<VBtn
@@ -275,12 +289,13 @@
 		if (result) emit('onReload')
 	}
 
-	// One item for the project's own activity, its shopping list as steps — no reload: the board
-	// shows nothing about to-do membership, and the project stays NeedsShopping until the user moves it.
+	// One item for the project's own activity, its shopping list as steps. The dialog links it to the project
+	// (FO13), so ticking it off moves the card to Ready to start on its own; reload so the card says that.
 	async function onAddToTodoList(item: ActivityProjectProfile) {
-		await openDialog({
+		const result = await openDialog({
 			component: ShoppingToTodoDialog,
 			componentProps: {
+				projectId: item.id,
 				activityId: item.activityId,
 				projectName: item.activity.name,
 				materialsNeeded: item.materialsNeeded,
@@ -291,6 +306,7 @@
 				confirmBtnLabel: t('general.add'),
 			},
 		})
+		if (result) emit('onReload')
 	}
 
 	// A leaf with no undo, so the user's `askBeforeDelete` decides — the same call as the ladder's.

@@ -70,6 +70,8 @@ const leisure = {
 			stepsPreview: `Kroky ({count})`,
 			note: `Nákup na projekt: {project}`,
 			added: `Pridané do zoznamu: {list}`,
+			addedLinked: `Pridané do zoznamu: {list}. Keď to tam odškrtneš, projekt {project} sa presunie do stĺpca Pripravené.`,
+			onList: `Nákup je v to-do zozname. Keď ho odškrtneš, projekt sa presunie do stĺpca Pripravené.`,
 			alreadyOnList: `Projekt {project} už v tomto zozname je`,
 		},
 		ladder: {

@@ -19,6 +19,9 @@ export class ActivityProjectProfile implements IIdResponse {
 		public materialsNeeded: string[],
 		public requiredTools: string[],
 		public readinessStatus: ReadinessStatus,
+		// FO13: the to-do item the shopping handoff created, while it exists. Ticking it off makes the project
+		// ready on the server, so the board can say so instead of offering a second handoff.
+		public shoppingTodoListItemId: number | null = null,
 	) {}
 
 	static fromJson(object: any) {
@@ -33,6 +36,7 @@ export class ActivityProjectProfile implements IIdResponse {
 			materialsNeeded = [],
 			requiredTools = [],
 			readinessStatus = ReadinessStatus.Planning,
+			shoppingTodoListItemId = null,
 		} = object
 		// The server sends the enum's NAME (`"NeedsShopping"`, `"Intermediate"`), while these enums
 		// declare camelCase VALUES (`'needsShopping'`) because the `enums.*` locale keys are camelCase.
@@ -51,6 +55,7 @@ export class ActivityProjectProfile implements IIdResponse {
 			Array.isArray(materialsNeeded) ? materialsNeeded : [],
 			Array.isArray(requiredTools) ? requiredTools : [],
 			convertToEnum(ReadinessStatus, readinessStatus) ?? ReadinessStatus.Planning,
+			shoppingTodoListItemId,
 		)
 	}
 

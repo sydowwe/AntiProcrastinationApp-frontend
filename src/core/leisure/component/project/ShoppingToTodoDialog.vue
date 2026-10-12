@@ -49,6 +49,7 @@
 	import { useTodoListCrud } from '@/core/todoList/api/todoListApi.ts'
 	import { useTaskPriorityCrud } from '@/core/todoList/api/taskPriorityApi.ts'
 	import { useTodoListItemCrud } from '@/core/todoList/api/todoListItemApi.ts'
+	import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 	import { ToDoListItemRequest } from '@/core/todoList/dto/request/ToDoListItemRequest.ts'
 	import { TodoListItemStepRequest } from '@/core/todoList/dto/request/TodoListItemStepRequest.ts'
 	import type { SelectOption } from '@/_common/dto/response/general/SelectOption.ts'
@@ -58,7 +59,9 @@
 	import { handleHttpCodes, ServerErrorType } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 	import { extractServerErrorType } from '@/_common/axiosConfig.ts'
 
-	const { activityId, projectName, materialsNeeded, requiredTools } = defineProps<{
+	const { projectId, activityId, projectName, materialsNeeded, requiredTools } = defineProps<{
+		/** The project profile's own id — the link route is keyed by it, not by `activityId`. */
+		projectId: number
 		activityId: number
 		projectName: string
 		materialsNeeded: string[]
@@ -74,6 +77,7 @@
 	const { showSuccessSnackbar } = useSnackbar()
 	const { fetchSelectOptions: fetchListOptions } = useTodoListCrud()
 	const { fetchSelectOptions: fetchPriorityOptions } = useTaskPriorityCrud()
+	const { linkShoppingItem } = useActivityProjectProfileCrud()
 
 	const formRef = ref<VForm>()
 	const todoListId = ref<number | null>(null)
@@ -134,9 +138,16 @@
 			// `_silent` so the one refusal this dialog can explain — the activity is already on that list,
 			// the (UserId, ActivityId, TodoListId) unique index — lands under the list field instead of as
 			// the interceptor's generic snackbar. Every other failure goes through the shared handler below.
-			await useTodoListItemCrud(listId).createWithResponse(request, { _silent: true })
+			const item = await useTodoListItemCrud(listId).createWithResponse(request, { _silent: true })
+			// FO13: link the item so ticking it off makes the project ready. It never rejects, so a failed link
+			// cannot reach the catch below and read as a failed handoff — the item exists either way.
+			const linked = await linkShoppingItem(projectId, item.id)
 			const listName = listOptions.value.find(o => o.id === listId)?.text ?? ''
-			showSuccessSnackbar(t('leisure.shoppingHandoff.added', { list: listName }))
+			showSuccessSnackbar(
+				linked
+					? t('leisure.shoppingHandoff.addedLinked', { list: listName, project: projectName })
+					: t('leisure.shoppingHandoff.added', { list: listName }),
+			)
 			dialog.close(true)
 		} catch (e) {
 			const status = axios.isAxiosError(e) ? e.response?.status : undefined
