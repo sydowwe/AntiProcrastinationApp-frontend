@@ -118,8 +118,9 @@
 	const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
 
 	function getNaturalDayType(): DayType {
-		// dayIndex 6 or 7 = weekend (Saturday/Sunday)
-		if (props.calendar!.dayIndex === 6 || props.calendar!.dayIndex === 7) {
+		// dayIndex 6 or 7 = weekend (Saturday/Sunday). Optional: a throw here, from a render with no row
+		// yet, left the dialog dead for the life of the page.
+		if (props.calendar?.dayIndex === 6 || props.calendar?.dayIndex === 7) {
 			return DayType.Weekend
 		}
 		return DayType.Workday
@@ -144,10 +145,11 @@
 
 	async function save() {
 		const isValid = await form.value?.validate()
-		if (!isValid?.valid || !props.calendar!.id) {
+		const id = props.calendar?.id
+		if (!isValid?.valid || !id) {
 			return
 		}
-		await updateWithResponse(props.calendar!.id, data.value)
+		await updateWithResponse(id, data.value)
 			.then(updatedEntity => {
 				emit('updated', updatedEntity)
 				model.value = false

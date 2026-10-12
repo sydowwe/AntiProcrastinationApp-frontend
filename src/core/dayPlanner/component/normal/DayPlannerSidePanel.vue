@@ -7,11 +7,14 @@
 		detailsIcon="calendar-day"
 	>
 		<template #titleActions>
+			<!-- Disabled until the day's calendar row has loaded: the dialog edits that row, and opened
+			     before it arrived it had nothing to read or save. -->
 			<VBtn
 				v-if="activePanel === 'details'"
 				variant="outlined"
 				color="secondaryOutline"
 				size="small"
+				:disabled="!calendar"
 				@click="emit('openEditDialog')"
 			>
 				<VIcon

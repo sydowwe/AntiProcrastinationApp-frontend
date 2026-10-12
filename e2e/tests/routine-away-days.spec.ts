@@ -206,14 +206,11 @@ test.describe('Away days excuse a routine cycle (/routine-todo-list, / and /day-
 test.describe('Away-day hint in Day Details (/day-planner/:date)', () => {
 	async function openDayDetails(page: Page, seed: SeedResponse) {
 		const date = seedDateParam(seed, 1)
-		// The Edit button is live before the view has stored the day's calendar row, and opening the
-		// dialog then throws on `props.calendar!.dayIndex` (CalendarDetailsDialog.vue
-		// `getNaturalDayType`) and leaves it dead for the life of the page. On a cold load the view
-		// mounts twice, each instance fetching the day and its tasks, so no single request marks the
-		// visible one as ready; waiting for the network to settle does. The race is not what is under
-		// test here.
+		// Clicked straight after navigation on purpose. Edit used to be live before the view had the
+		// day's calendar row, and opening the dialog then threw on `props.calendar!.dayIndex` and left it
+		// dead for the life of the page. It is now disabled until the row arrives, and the click's
+		// actionability wait is what holds this spec to that.
 		await page.goto(`/day-planner/${date}`)
-		await page.waitForLoadState('networkidle')
 		await page.getByRole('button', { name: 'Edit', exact: true }).click()
 		const dialog = page.getByRole('dialog', { name: 'Day Details' })
 		await expect(dialog).toBeVisible()
