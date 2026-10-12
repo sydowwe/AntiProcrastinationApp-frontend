@@ -79,6 +79,24 @@
 					{{ $t('home.welcomeBack.routines', { names: joinNames(card.brokenRoutines.map(r => r.text)) }) }}
 				</span>
 			</p>
+			<!-- F1-04: where a skip can still carry the run on, say so and go straight to the routines page's own
+				 skip confirm (`?offerFreeze=`), which decides again before anything is spent. -->
+			<div
+				v-if="freezable.length > 0"
+				class="d-flex flex-wrap ga-2 ps-10"
+			>
+				<VBtn
+					v-for="routine in freezable"
+					:key="routine.id"
+					variant="tonal"
+					color="primaryOutline"
+					size="small"
+					prependIcon="fa-snowflake"
+					@click="openFreezeOffer(routine.id)"
+				>
+					{{ $t('home.welcomeBack.keepWithSkip', { name: routine.text }) }}
+				</VBtn>
+			</div>
 		</VCardText>
 
 		<VCardActions class="flex-wrap justify-end ga-2 px-4 pb-3">
@@ -105,6 +123,7 @@
 <script setup lang="ts">
 	import { computed, ref, useId } from 'vue'
 	import { useI18n } from 'vue-i18n'
+	import { useRouter } from 'vue-router'
 	import { localeTag } from '@/i18n.ts'
 	import WelcomeBackChoice from '@/core/home/component/WelcomeBackChoice.vue'
 	import { useWelcomeBack } from '@/core/home/composable/useWelcomeBack.ts'
@@ -117,6 +136,7 @@
 	} from '@/core/home/dto/enum/FreshStartChoice.ts'
 
 	const { t, locale } = useI18n()
+	const router = useRouter()
 	const { card, applying, startFresh, dismiss } = useWelcomeBack()
 	const titleId = useId()
 
@@ -149,6 +169,12 @@
 			card.value !== null &&
 			(card.value.overdueTodos.count > 0 || card.value.pastTasks.count > 0 || card.value.unreadNotifications > 0),
 	)
+
+	const freezable = computed(() => card.value?.brokenRoutines.filter(r => r.canFreeze) ?? [])
+
+	function openFreezeOffer(timePeriodId: number) {
+		void router.push({ name: 'routineToDoList', query: { offerFreeze: String(timePeriodId) } })
+	}
 
 	function joinNames(names: string[]) {
 		return new Intl.ListFormat(localeTag(locale.value), { style: 'long', type: 'conjunction' }).format(names)

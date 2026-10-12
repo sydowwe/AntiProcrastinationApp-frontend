@@ -218,8 +218,12 @@ activityTracking 14, leisure 5 (one with no client DTO at all), user 3. One was 
 
 - ~~`GET …/domain-details` (`getDomainDetails`, `activityTrackingApi.ts:45-55`).~~ Called since OP16 (2026-10-04),
   from `ActivityPieChartSection.vue`.
-- `/leisure/suggestion/draw`. The picker ranks client-side over the three grids.
+- ~~`/leisure/suggestion/draw`~~ (the real route is `POST /leisure-suggestion`, with `POST /leisure-suggestion/seen`
+  beside it). Both called since FO12 / F2-04 (2026-10-12): the picker ranks on the server now
+  (`leisureSuggestionApi.ts`).
 - `SetupTwoFactorForLoginEndpoint` (G6).
+- `GET /routine-time-period/{id}/completion-history` and `GET /distinct-processes`. Plain reads; the grouped routine
+  read already carries the history (F2 *Rejected*).
 
 ### The reverse: the client reads what the server never sends
 
@@ -444,8 +448,9 @@ Counts are fields after the corrections below. "derived" figures are already ins
   Readers added.
 - **C5. `Calendar.dayType/label/wakeUpTime/bedTime/holidayKey/holidayName` are read by historyDashboard**, server-projected
   into `CalendarActivityDaySummary` (`HistoryDayCellContent.vue:13`, framework `CalendarDayCellHeader.vue`). Listed by the
-  history extract, missing from the planner extract. Row added. `Calendar.label`, which the planner calendar shows only in
-  the side panel, *is* in the history calendar's cell header.
+  history extract, missing from the planner extract. Row added. `Calendar.label` is in **both** calendars' cell header:
+  the planner calendar renders the same `CalendarGrid` → `CalendarDayCellHeader` (corrected 2026-10-12, F4 #2; this
+  line used to say the planner showed it only in the side panel).
 - **C6. `PlannerStreak.today` and `.timezone`: classified differently, now `derived · unread`.** The planner extract said
   `derived · spent`. The todo extract said "console.warn tripwire only, not displayed". Settled from
   `src/core/home/composable/useTodayPlan.ts:385-392`: the only read is `assertServerDateAgrees`, which either returns or
@@ -514,8 +519,8 @@ have no note field.
   `PlannerCalendarView.vue:136` reads it, as do three files in activityHistory and activityTracking.
 - The planner group brief said the client never calls `GET task-planner-day-template/suggestions/{calendarId}`.
   `DayTemplatePicker.vue:231-240` has called it since 2026-09-24.
-- `ActivityInfo.ts:15` / B6 say `/leisure/pick` uses `/leisure/suggestion/draw`. It ranks client-side, and nothing calls
-  the endpoint.
+- `ActivityInfo.ts:15` / B6 say `/leisure/pick` uses `/leisure/suggestion/draw`. It ranked client-side, and nothing called
+  the endpoint. Since FO12 (2026-10-12) it does call the server draw, at `POST /leisure-suggestion`.
 - projects usecase / O1: the handoff should be "guarded by `isOnTodoList`". The field is never populated on those rows.
   The shipped handoff relies on the server's unique index and a 409.
 

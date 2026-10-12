@@ -96,6 +96,7 @@ const home = {
 				keep: `Nechať neprečítané`,
 			},
 			routines: `Dnes začínajú odznova: {names}`,
+			keepWithSkip: `Udržať sériu „{name}“ vynechaním`,
 			startFresh: `Začať odznova`,
 			dismiss: `Nechať všetko tak`,
 			gotIt: `Rozumiem`,

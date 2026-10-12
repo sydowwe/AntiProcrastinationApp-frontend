@@ -96,6 +96,7 @@ const home = {
 				keep: `Keep them unread`,
 			},
 			routines: `Starting fresh today: {names}`,
+			keepWithSkip: `Keep {name} going with a skip`,
 			startFresh: `Start fresh`,
 			dismiss: `Leave everything as it is`,
 			gotIt: `Got it`,

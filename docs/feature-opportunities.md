@@ -252,8 +252,12 @@ never ships a call to a route or field that the running API does not have yet.
       item.
     - **Help.** Both counts feed `planHelp` as failed attempts that point to *a smaller step*. An item that is only
       ever renegotiated can be stuck too. Neither count reaches the wire (`[JsonIgnore]`; asserted on raw JSON).
-    - **Not done:** an undo of the bulk reschedule restores the dates but leaves the postponement counted (no
-      undo endpoint). FO4's *apply* must call `PlannerTaskMoveRecorder` too.
+    - ~~**Not done:** an undo of the bulk reschedule restores the dates but leaves the postponement counted (no
+      undo endpoint).~~ **Built 2026-10-12** (backend `2d6a22e`): `reschedule-overdue` returns an `undoToken`,
+      and `POST /todo-list-item/reschedule-overdue/undo` restores date, `FirstDueDate` and `PostponeCount` from
+      a 15-minute before-image (`RescheduleOverdueUndo`), only for items still open and still on the new date.
+      The banner's undo uses it, and falls back to the old PUT loop against an API that sends no token. Four
+      new `RescheduleOverdueTodoListItemTests` cases. FO4's *apply* calls `PlannerTaskMoveRecorder` (done in FO4).
   - **Backend:** `ITodoListItemPlanSource.PlanHistoryAsync` sorts every linked block by outcome: completed,
     carried over (the sum of `CarryOverCount`), missed (a foreground `NotStarted`/`OnHold` block on a day before
     the user's today), and skipped per key. TodoLists' `TodoListItemPlanHelp` turns that into `planHelp`
@@ -387,6 +391,10 @@ never ships a call to a route or field that the running API does not have yet.
   scheduler alerts still go out. The shared away check is `WasMarkedAway` on `GET /welcome-back` (FO1's
   half-the-days rule), which picks the card's "welcome back from your break" title. `WelcomeBackTests`,
   `NotificationAwayHoldTests` and `ModuleWiringTests` re-run green on 2026-10-12 (51 tests). Nothing is left.
+  **Added 2026-10-12 (backend `2d6a22e`), from F1-04's spec, which the build had left out:** each broken routine
+  carries `canFreeze` (Routines' `DescribeBreak`, the freeze endpoint's own rule), and the card offers *Keep
+  {name} going with a skip*, which opens the routines page's skip confirm (`?offerFreeze=`). Not browser-checked:
+  it needs an absence of four days. Covered by `WelcomeBackTests` and the client's wire test.
 - **Status (2026-10-08): step 1 (the greeting) built and on backend `dev` (`8863158`), migration
   `20261008080300_UserLastActiveAndWelcomeBack` applied.** Frontend card built and committed: `WelcomeBackCard.vue`
   above the now bar, in `src/core/home/`. Checked end to end in the browser against the real API (2026-10-08), at
@@ -707,7 +715,11 @@ never ships a call to a route or field that the running API does not have yet.
   - **Tests:** `AndroidSyncAttributionTests` (5), `DesktopMappingSuggestionsTests` (6),
     `AndroidMappingSuggestionsTests` (4), five new `ActivityTimeAttributionSinkTests`, `SeamWiringTests`
     extended.
-  - **Not done:** the android sessions synced before this stay unattributed (no backfill).
+  - **Not done, and not planned (decided 2026-10-12):** the android sessions synced before this stay
+    unattributed (no backfill). Until FO7 (2026-10-07) only the seeded root account could sign a tracker in, so
+    the gap is that one account's pre-2026-10-08 phone history. A backfill would also apply today's rules to
+    old rows, which the desktop path never does ("rules edited after the fact are not re-applied"). Build an
+    owner-run backfill only if that history turns out to matter.
   - **FO7's pre-FO9 check:** an account created through Google sign-in has no password
     (`UserRegistrationFlow.cs:125`), so it cannot sign a tracker in directly. *Forgot password* does set one
     (`ResetPasswordAsync` works on a passwordless account), so it is a detour, not a dead end. Pairing codes
@@ -761,9 +773,9 @@ never ships a call to a route or field that the running API does not have yet.
   - **Frontend:** `SleepWindowField.vue` in Settings → Preferences, with two `TimePicker`s that save one field
     per PUT after an 800 ms debounce, read through `useUserPreferences`. The privacy policy's account-data
     list names the new preference (SK + EN).
-  - **Not done:** users with no calendar row on a day still get
-    the generic 08:00 window in the re-plan *preview's* reported window end. A day with no row has no
-    tasks, so nothing moves differently.
+  - ~~**Not done:** users with no calendar row on a day still get the generic window in the re-plan
+    *preview's* reported window end.~~ **Fixed 2026-10-12** (backend `2d6a22e`): the preview reads the user's
+    default bed time for such a day, as `next-free-slot` does (`DayReplanTests`, one new case).
 - **Source:** F2-10.
 - **Moment:** a user who wakes at 10:30 gets the 08:00 routine push. Every future morning sweep (N2, N4) and FO4's
   window inherit the same defaults.
@@ -1002,12 +1014,12 @@ is already queued there. Items the inputs record as *Fixed since* are not repeat
    question 4. (F2 #5)
 10. **Dead branch (framework): `DayType.Holiday`'s colour and icon** (`_common/dto/enum/DayType.ts:16,35`) are
     unreachable from server data. Removing the member is a framework change; weigh it against other apps. (F4 #5)
-11. **Stale backend comments and seed:**
-    - `ActivityHistory.cs:16` claims the web extension attributes rows (F3 #3);
-    - `Calendar.cs:26` and `PlannerTaskSeeder.cs:91` model HomeOffice/Office as a label (F4 #3, folded into FO1).
-12. **Stale docs:**
-    - `docs/data-map/planner.md:130` and `docs/data-map.md:448` say the label is not in the month cell (F4 #2);
-    - `docs/data-map.md` § *Endpoints with no client caller* lacks `POST /leisure-suggestion/seen`, the routine
-      completion-history and distinct-processes reads, and `/reminder/*`, and misnames the draw route (F2 #6).
+11. ~~**Stale backend comments and seed**~~ Fixed: `ActivityHistory.cs:16` corrected 2026-10-12 (backend
+    `2d6a22e`, F3 #3); `Calendar.cs:26` and `PlannerTaskSeeder.cs:91` no longer model HomeOffice/Office as a label
+    (F4 #3, done with FO1).
+12. ~~**Stale docs**~~ Fixed 2026-10-12: `docs/data-map/planner.md:130` and `docs/data-map.md` now say the label is
+    in both calendars' cell header (F4 #2); § *Endpoints with no client caller* names the leisure draw's real
+    routes as called since FO12 and lists the two plain reads still uncalled (F2 #6). `/reminder/*` was not
+    re-checked.
 13. **Known gap capping every History-side join:** tracker attribution truncates sub-minute seconds (`IntTime.cs:14-18`,
     pinned as `KnownGap`). FO2, FO9 and the deferred F3-03 inherit it. (F3 #7)

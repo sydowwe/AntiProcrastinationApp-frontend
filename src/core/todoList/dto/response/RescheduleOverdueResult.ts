@@ -8,11 +8,16 @@ export class RescheduleOverdueResult {
 		 * it, so an undo restores these and nothing else.
 		 */
 		public movedIds: number[],
+		/**
+		 * Takes the move back on the server, postponements included, for 15 minutes
+		 * (`POST todo-list-item/reschedule-overdue/undo`). Null when nothing moved, or from an API that predates it.
+		 */
+		public undoToken: string | null = null,
 	) {}
 
 	static fromJson(json: any) {
-		const { dueDate, movedIds = [] } = json
-		return new RescheduleOverdueResult(dueDate, movedIds)
+		const { dueDate, movedIds = [], undoToken = null } = json
+		return new RescheduleOverdueResult(dueDate, movedIds, undoToken)
 	}
 
 	static listFromObjects(objects: any[]) {

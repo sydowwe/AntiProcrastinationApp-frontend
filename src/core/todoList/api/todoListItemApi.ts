@@ -149,6 +149,14 @@ export function useTodoListItemCrud(todoListId: number) {
 		return RescheduleOverdueResult.fromJson(data)
 	}
 
+	/**
+	 * Takes a `rescheduleOverdue` back: old due dates and the postponements it recorded. Items ticked off or
+	 * re-dated since are left alone. A spent or expired token is a 404.
+	 */
+	async function undoRescheduleOverdue(undoToken: string): Promise<void> {
+		await API.post(`${url}/reschedule-overdue/undo`, { undoToken })
+	}
+
 	async function uncheckAll(doneIds: number[]) {
 		if (doneIds.length === 0) return
 		try {
@@ -174,5 +182,6 @@ export function useTodoListItemCrud(todoListId: number) {
 		toggleIsDone,
 		uncheckAll,
 		rescheduleOverdue,
+		undoRescheduleOverdue,
 	}
 }

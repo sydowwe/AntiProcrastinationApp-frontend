@@ -127,7 +127,7 @@ Fetched through `activityHistory/api/calendarApi.ts` (`calendar/filter`, `calend
 | `date` | `string` | server (rows are bulk-seeded per year) | `CalendarStatsBar.vue:72-84`, `CalendarDayCellContent.vue:112`, navigation `PlannerCalendarView.vue:314`, `PlannerTaskLinkView.vue:74` | derived · spent | yes |
 | `dayType` | `DayType` | Day Details dialog (`CalendarDetailsDialog.vue:38`); bulk bar *Change day type* | `DayDetailsPanel.vue:21-24` (`DayTypeChip`); the server matches it for both suggestion endpoints | spent | yes |
 | `dayIndex` | `number` | server | `CalendarDetailsDialog.vue:108` (natural weekday/weekend type) | derived · spent | yes |
-| `label` | `string \| null` | Day Details dialog (`:27`) | `DayDetailsPanel.vue:9-14` (heading) — not in the month cell | spent | — |
+| `label` | `string \| null` | Day Details dialog (`:27`) | `DayDetailsPanel.vue:9-14` (heading), and the month cell's header (framework `CalendarDayCellHeader`, rendered by `CalendarGrid` for every day) | spent | — |
 | `holidayKey` | `string \| null` | server (B19) | `DayDetailsPanel.vue:44` via `useHolidayLabel()`; calendar holiday strip | derived · spent | yes |
 | `holidayName` | `string \| null` | server | `DayDetailsPanel.vue:41` (gate + fallback text) | derived · spent | yes |
 | `wakeUpTime` | `Time` | Day Details dialog (`:18`); day view start steppers | `CalendarDayCellContent.vue:9-17,46`; bounds the day grid (`DayPlannerView.vue:267`); `OverdueTasksBanner.vue:86` | spent | yes |

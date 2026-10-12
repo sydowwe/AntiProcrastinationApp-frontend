@@ -36,11 +36,16 @@ export class WelcomeBackRoutine {
 		public readonly id: number,
 		public readonly text: string,
 		public readonly color: string,
+		/**
+		 * A skip (streak freeze) spent now would bring the run back. The server's `DescribeBreak`, the same
+		 * rule as the freeze endpoint, so the card never offers a rescue the routines page would refuse.
+		 */
+		public readonly canFreeze: boolean = false,
 	) {}
 
 	static fromJson(json: any): WelcomeBackRoutine {
-		const { id = 0, text = '', color = '' } = json ?? {}
-		return new WelcomeBackRoutine(id, text, color)
+		const { id = 0, text = '', color = '', canFreeze = false } = json ?? {}
+		return new WelcomeBackRoutine(id, text, color, canFreeze)
 	}
 
 	static listFromObjects(objects: any[]): WelcomeBackRoutine[] {

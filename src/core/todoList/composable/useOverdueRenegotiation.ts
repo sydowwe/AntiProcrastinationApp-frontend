@@ -19,6 +19,7 @@ export function useOverdueRenegotiation(
 		update: (id: number, request: ToDoListItemRequest) => Promise<unknown>
 		fetchAll: () => Promise<TodoListItemEntity[]>
 		rescheduleOverdue: (days: number) => Promise<RescheduleOverdueResult>
+		undoRescheduleOverdue: (undoToken: string) => Promise<void>
 	},
 ) {
 	const i18n = useI18n()
@@ -41,17 +42,17 @@ export function useOverdueRenegotiation(
 	 * clears instead of shifting a month-old task to three weeks old. The server chooses the items and
 	 * the date (FO3), and records each move as a postponement.
 	 *
-	 * The undo puts back the dates of exactly the items the server moved. It does not take the
-	 * postponement back: the count is never shown and only decides which help an item is offered, so one
-	 * undone renegotiation nudging an item toward that offer is the accepted cost of not having an undo
-	 * endpoint.
+	 * The undo goes through the server's undo token, which puts back the dates of exactly the items the
+	 * server moved **and** the postponements it recorded, so an undone renegotiation never nudges an item
+	 * toward the stuck-item offer. Against an API that returns no token it falls back to re-sending each
+	 * item's old date, which restores the dates only.
 	 */
 	async function rescheduleOverdue(days: number) {
 		if (overdueItems.value.length === 0) return
 		const previous = new Map(overdueItems.value.map(item => [item.id, ToDoListItemRequest.fromEntity(item)]))
 		isRenegotiating.value = true
 		try {
-			const { movedIds } = await deps.rescheduleOverdue(days)
+			const { movedIds, undoToken } = await deps.rescheduleOverdue(days)
 			const restorable = movedIds.flatMap(id => {
 				const request = previous.get(id)
 				return request ? [{ id, request }] : []
@@ -65,7 +66,8 @@ export function useOverdueRenegotiation(
 			)
 			if (restorable.length > 0) {
 				pushBulkRescheduleUndo(restorable.length, async () => {
-					await Promise.all(restorable.map(({ id, request }) => deps.update(id, request)))
+					if (undoToken != null) await deps.undoRescheduleOverdue(undoToken)
+					else await Promise.all(restorable.map(({ id, request }) => deps.update(id, request)))
 					items.value = await deps.fetchAll()
 				})
 			}

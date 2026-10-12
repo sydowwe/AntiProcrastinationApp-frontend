@@ -23,7 +23,10 @@ const card = {
 		],
 	},
 	pastTasks: { count: 2, preview: [{ id: 7, name: 'work', date: '2030-03-04' }] },
-	brokenRoutines: [{ id: 9, text: 'Daily-broken', color: '#abcdef' }],
+	brokenRoutines: [
+		{ id: 9, text: 'Daily-broken', color: '#abcdef', canFreeze: false },
+		{ id: 10, text: 'Weekly', color: '#123456', canFreeze: true },
+	],
 	unreadNotifications: 3,
 }
 
@@ -34,6 +37,8 @@ describe('welcome-back on the wire (FO5)', () => {
 		expect(parsed.overdueTodos.preview.map(i => i.name)).toEqual(['todo-march-1', 'todo-march-8', 'todo-march-10'])
 		expect(parsed.pastTasks.preview[0]!.date).toBe('2030-03-04')
 		expect(parsed.brokenRoutines[0]!.text).toBe('Daily-broken')
+		expect(parsed.brokenRoutines.map(r => r.canFreeze)).toEqual([false, true])
+		expect(WelcomeBack.fromJson({ ...card, brokenRoutines: [{ id: 9 }] }).brokenRoutines[0]!.canFreeze).toBe(false)
 		expect(parsed.unreadNotifications).toBe(3)
 		expect(parsed.isEmpty).toBe(false)
 	})
