@@ -74,13 +74,14 @@ export function useEstimateFitWording() {
 	 * F2-06: a routine item's typical occurrence, said of the item ("usually takes about 18m"). The count takes
 	 * plural forms, unlike the to-do group's: it starts at three, and Slovak changes form between 4 and 5.
 	 */
+	// `getNice` pads a missing hour or minute part with a space (" 18m"), which "~{time}" would show as "~ 18m".
 	function describeRoutineTypical(time: Time, sampleCount: number): string {
-		return t('toDoList.estimateFit.routineTypical', { time: time.getNice, count: sampleCount }, sampleCount)
+		return t('toDoList.estimateFit.routineTypical', { time: time.getNice.trim(), count: sampleCount }, sampleCount)
 	}
 
 	/** The short form, for a routine item with no estimate to set it beside. */
 	function routineTypicalChip(time: Time): string {
-		return t('toDoList.estimateFit.routineTypicalChip', { time: time.getNice })
+		return t('toDoList.estimateFit.routineTypicalChip', { time: time.getNice.trim() })
 	}
 
 	return { describeLogged, describePlanned, describeRoutineTypical, routineTypicalChip }

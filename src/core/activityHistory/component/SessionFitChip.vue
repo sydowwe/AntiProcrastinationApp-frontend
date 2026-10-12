@@ -13,7 +13,7 @@
 				prependIcon="hourglass-half"
 				@click="emit('apply', length)"
 			>
-				{{ $t('history.sessionFit.try', { time: length.getNice }) }}
+				{{ $t('history.sessionFit.try', { time: length.getNice.trim() }) }}
 			</VChip>
 		</template>
 	</VTooltip>

@@ -61,8 +61,9 @@
 								color="neutral-600"
 								prependIcon="clock"
 							>
-								~{{ toDoListItem.suggestedTime!.getNice }}
-								<template v-if="actualTime">&nbsp;/ {{ actualTime.getNice }}</template>
+								<!-- trim: `getNice` pads a missing part with a space, which read as "~ 10m". -->
+								~{{ toDoListItem.suggestedTime!.getNice.trim() }}
+								<template v-if="actualTime">&nbsp;/ {{ actualTime.getNice.trim() }}</template>
 							</VChip>
 						</template>
 						<span v-if="actualTooltip">{{ actualTooltip }}</span>
