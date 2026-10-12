@@ -161,7 +161,7 @@
 			</div>
 
 			<div
-				v-if="!loading && (showError || focusTask || !hasPlan)"
+				v-if="!loading && (showError || focusTask || !hasPlan || focusMode === 'allDone')"
 				class="nowbar__actions"
 			>
 				<VBtn
@@ -242,6 +242,20 @@
 					@click="openPlanner"
 				>
 					{{ $t('home.planToday') }}
+				</VBtn>
+
+				<!-- The plan is done: the natural next question is what to do with the rest of the day, and the
+					 leisure picker answers it without another decision to make. -->
+				<VBtn
+					v-else-if="focusMode === 'allDone'"
+					class="nowbar__action"
+					variant="tonal"
+					color="primaryOutline"
+					:size="buttonSize"
+					prependIcon="fa-mug-hot"
+					@click="openLeisurePicker"
+				>
+					{{ $t('home.pickSomethingRestful') }}
 				</VBtn>
 			</div>
 		</div>
@@ -342,6 +356,10 @@
 
 	function openPlanner() {
 		router.push({ name: 'dayPlanner', params: { date: todayUrlDate.value } })
+	}
+
+	function openLeisurePicker() {
+		router.push({ name: 'leisurePicker' })
 	}
 
 	// ---------------------------------------------------------------- running timer

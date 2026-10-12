@@ -18,7 +18,7 @@
 		<VSelect
 			:modelValue="null"
 			:label="$t('planner.calendar.changeDayType')"
-			:items="dayTypeOptions"
+			:items="dayTypeItems"
 			density="compact"
 			minWidth="185"
 			hideDetails
@@ -43,9 +43,11 @@
 </template>
 
 <script setup lang="ts">
-	import { DayType } from '@/_common/dto/enum/DayType.ts'
+	import { computed } from 'vue'
+	import type { DayType } from '@/_common/dto/enum/DayType.ts'
 	import ActionBar from '@/_common/component/ActionBar.vue'
 	import { useI18n } from 'vue-i18n'
+	import { dayTypeOptions } from '@/core/dayPlanner/dto/enum/dayTypeOptions.ts'
 	import { useActionBarFocusReturn } from '@/core/dayPlanner/composable/useActionBarFocusReturn.ts'
 
 	const { isShown, selectedCount, bulkApplying } = defineProps<{
@@ -63,7 +65,9 @@
 	}>()
 
 	const { t } = useI18n()
-	const dayTypeOptions = Object.values(DayType).map(v => ({ title: t(`planner.dayType.${v}`), value: v }))
+	// The app's list, not `Object.values(DayType)`: the framework enum also carries `Holiday`, which the server
+	// rejects, so picking it failed the whole batch.
+	const dayTypeItems = computed(() => dayTypeOptions.map(v => ({ title: t(`planner.dayType.${v}`), value: v })))
 
 	function onDayTypePicked(dayType: DayType | null) {
 		if (dayType != null) emit('changeDayType', dayType)

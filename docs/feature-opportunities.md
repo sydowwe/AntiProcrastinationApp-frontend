@@ -980,19 +980,19 @@ never ships a call to a route or field that the running API does not have yet.
 Still open on 2026-10-06, merged from F1–F4 and deduped. Every OP in `docs/opportunities.md` is closed, so none of these
 is already queued there. Items the inputs record as *Fixed since* are not repeated.
 
-1. **Bug (frontend): the bulk bar offers `Holiday`, a day type the server does not have.** `BulkSelectActionBar.vue:66`
-   builds from `Object.values(DayType)`, which includes the framework's `Holiday`. Reuse `dto/enum/dayTypeOptions.ts`,
-   as the dialog already does. `docs/views/planner-day/inventory.md:31` documents the wrong option. (F4 #1)
+1. ~~**Bug (frontend): the bulk bar offers `Holiday`, a day type the server does not have.**~~ Fixed 2026-10-12: the
+   bar builds from `dto/enum/dayTypeOptions.ts`, as the dialog does, and `inventory.md:31` no longer lists it. (F4 #1)
 2. ~~**Latent bug (frontend): the log-time controller toggles without `forceValue`**~~ Fixed with FO2 (2026-10-06).
    (F2-02)
-3. **Tone (frontend): the day progress ring turns red below 50%** (`DayPlannerProgressBlock.vue:67-78`), which the
-   `_done/day-planner` F2 prompt ruled out. (F3 #6)
+3. ~~**Tone (frontend): the day progress ring turns red below 50%**~~ Fixed 2026-10-12: it stays the neutral primary
+   below 80% and turns green above, with no orange or red step. (F3 #6)
 4. **Frontend-only: show the plan on the unified tracking timeline for one day.** Both reads exist, and
    `activityTracking` may import `dayPlanner`'s `api/`. The tracking page already shows device data, so this raises no
    privacy issue. (F3 #5)
 5. **Frontend-only: one-field capture.** Chain the activity quick-create with `POST /todo-list-item`, mindful that each
    capture becomes a permanent `Activity` and that items are unique per (activity, list). (F1 #1)
-6. **Frontend-only: suggest `/leisure/pick` from `NowBar`'s "You're done for today!"** (F1 #4)
+6. ~~**Frontend-only: suggest `/leisure/pick` from `NowBar`'s "You're done for today!"**~~ Built 2026-10-12: the
+   all-done bar offers *Pick something to enjoy*. (F1 #4)
 7. **Frontend-only, superseded by FO8: the to-do → planner handoff ignores the calibration ratio it has already
    computed** (`TodoListView.vue`, F1 #2). FO8's group ratio is the correct input. Scaling by today's activity-keyed
    ratio would inherit S3's unit mismatch (F3 #2).

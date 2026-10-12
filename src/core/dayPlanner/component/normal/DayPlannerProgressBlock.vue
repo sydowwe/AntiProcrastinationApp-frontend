@@ -64,19 +64,12 @@
 
 	const store = useDayPlannerStore()
 
-	const progressColorName = computed(() => {
-		const rate = calendar.completionRate
-		if (rate >= 80) return 'success'
-		if (rate >= 50) return 'warning'
-		return 'error'
-	})
+	// Describes the day, never grades it: a low share stays the neutral primary rather than turning
+	// warning-orange or red (`_done/day-planner` F2: "no red, no warning icons"). Only a nearly-done day
+	// gets the encouraging green.
+	const progressColorName = computed(() => (calendar.completionRate >= 80 ? 'success' : 'primary'))
 
-	const progressColor = computed(() => {
-		const rate = calendar.completionRate
-		if (rate >= 80) return 'rgb(var(--v-theme-success))'
-		if (rate >= 50) return 'rgb(var(--v-theme-warning))'
-		return 'rgb(var(--v-theme-error))'
-	})
+	const progressColor = computed(() => `rgb(var(--v-theme-${progressColorName.value}))`)
 
 	const taskStats = computed(() => {
 		const nonBgTasks = store.tasks.filter(t => !t.isBackground && t.id > 0)

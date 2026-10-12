@@ -28,7 +28,7 @@
 | Day cell (edit-details mode) | row action | same | opens "Day Details" dialog for that day | dialog |
 | Day cell (apply-template mode, no template chosen) | row action | same | navigates to that day, carrying `applyTemplateId` as a query param the day view consumes once then clears | `/day-planner/:date` |
 | Select All (bulk bar) | button | `getByRole('button', {name:'Select All'})` | selects every visible day | in place |
-| Change day type (bulk bar) | select | `getByRole('combobox', {name:'Change day type'})` | Workday / Weekend / Holiday / Vacation / Sick day / Special | in place |
+| Change day type (bulk bar) | select | `getByRole('combobox', {name:'Change day type'})` | Workday / Weekend / Vacation / Sick day / Special (`dayTypeOptions`; the framework's `Holiday` is not offered, the server has no such type) | in place |
 | Apply Template (bulk bar) | button | `getByRole('button', {name:'Apply Template'}).nth(1)` | opens "Apply Template to N day(s)" dialog | dialog |
 | Copy Day (bulk bar) | button | `getByRole('button', {name:'Copy Day'})` | opens "Copy tasks to N day(s)" dialog | dialog |
 | Cancel (bulk bar) | button | `getByRole('button', {name:'Cancel'})` | clears selection and exits bulk mode | in place |

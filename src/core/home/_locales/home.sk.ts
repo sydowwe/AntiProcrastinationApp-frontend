@@ -39,6 +39,7 @@ const home = {
 		allDone: `Hotovo`,
 		missed: `Zmeškané`,
 		allDoneLong: `Na dnes máš hotovo!`,
+		pickSomethingRestful: `Vyber si niečo príjemné`,
 		wasDue: `Malo skončiť pred {time}`,
 		overrunBy: `Beží o {time} dlhšie`,
 		leftOfPlan: `Zostáva {time}`,

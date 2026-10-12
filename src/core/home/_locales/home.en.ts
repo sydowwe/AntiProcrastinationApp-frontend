@@ -39,6 +39,7 @@ const home = {
 		allDone: `Done`,
 		missed: `Missed`,
 		allDoneLong: `You're done for today!`,
+		pickSomethingRestful: `Pick something to enjoy`,
 		wasDue: `Was due {time} ago`,
 		overrunBy: `Running {time} over`,
 		leftOfPlan: `{time} left`,
