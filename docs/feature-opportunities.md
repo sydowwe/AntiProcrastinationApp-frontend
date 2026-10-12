@@ -258,6 +258,10 @@ never ships a call to a route or field that the running API does not have yet.
       a 15-minute before-image (`RescheduleOverdueUndo`), only for items still open and still on the new date.
       The banner's undo uses it, and falls back to the old PUT loop against an API that sends no token. Four
       new `RescheduleOverdueTodoListItemTests` cases. FO4's *apply* calls `PlannerTaskMoveRecorder` (done in FO4).
+      **Checked live 2026-10-13** after the API restart: on the seed's Errands list, *In a week* moved the six
+      overdue items (the response carried an `undoToken`), and the toolbar's undo called `…/undo` (200), with no
+      PUT. All six were back on their old dates, with no console errors. The restored count is not on the wire,
+      so the tests cover that part.
   - **Backend:** `ITodoListItemPlanSource.PlanHistoryAsync` sorts every linked block by outcome: completed,
     carried over (the sum of `CarryOverCount`), missed (a foreground `NotStarted`/`OnHold` block on a day before
     the user's today), and skipped per key. TodoLists' `TodoListItemPlanHelp` turns that into `planHelp`
