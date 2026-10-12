@@ -43,6 +43,10 @@ installFramework(app, {
 		terms: { name: 'legalTerms' },
 		privacy: { name: 'legalPrivacy' },
 	},
+	// The API deletes a sign-up still unconfirmed after this long (P2-05). The client cannot read it, so it
+	// must match `UnconfirmedAccountJobHandler.PurgeAfter` in the API — change both together. The login
+	// screen names the deadline beside the resend button; a dead confirmation link offers a new sign-up.
+	unconfirmedAccountDeletionDays: 14,
 	// Only `main` — the `customer` and `system` trees are for multi-tenant/admin apps and stay empty
 	// here, which also keeps their section dividers and subheaders out of the sidebar.
 	navTrees: { main: navItems },
