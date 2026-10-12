@@ -51,6 +51,16 @@
 				:label="i18n.t('pomodoroTimer.longRest')"
 			></PomodoroDurationCard>
 		</div>
+		<!-- F2-07: sets the focus length only; the breaks are the user's own choice. -->
+		<div
+			v-if="fitOffer"
+			class="d-flex justify-center mt-3"
+		>
+			<SessionFitChip
+				:length="fitOffer"
+				@apply="applyFit"
+			/>
+		</div>
 		<SubtleCard
 			color="primary-accent"
 			borderOpacity="high"
@@ -84,11 +94,14 @@
 	import { useI18n } from 'vue-i18n'
 	import SubtleCard from '@/_common/component/feedback/SubtleCard.vue'
 	import PomodoroDurationCard from '@/core/activityHistory/component/PomodoroDurationCard.vue'
-	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import SessionFitChip from '@/core/activityHistory/component/SessionFitChip.vue'
+	import { Time } from '@/_common/dto/dto/Time.ts'
 	import type { PomodoroTimerPreset } from '@/core/activityHistory/dto/response/PomodoroTimerPreset.ts'
 
-	const { presets = [] } = defineProps<{
+	const { presets = [], fitOffer = null } = defineProps<{
 		presets?: PomodoroTimerPreset[]
+		/** A shorter focus length that usually works for the chosen activity (F2-07), or null. */
+		fitOffer?: Time | null
 	}>()
 
 	const emit = defineEmits<{
@@ -103,4 +116,8 @@
 	const numberOfFocusPeriodsInCycle = defineModel<number>('numberOfFocusPeriodsInCycle', { required: true })
 
 	const i18n = useI18n()
+
+	function applyFit(length: Time) {
+		focusTime.value = new Time(length.hours, length.minutes)
+	}
 </script>

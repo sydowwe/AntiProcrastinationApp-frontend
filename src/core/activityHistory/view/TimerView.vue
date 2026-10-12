@@ -11,18 +11,25 @@
 			:xl="compact ? undefined : 6"
 			class="d-flex flex-column"
 		>
-			<TimePicker
-				v-if="timeInputVisible"
-				v-model="initialTime"
-				class="mx-auto"
-				viewMode="minute"
-				allowedMinutesSelected="1"
-				:label="$t('dateTime.length')"
-				color="primaryOutline"
-				density="default"
-				icon="hourglass-half"
-				hideDetails
-			></TimePicker>
+			<template v-if="timeInputVisible">
+				<TimePicker
+					v-model="initialTime"
+					class="mx-auto"
+					viewMode="minute"
+					allowedMinutesSelected="1"
+					:label="$t('dateTime.length')"
+					color="primaryOutline"
+					density="default"
+					icon="hourglass-half"
+					hideDetails
+				></TimePicker>
+				<SessionFitChip
+					v-if="fitOffer"
+					class="align-self-center mt-3"
+					:length="fitOffer"
+					@apply="applyFit"
+				/>
+			</template>
 			<TimeDisplayWithProgress
 				v-else
 				:title="selectedActivityName"
@@ -64,6 +71,8 @@
 	import ActivitySelectionForm from '@/core/activity/component/ActivitySelectionForm.vue'
 	import SaveActivityBody from '@/core/activity/component/SaveActivityBody.vue'
 	import TimerPresetsSection from '@/core/activityHistory/component/TimerPresetsSection.vue'
+	import SessionFitChip from '@/core/activityHistory/component/SessionFitChip.vue'
+	import { useSessionFit } from '@/core/activityHistory/composable/useSessionFit.ts'
 	import { requestNotificationPermission } from '@/_common/utils/notifications.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
@@ -117,6 +126,12 @@
 	const initialTime = ref(initialDuration ? new Time(initialDuration.hours, initialDuration.minutes) : new Time())
 	const selectedActivityId = ref<number | null>(activityId)
 	const selection = ref<ActivitySelection | null>(null)
+
+	// F2-07: "Try 15m" under the picker, for the pinned activity or the one picked below it.
+	const { offer: fitOffer } = useSessionFit(
+		() => activityId ?? selectedActivityId.value,
+		() => initialTime.value,
+	)
 
 	/**
 	 * The countdown this instance owns, or null. The whole state machine — `endsAt`, the paused
@@ -259,6 +274,10 @@
 		const current = session.value
 		if (current === null) return new Time()
 		return sessionLengthFromMs(current.durationMs - store.remainingMs)
+	}
+
+	function applyFit(length: Time) {
+		initialTime.value = new Time(length.hours, length.minutes)
 	}
 
 	function applyPreset(preset: TimerPreset) {

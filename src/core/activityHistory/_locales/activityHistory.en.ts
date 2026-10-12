@@ -83,6 +83,11 @@ const activityHistory = {
 			endedNotifTitle: `Timer ended`,
 			endedNotifBody: `Your timer for {activity} ended — it ran for {duration}.`,
 		},
+		// F2-07. Offers a length and never rates the person: no share, no "you usually stop".
+		sessionFit: {
+			try: `Try {time}`,
+			tooltip: `That's the length that usually works for this, going by its recent timers`,
+		},
 		pomodoroPreset: {
 			editTitle: `Edit Pomodoro Preset`,
 			addTitle: `Add Pomodoro Preset`,

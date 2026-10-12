@@ -44,6 +44,12 @@
 ### ~~ActivityLoggedTimeAggregate~~: deleted 2026-10-12 (FO8)
 It summed an activity's whole history per sitting, and the client divided that by a per-item estimate (F3 *Out of scope* #2). Its last reader, the routine list, moved to the item-keyed `RoutineTodoListItemEntity.typicalSeconds` in F2-06. The server route `POST /activity-history/aggregate-by-activity` has no client caller now.
 
+### SessionFit (F2-07): `src/core/activityHistory/dto/response/SessionFit.ts` · request: `?activityId=` (`activityHistoryApi.ts` `fetchSessionFit`)
+| field | type | captured in | read in | status | time |
+| --- | --- | --- | --- | --- | --- |
+| `suggestedSeconds` | `number \| null` | server: the largest 5-minute focus length that ≥ 70% of the activity's recent focus stretches reached; null under 5 sessions | `composable/useSessionFit.ts` → `SessionFitChip.vue` "Try 15m" under `TimerView`'s picker and beside `PomodoroSetupPanel`'s focus card, both routed and inside `TrackTimeDialog`; shown only when shorter than what is set | derived · spent | yes |
+| `sampleCount` | `number \| null` | server | not shown. The chip offers a length and states no count | derived · unread | — |
+
 ### TimerPreset (Quick Time / Activity Preset) — `src/core/activityHistory/dto/response/TimerPreset.ts` · request: `TimerPresetRequest.ts`
 | field | type | captured in | read in | status | time |
 | --- | --- | --- | --- | --- | --- |

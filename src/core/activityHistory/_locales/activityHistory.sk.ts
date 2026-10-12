@@ -84,6 +84,11 @@ const activityHistory = {
 			endedNotifTitle: `Časovač skončil`,
 			endedNotifBody: `Váš časovač pre {activity} skončil — bežal {duration}.`,
 		},
+		// F2-07. Ponúka dĺžku, nikdy nehodnotí človeka: žiadny podiel, žiadne „zvyčajne prestávaš".
+		sessionFit: {
+			try: `Skús {time}`,
+			tooltip: `Taká dĺžka pri tejto činnosti zvyčajne vyjde, podľa jej nedávnych časovačov`,
+		},
 		pomodoroPreset: {
 			editTitle: `Upraviť pomodoro predvoľbu`,
 			addTitle: `Pridať pomodoro predvoľbu`,

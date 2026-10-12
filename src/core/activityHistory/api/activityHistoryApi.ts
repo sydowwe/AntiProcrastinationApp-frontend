@@ -5,6 +5,7 @@ import { Time } from '@/_common/dto/dto/Time.ts'
 import { ActivityHistoryRequest } from '@/core/activityHistory/dto/request/ActivityHistoryRequest.ts'
 import type { ActivityHistorySessionRequest } from '@/core/activityHistory/dto/request/ActivityHistorySessionRequest.ts'
 import { ActivityHistory } from '@/core/activityHistory/dto/response/ActivityHistory.ts'
+import { SessionFit } from '@/core/activityHistory/dto/response/SessionFit.ts'
 
 export function useActivityHistoryCrud() {
 	const url = 'activity-history'
@@ -72,6 +73,19 @@ export interface TrackedTime {
 export interface HistoryItemLink {
 	todoListItemId?: number | null
 	routineTodoListId?: number | null
+}
+
+/**
+ * F2-07: the focus length that usually works for `activityId`. `_silent`, and an empty fit on failure: it decorates a
+ * timer setup the user opened to start a timer, so a failure must leave the chip off rather than raise an error toast.
+ */
+export async function fetchSessionFit(activityId: number): Promise<SessionFit> {
+	try {
+		const { data } = await API.get('/activity-history/session/fit', { params: { activityId }, _silent: true })
+		return SessionFit.fromJson(data)
+	} catch {
+		return new SessionFit()
+	}
 }
 
 /**

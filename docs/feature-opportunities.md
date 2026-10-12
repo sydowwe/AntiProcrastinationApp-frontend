@@ -85,7 +85,7 @@ never ships a call to a route or field that the running API does not have yet.
 | **B. The plan follows what happened** ✅ (2026-10-08) | FO2, FO7, FO9 | Publishers of `ActivityTimeRecordedEvent` (only the desktop heartbeat today) and the tracker ingest paths | 1. FO2 (History publishes; client `forceValue` fix in the same change). 2. FO7 (decided: drop the gate, S). 3. FO9: F2-01's Android attribution is the second publisher, then F3-02's rule suggestions. **All three built**; FO9 waits only on an API restart |
 | **C. Recover the day** ✅ (2026-10-12) — FO3/FO4/FO6/FO10 built, migrated and checked live. FO4 and FO6 keep the open questions in `feature-opportunities-effort.md` | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9). Its migration `20261011212220` was applied on 2026-10-12, and the settings card was then checked live (FO10's status) |
 | **D. Coming back** ✅ (2026-10-12) — FO5 both steps committed | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-12):** step 1 committed (backend `8863158`, frontend `874ee396`, browser-checked); step 2 committed (framework `5646e89`, backend `1aa7f2b`, no frontend). The 2026-10-11 "not committed" note was stale |
-| **E. Learn from what happened** — F3-01 and F2-06 committed (2026-10-12) | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first. **Status (2026-10-12):** F3-01 and F2-06 were built ahead of the data, since both stay silent below their thresholds. F3-01 is browser-checked against the restarted API, and the `todo-motivation.spec.ts` estimate-fit block is green. F2-06 is committed and tested backend-side, but **not browser-checked**: it waits on an API restart. **Left:** F2-06's browser check, then F2-07. In early November, re-check the 5- and 3-sample thresholds and the 90-day window against the real distribution |
+| **E. Learn from what happened** — all three parts committed (2026-10-12) | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first. **Status (2026-10-12):** all three were built ahead of the data, since each stays silent below its threshold. F3-01 is browser-checked against the restarted API, and the `todo-motivation.spec.ts` estimate-fit block is green. F2-06 and F2-07 are committed and tested backend-side, but **not browser-checked**: both wait on an API restart (no migration). **Left:** an API restart, then a browser check of F2-06 and F2-07, and e2e specs for both (none exists yet). In early November, re-check the thresholds (5 to-dos / 3 routine occurrences / 5 sessions), the 90-day windows and F2-07's 70% share against the real distribution |
 | **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
 
 ---
@@ -505,9 +505,24 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Sonnet 5.5, medium.
 
 ### FO8. Estimates that learn from what happened, per item and per timer
-- **Status (2026-10-12): F3-01 committed (backend `9b7919a`, frontend `fcda4345`). F2-06 committed (backend `fcb4a48`
-  plus the frontend commit after it), not browser-checked: the API was down when it was committed, and it needs a
-  restart (no migration). F2-07 not started.**
+- **Status (2026-10-12): all three parts built. F3-01 is committed (backend `9b7919a`, frontend `fcda4345`) and
+  browser-checked. F2-06 (backend `fcb4a48`, frontend `9a590ae3`) and F2-07 (backend `bbbfa13`, plus the frontend commit after
+  `9a590ae3`) are committed but
+  not browser-checked: the API was down, and both need a restart (no migration).**
+  - **F2-07, backend:**
+    - The route is `GET /activity-history/session/fit?activityId=` and the rule is `TimerLengthFit` (History).
+    - It reads the activity's newest 20 sessions in 90 days. Each countdown row is one focus stretch, and so is
+      each Pomodoro focus row, told apart from breaks by `Phase` because the rest activity may be the same activity.
+    - A stretch that ran its length counts as "at least this long". Only a Stop counts against a longer length.
+    - `RanOutWhileAway` sessions are left out.
+    - The offer is the largest 5-minute length that ≥ 70% of the stretches bearing on it reached, with 5 of them
+      over ≥ 5 sessions (`EstimateFitRule.TimerLength*`).
+    - The response is `suggestedSeconds` / `sampleCount` and nothing else. There is no completion share.
+    - `TimerLengthFitTests` (6) and `ActivityHistorySessionFitTests` (4) pass, as does the History suite.
+  - **F2-07, frontend:** `SessionFitChip` ("Try 15m", with the tooltip "the length that usually works for this")
+    appears under `TimerView`'s picker and beside `PomodoroSetupPanel`'s focus card. `TrackTimeDialog` embeds both
+    views, so it gets the chip too. The chip shows only when the offer is shorter than what is set, or when nothing
+    is set. One tap sets the length (the focus length, for a Pomodoro). Presets are never edited.
   - **F2-06, backend:**
     - Core's `IRoutineItemLoggedTimeSource` (History implements it) returns the recordings linked by
       `RoutineTodoListId` alone.

@@ -28,6 +28,7 @@
 					v-model:numberOfCycles="numberOfCycles"
 					v-model:numberOfFocusPeriodsInCycle="numberOfFocusPeriodsInCycle"
 					:presets
+					:fitOffer
 					@applyPreset="selectPreset"
 					@openPresets="openPresets"
 					@resetToDefault="resetPickersToDefault"
@@ -101,6 +102,7 @@
 	} from '@/core/activityHistory/store/runningTimerStore.ts'
 	import { useTimerSessionGuard } from '@/core/activityHistory/composable/useTimerSessionGuard.ts'
 	import { useSessionLength } from '@/core/activityHistory/composable/useSessionLength.ts'
+	import { useSessionFit } from '@/core/activityHistory/composable/useSessionFit.ts'
 
 	const {
 		activityId = null,
@@ -150,6 +152,12 @@
 	const restActivityId = ref<number | null>(null)
 	const focusSelection = ref<ActivitySelection | null>(null)
 	const restSelection = ref<ActivitySelection | null>(null)
+
+	// F2-07: a focus length that usually works for the focus activity, offered beside the duration cards.
+	const { offer: fitOffer } = useSessionFit(
+		() => activityId ?? focusActivityId.value,
+		() => focusInitialTime.value,
+	)
 
 	/**
 	 * The pomodoro this instance owns, or null. Every part of the cycle that used to be a local ref —
