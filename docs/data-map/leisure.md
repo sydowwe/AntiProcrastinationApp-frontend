@@ -96,7 +96,7 @@ Four endpoints: `activity-location-type`, `activity-weather-dependency`, `activi
 | --- | --- | --- | --- | --- | --- |
 | `matchingWeatherDependencyIds` | `number[]` | server (today's weather × the user's location setting) | BacklogTable "good today" chip (`fitsToday`); picker `isEligible` exclusion, bonus and weather reason. An empty list is collapsed to `null` at the API boundary (`leisureWeatherApi.ts`) | derived · spent | — |
 
-> **The picker's history is server-side since F2-04.** `LeisureSuggestionRecord` (one row per user × source × activity: last-shown instant, last outcome; swept after 90 days) is written by `POST /leisure-suggestion/seen` on reroll and commit, and read only by the draw (staleness, effort variety). The old per-device `localStorage` key `leisure.picker.history` is no longer read or written; any value left in a browser is inert.
+> **The picker's history is server-side since F2-04.** `LeisureSuggestionRecord` (one row per user × source × activity: last-shown instant, last outcome; swept after 90 days) is written by `POST /leisure-suggestion/seen` on reroll and commit, and read only by the draw (staleness, effort variety). The old per-device `localStorage` key `leisure.picker.history` is no longer read or written; any value left in a browser is inert. Since F3-06 each drawn card also carries `lastDoneAt` (time-bearing): the latest positive evidence the activity happened, merged server-side from History recordings, completed planner blocks and memory anchors. The card renders it as "Last time: 3 weeks ago" (`SuggestionCard.vue`, `usePickerLabels.lastDoneLabel`) and says nothing when it is null.
 
 ## Cross-module reads
 | field | owned by | read by (module → file) | what for |

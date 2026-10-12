@@ -49,6 +49,11 @@ export class LeisureSuggestion {
 		public requiresTravel: boolean,
 		/** Where a backlog activity happens, what kind of experience a bucket-list entry is, a project's area. */
 		public contextLabel: string | null,
+		/**
+		 * F3-06: the latest positive evidence the user actually did this — a recording, a completed block, a
+		 * memory anchor's month. `null` when there is none; the card then says nothing.
+		 */
+		public lastDoneAt: Date | null = null,
 	) {}
 
 	static fromJson(object: any): LeisureSuggestion {
@@ -69,7 +74,9 @@ export class LeisureSuggestion {
 			comfortZoneStep = null,
 			requiresTravel = false,
 			contextLabel = null,
+			lastDoneAt = null,
 		} = object ?? {}
+		const lastDone = typeof lastDoneAt === 'string' ? new Date(lastDoneAt) : null
 		return new LeisureSuggestion(
 			key,
 			tokenOf(SOURCES, source, 'backlog'),
@@ -87,6 +94,7 @@ export class LeisureSuggestion {
 			comfortZoneStep,
 			requiresTravel,
 			contextLabel,
+			lastDone !== null && !Number.isNaN(lastDone.getTime()) ? lastDone : null,
 		)
 	}
 

@@ -36,9 +36,14 @@ None of FO1, FO2, FO4, FO6 or FO7 has an e2e spec. Only FO3 phase 1 does (`todo-
 | | ~~F2-06 (routines), F2-07 (timers)~~ both committed, browser-checked and covered by e2e specs 2026-10-12 | **medium** | Both reuse the rule; the reads only add data. |
 | **FO9** | backend agent | **xhigh** | Ingest must attribute idempotently, and it needs a policy for time counted twice by desktop and Android. A wrong rule is silent and permanent. |
 | **FO11** | one session | **medium** | A SQL view edit plus one table that only adds data. |
-| **FO12** | F2-04 (ranker swap) | **high** | It must compare the client's ranker against the server's, and the two may have drifted apart. |
-| | F3-06 (last-done seam) | **medium** | One keyed seam with three implementations. |
-| **FO13** | one session | **medium** | The handler is small. The one real choice is where the handoff link lives. |
+| **FO12** | ~~F2-04 (ranker swap)~~ built 2026-10-12 (backend `c086af0`, frontend `15e4bb1e`) | **high** | It must compare the client's ranker against the server's, and the two may have drifted apart. They had: weather, and the client's party-size penalty. Both ported. |
+| | ~~F3-06 (last-done seam)~~ built 2026-10-12 (backend `017595f`; frontend in the commit that carries this row) | **medium** | One keyed seam with three implementations. Done inline, not by a separate agent. |
+| **FO13** | ~~one session~~ built 2026-10-12 (backend `e2364cd`, frontend `250bdd22`) | **medium** | The handler is small. The one real choice is where the handoff link lives: a nullable column on the project profile, FK declared host-side. |
+
+**Wave F, left (2026-10-12):** the owner applies `20261012091415_ProjectShoppingTodoListItemLink` and restarts the
+API. Then browser-check FO13's handoff → tick → *Ready to start* and FO12's weather and "last time" line, and
+re-run the three picker e2e specs reworked for the server draw (`leisure-backlog-max-participants`,
+`weather-location`, `leisure-backlog-picker.draft`).
 
 ## Rule of thumb
 

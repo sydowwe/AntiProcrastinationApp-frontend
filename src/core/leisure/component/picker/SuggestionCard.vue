@@ -136,7 +136,7 @@
 	const emit = defineEmits<{ commit: [startTime: Time | null] }>()
 
 	const i18n = useI18n()
-	const { durationLabel } = usePickerLabels()
+	const { durationLabel, lastDoneLabel } = usePickerLabels()
 	const { openDialog } = useDialog()
 
 	const meta = computed(() => SOURCE_META[suggestion.source])
@@ -182,6 +182,14 @@
 		}
 		if (fitsToday(suggestion.weatherDependencyId, weatherFit)) {
 			list.push({ icon: 'fas fa-cloud-sun', label: i18n.t('leisure.picker.reasonWeatherFit') })
+		}
+		// F3-06: a memory, never a reproach — said only when the app has positive evidence, and never as
+		// "you haven't done this in…".
+		if (suggestion.lastDoneAt !== null) {
+			list.push({
+				icon: 'fas fa-clock-rotate-left',
+				label: i18n.t('leisure.picker.lastTime', { when: lastDoneLabel(suggestion.lastDoneAt) }),
+			})
 		}
 		return list
 	})

@@ -86,7 +86,7 @@ never ships a call to a route or field that the running API does not have yet.
 | **C. Recover the day** ✅ (2026-10-12) — FO3/FO4/FO6/FO10 built, migrated and checked live. FO4 and FO6 keep the open questions in `feature-opportunities-effort.md` | FO3, FO4, FO6, FO10 | Planner write paths (one "missed" definition, a move-with-trace rule, free-interval packing) and **one batched migration on `planner_task`** | 1. FO3 phase 1 (no migration). 2. FO4 (no migration). 3. **One `planner_task` migration** carrying FO3 phase 2's `OriginalStartTime` / `PostponeCount` *and* FO6's `SourceRepeatingTaskId`, so the hot table is migrated once. 4. FO6's materialiser. 5. FO10 can run any time. It widens FO4's window from midnight to the user's bed time. **Status (2026-10-11):** steps 1–4 built; migrations `20261007200704` and `20261007204638` applied locally. FO4 checked live against the real `replan`, `replan/apply` and `next-free-slot` routes; `todo-motivation.spec.ts` re-run, 12/12 green. Step 5 (FO10) built and tested backend-side (`UserSleepWindowTests`, 9/9). Its migration `20261011212220` was applied on 2026-10-12, and the settings card was then checked live (FO10's status) |
 | **D. Coming back** ✅ (2026-10-12) — FO5 both steps committed | FO5 | `User.LastActiveAt`, the `IReturnSummarySource` seams, the framework's `IRecipientEngagementReader` | After A (shares FO1's away check) and C (carries tasks with FO3's move rule). The greeting ships first; the notification back-off is a separable second step. **Status (2026-10-12):** step 1 committed (backend `8863158`, frontend `874ee396`, browser-checked); step 2 committed (framework `5646e89`, backend `1aa7f2b`, no frontend). The 2026-10-11 "not committed" note was stale |
 | **E. Learn from what happened** ✅ (2026-10-12) — all three parts committed and browser-checked | FO8 | One shared median/threshold/wording rule; item-keyed History seams | F3-01 (to-dos, exact FKs) → F2-06 (routine items) → F2-07 (timer lengths). Start once ~4 weeks of linked rows exist, i.e. early November. Check the real distribution first. **Status (2026-10-12):** all three were built ahead of the data, since each stays silent below its threshold. F3-01 is browser-checked against the restarted API, and the `todo-motivation.spec.ts` estimate-fit block is green. F2-06 and F2-07 were browser-checked against the restarted API the same day (FO8's status). e2e specs for both landed the same day (`routine-typical-duration.spec.ts`, `timer-session-fit.spec.ts`). In early November, re-check the thresholds (5 to-dos / 3 routine occurrences / 5 sessions), the 90-day windows and F2-07's 70% share against the real distribution |
-| **F. Leisure** | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam |
+| **F. Leisure** — all three parts committed (2026-10-12); waits on a migration and an API restart | FO12, FO13 | `.ActivityProfiles` draw and readiness | FO13 any time (independent handler). FO12: F2-04's weather-in-draw + client adoption, then F3-06's last-done seam. **Status (2026-10-12):** FO13 built (backend `e2364cd`, frontend `250bdd22`), with migration `20261012091415_ProjectShoppingTodoListItemLink`. F2-04 built (backend `c086af0`, frontend `15e4bb1e`); the picker now ranks on the server, and the diff found a second drift (the client's party-size penalty), now ported. F3-06 built (backend `017595f`; frontend in the commit that carries this note). **Left:** the owner applies the migration and restarts the API; then a browser check of the handoff → tick → *Ready to start* path, the picker's weather and "last time" line, and a re-run of `leisure-backlog-max-participants`, `weather-location` and `leisure-backlog-picker.draft` specs, which were reworked for the server draw but not yet run against it |
 
 ---
 
@@ -776,6 +776,19 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Sonnet 5.5, medium.
 
 ### FO12. The leisure picker remembers what you turned down, and what you actually did
+- **Status (2026-10-12): both steps built and committed; not yet checked against the restarted API.**
+  - **F2-04** (backend `c086af0`, frontend `15e4bb1e`). The two rankers were diffed before the swap. Two drifts
+    were found: weather (expected) and the client's flat -2 for more people than an activity takes, which the
+    server never had. Both are now in `LeisureDrawRanker` with the client's weights, and the client's tests were
+    ported into `LeisureDrawRankerTests`. `ILeisureWeatherSignal` serves both the badge route and the draw. The
+    draw asks the provider only when a backlog row has a real dependency, and waits at most 2 s. The browser
+    ranker, its tests and the `localStorage` history are deleted; reroll and commit call `/seen`. Checked live
+    against the pre-restart API: cards render, and a reroll posts `seen(rejected)` and redraws on a new seed.
+    The server's integer `SortOrder` also retired the client's string-compared cost-tier cutoff.
+  - **F3-06** (backend `017595f`). Done inline rather than by a separate agent. `IActivityLastDoneSource` has
+    three keyed implementations (History, Planning, ActivityProfiles' memory anchors). Staleness reads
+    `max(last shown, last done)`. Two untouched past blocks since the last done cost -1.5, which expires after
+    30 days and never excludes. The card shows "Last time: 3 weeks ago" only when there is positive evidence.
 - **Source:** F2-04 (adopt the server draw, with weather) + F3-06 (last done, unkept commitments).
 - **Moment:** in the evening at `/leisure/pick`, being offered again what was rerolled on the laptop, or done
   yesterday.
@@ -799,6 +812,19 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high.
 
 ### FO13. A project becomes suggestible again once its shopping is done
+- **Status (2026-10-12): built and committed** (backend `e2364cd`, frontend `250bdd22`). **Waits on** the owner
+  applying migration `20261012091415_ProjectShoppingTodoListItemLink` and restarting the API.
+  - **Where the link lives:** a nullable `ActivityProjectProfile.ShoppingTodoListItemId`, with its FK to
+    `TodoListItem` (`SetNull`) declared host-side. It is one column rather than a link table, because a project
+    has one shopping trip at a time.
+  - **How it gets set:** the handoff dialog creates the item, then calls
+    `PATCH /activity-project-profile/{id}/shopping-item`. That call is silent: if it fails, the user only loses
+    the auto-move.
+  - **What moves the project:** `ProjectShoppingDoneEventHandler` (ActivityProfiles, on
+    `TodoListItemIsDoneChangedEvent`) moves `NeedsShopping` → `ReadyToStart`. It goes forwards only, never out of
+    `Planning`, and keys on the link, never the activity.
+  - **Board:** a linked card says the shopping is on a list instead of offering a second handoff.
+  - **Tests:** `ProjectShoppingHandoffTests`, 9 cases.
 - **Source:** F2-05.
 - **Moment:** the weekend after ticking "Shopping for Build a Bookshelf", when the picker never offers the bookshelf.
 - **Today:** the only `TodoListItemIsDoneChangedEvent` handler is Planning's. `ReadinessStatus` changes only by hand, and
