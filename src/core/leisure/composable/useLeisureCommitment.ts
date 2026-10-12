@@ -6,9 +6,13 @@ import { PlannerTaskRequest } from '@/core/dayPlanner/dto/request/PlannerTaskReq
 import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 import { useTaskImportanceCrud } from '@/core/dayPlanner/api/taskImportanceApi.ts'
-import { MIN_SLOT_MINUTES, slotMinutesFor, type PickerConstraints } from '@/core/leisure/composable/leisureScoring.ts'
-import { recordCommitted } from '@/core/leisure/composable/suggestionHistory.ts'
-import type { LeisureSuggestion } from '@/core/leisure/composable/useLeisurePicker.ts'
+import {
+	MIN_SLOT_MINUTES,
+	slotMinutesFor,
+	type PickerConstraints,
+} from '@/core/leisure/composable/pickerConstraints.ts'
+import { useLeisureSuggestionApi } from '@/core/leisure/api/leisureSuggestionApi.ts'
+import type { LeisureSuggestion } from '@/core/leisure/dto/response/LeisureSuggestion.ts'
 
 /**
  * The follow-through. A suggestion the user reads and forgets is worth nothing — Gollwitzer (1999):
@@ -63,6 +67,7 @@ function slotFrom(startMinutes: number, lengthMinutes: number): PlannedSlot {
 export function useLeisureCommitment() {
 	const { create } = useTaskPlannerCrud()
 	const { fetchAll: fetchImportances } = useTaskImportanceCrud()
+	const { recordSeen } = useLeisureSuggestionApi()
 
 	/**
 	 * Rest is booked as **optional**, so it can never cost the user their planner streak. Booked with no
@@ -111,7 +116,9 @@ export function useLeisureCommitment() {
 		}
 
 		await create(request)
-		recordCommitted(suggestion.key, suggestion.effortType, now)
+		// The server reads the committed row's effort type back off the profile, so the key is all it needs.
+		// Never rejects: the block is booked either way.
+		await recordSeen([suggestion.key], 'committed')
 		return slot
 	}
 

@@ -1,171 +1,56 @@
-import { computed, type ComputedRef, onMounted, ref, type Ref, watch } from 'vue'
-import { FilteredTableRequest } from '@/_common/dto/request/base/FilteredTableRequest.ts'
+import { onMounted, ref, type Ref, watch } from 'vue'
 import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
-import { useActivityBacklogProfileCrud } from '@/core/leisure/api/activityBacklogProfileApi.ts'
-import { useActivityBucketListProfileCrud } from '@/core/leisure/api/activityBucketListProfileApi.ts'
-import { useActivityProjectProfileCrud } from '@/core/leisure/api/activityProjectProfileApi.ts'
 import { useActivityExpectedCostTierApi, useActivityLocationTypeApi } from '@/core/leisure/api/activityLookupApi.ts'
-import { ActivityBacklogProfileFilter } from '@/core/leisure/dto/request/ActivityBacklogProfileFilter.ts'
-import { ActivityBucketListProfileFilter } from '@/core/leisure/dto/request/ActivityBucketListProfileFilter.ts'
-import { ActivityProjectProfileFilter } from '@/core/leisure/dto/request/ActivityProjectProfileFilter.ts'
-import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
-import type { ActivityBucketListProfile } from '@/core/leisure/dto/response/ActivityBucketListProfile.ts'
-import type { ActivityProjectProfile } from '@/core/leisure/dto/response/ActivityProjectProfile.ts'
-import type { ActivityInfo } from '@/core/leisure/dto/response/ActivityInfo.ts'
-import { ReadinessStatus } from '@/core/leisure/dto/enum/ReadinessStatus.ts'
-import {
-	BUCKET_LIST_MIN_MINUTES,
-	type CandidateFacts,
-	comfortStepAsEnergy,
-	difficultyAsEnergy,
-	type PickerConstraints,
-	pickSuggestions,
-	PROJECT_MIN_MINUTES,
-} from '@/core/leisure/composable/leisureScoring.ts'
-import { readSuggestionHistory } from '@/core/leisure/composable/suggestionHistory.ts'
+import { useLeisureSuggestionApi } from '@/core/leisure/api/leisureSuggestionApi.ts'
+import type { LeisureSuggestion } from '@/core/leisure/dto/response/LeisureSuggestion.ts'
+import { type PickerConstraints, SUGGESTION_COUNT } from '@/core/leisure/composable/pickerConstraints.ts'
 import { useWeatherFit } from '@/core/leisure/composable/useWeatherFit.ts'
 import type { WeatherFit } from '@/core/leisure/dto/response/WeatherFit.ts'
 
 /**
- * Turns the three profile tables into three suggestions.
+ * Asks the server for three suggestions (F2-04).
  *
- * The pool is fetched from the endpoints that already exist — `POST /<entity>/grid` — with
- * every hard constraint those filters *can* express pushed down into them (cost tier, location type,
- * readiness). The ranking then happens here, because no existing endpoint can rank across the three
- * sources, and none of them knows what the picker showed yesterday.
+ * This used to fetch up to 200 rows of each profile table and rank them here, which ranked a large backlog over
+ * a prefix of it, could not see today's weather server-side, and remembered what it showed only per device. The
+ * draw (`POST /leisure-suggestion`) now does all of that: every row, the weather, and a history shared across
+ * devices. What is left here is asking at the right moments and keeping a slower answer from overwriting a
+ * newer one.
  *
- * That is a compromise, and a bounded one: `CANDIDATE_PAGE_SIZE` is the ceiling on how much of each
- * table this will pull, so a user with thousands of backlog rows would silently be ranked over the
- * first few hundred. Moving the draw server-side is the ask in `prompts/leisure/backend/D1-backend.md`;
- * the seam is this file and nothing else.
+ * Every change to the constraints or the seed is a round trip now, energy and party size included — they are
+ * ranked server-side. The seed is what keeps a reload showing the same three cards.
  */
-
-/**
- * How much of each table one draw is willing to pull. Comfortably above any realistic personal
- * backlog, and low enough that the request stays small. It is a ceiling, not a page — the picker
- * never paginates.
- */
-const CANDIDATE_PAGE_SIZE = 200
-
-export interface LeisureSuggestion extends CandidateFacts {
-	activity: ActivityInfo
-	/**
-	 * The one source-specific fact worth a chip: where a backlog activity happens, what kind of
-	 * experience a bucket-list entry is, which area a project belongs to.
-	 */
-	contextLabel: string | null
-}
-
-function backlogSuggestion(profile: ActivityBacklogProfile): LeisureSuggestion {
-	const duration = profile.durationMinutes > 0 ? profile.durationMinutes : null
-	return {
-		key: `backlog:${profile.activityId}`,
-		source: 'backlog',
-		activityId: profile.activityId,
-		activity: profile.activity,
-		maxUsefulMinutes: duration,
-		energyLevel: profile.energyLevel,
-		energyIsDerived: false,
-		effortType: profile.effortType,
-		minParticipants: profile.minParticipants,
-		maxParticipants: profile.maxParticipants,
-		statedDurationMinutes: duration,
-		weatherDependencyId: profile.realWeatherDependencyId,
-		readinessStatus: null,
-		comfortZoneStep: null,
-		requiresTravel: false,
-		contextLabel: profile.locationType.text || null,
-	}
-}
-
-function projectSuggestion(profile: ActivityProjectProfile): LeisureSuggestion {
-	return {
-		key: `project:${profile.activityId}`,
-		source: 'project',
-		activityId: profile.activityId,
-		activity: profile.activity,
-		maxUsefulMinutes: profile.estimatedHours > 0 ? Math.round(profile.estimatedHours * 60) : null,
-		energyLevel: difficultyAsEnergy(profile.difficultyLevel),
-		energyIsDerived: true,
-		effortType: null,
-		minParticipants: null,
-		maxParticipants: null,
-		statedDurationMinutes: null,
-		weatherDependencyId: null,
-		readinessStatus: profile.readinessStatus,
-		comfortZoneStep: null,
-		requiresTravel: false,
-		contextLabel: profile.projectArea || null,
-	}
-}
-
-function bucketListSuggestion(profile: ActivityBucketListProfile): LeisureSuggestion {
-	return {
-		key: `bucketList:${profile.activityId}`,
-		source: 'bucketList',
-		activityId: profile.activityId,
-		activity: profile.activity,
-		maxUsefulMinutes: null,
-		energyLevel: comfortStepAsEnergy(profile.comfortZoneStep),
-		energyIsDerived: true,
-		effortType: null,
-		minParticipants: null,
-		maxParticipants: null,
-		statedDurationMinutes: null,
-		weatherDependencyId: null,
-		readinessStatus: null,
-		comfortZoneStep: profile.comfortZoneStep,
-		requiresTravel: profile.requiresTravel,
-		contextLabel: profile.experienceType.text || null,
-	}
-}
-
-/**
- * Cost tiers are user-editable lookup rows, so "no more expensive than X" has to be resolved through
- * `sortOrder` — the field that exists for exactly this — into the set of acceptable ids, which is
- * what the existing filter takes.
- */
-export function costTierIdsUpTo(tiers: readonly LookupResponse[], maxTierId: number | null): number[] | null {
-	if (maxTierId === null) return null
-	const ordered = [...tiers].sort((a, b) => String(a.sortOrder).localeCompare(String(b.sortOrder)))
-	const cutoff = ordered.findIndex(tier => tier.id === maxTierId)
-	// An id that is not in the list any more (a deleted tier still sitting in a bookmarked URL) must
-	// not silently become "free only" — treat it as no cost constraint at all.
-	if (cutoff === -1) return null
-	return ordered.slice(0, cutoff + 1).map(tier => tier.id)
-}
 
 export interface LeisurePicker {
 	suggestions: Ref<LeisureSuggestion[]>
 	loading: Ref<boolean>
 	/**
-	 * Candidates fetched, before the hard constraints. Distinguishes the two empty states: 0 means
-	 * nothing is filed at all, non-zero with no suggestions means something needs relaxing.
+	 * Profiles filed, before any constraint. Distinguishes the two empty states: 0 means nothing is filed at all,
+	 * non-zero with no suggestions means something needs relaxing.
 	 */
 	poolCount: Ref<number>
 	/**
-	 * The most recent pool fetch failed. Distinct from an empty pool: without this, a network error
-	 * renders as "you have nothing filed yet", which blames the user for the server's problem.
+	 * The most recent draw failed. Distinct from an empty pool: without this, a network error renders as "you
+	 * have nothing filed yet", which blames the user for the server's problem.
 	 */
 	loadFailed: Ref<boolean>
 	costTierOptions: Ref<LookupResponse[]>
 	locationTypeOptions: Ref<LookupResponse[]>
-	/** Today's weather fit, forwarded so a card can say *why* it matched — see `SuggestionCard`. */
+	/** Today's weather fit, for the card's badge — see `SuggestionCard`. The ranking reads it server-side. */
 	weatherFit: Ref<WeatherFit | null>
 	/**
-	 * Some candidate in the pool is filed under a real weather dependency, so a weather signal would
-	 * change the draw. Gates the "set your location" hint: without such a row, asking for a location
-	 * promises an effect the user would never see.
+	 * Some backlog row in the pool depends on the weather, so a weather signal would change the draw. Gates the
+	 * "set your location" hint: without such a row, asking for a location promises an effect the user would
+	 * never see.
 	 */
-	hasWeatherDependentCandidates: ComputedRef<boolean>
+	hasWeatherDependentCandidates: Ref<boolean>
 }
 
 export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<number>): LeisurePicker {
-	const { fetchFilteredTable: fetchBacklog } = useActivityBacklogProfileCrud()
-	const { fetchFilteredTable: fetchProjects } = useActivityProjectProfileCrud()
-	const { fetchFilteredTable: fetchBucketList } = useActivityBucketListProfileCrud()
+	const { draw } = useLeisureSuggestionApi()
 	const { fetchAll: fetchCostTiers } = useActivityExpectedCostTierApi()
 	const { fetchAll: fetchLocationTypes } = useActivityLocationTypeApi()
+	// Fired alongside the first draw, never awaited by it: it paints the badge, and it warms the server's
+	// forecast cache so the draw's own bounded weather wait finds an answer.
 	const weatherFit = useWeatherFit()
 
 	const suggestions = ref<LeisureSuggestion[]>([])
@@ -174,133 +59,67 @@ export function useLeisurePicker(constraints: Ref<PickerConstraints>, seed: Ref<
 	const loadFailed = ref(false)
 	const costTierOptions = ref<LookupResponse[]>([])
 	const locationTypeOptions = ref<LookupResponse[]>([])
+	const hasWeatherDependentCandidates = ref(false)
 
-	const pool = ref<LeisureSuggestion[]>([])
-	const hasWeatherDependentCandidates = computed(() =>
-		pool.value.some(candidate => candidate.weatherDependencyId !== null),
-	)
-	// What the last fetch was made under. Only the fields that change the *request* belong in it:
-	// energy and party size are ranked and filtered locally, so changing them must not cost a round
-	// trip, and neither must a reroll.
-	let poolSignature: string | null = null
-	// Guards against an older fetch finishing after a newer one and overwriting the pool.
-	let fetchToken = 0
+	// Guards against an older draw finishing after a newer one and overwriting its cards. The abort saves the
+	// server the work; the token is what actually keeps the screen honest.
+	let drawToken = 0
+	let inFlight: AbortController | null = null
 
-	function signatureOf(current: PickerConstraints): string {
-		return [
-			current.minutes >= PROJECT_MIN_MINUTES ? 'p' : '-',
-			current.minutes >= BUCKET_LIST_MIN_MINUTES ? 'b' : '-',
-			current.maxCostTierId ?? '',
-			current.locationTypeId ?? '',
-		].join('|')
-	}
-
-	function backlogRequest(current: PickerConstraints): FilteredTableRequest<ActivityBacklogProfileFilter> {
-		const filter = new ActivityBacklogProfileFilter()
-		filter.expectedCostTierIds = costTierIdsUpTo(costTierOptions.value, current.maxCostTierId)
-		filter.locationTypeIds = current.locationTypeId === null ? null : [current.locationTypeId]
-		// `maxDurationMinutes` is deliberately NOT set here even though the filter has it: rows with no
-		// duration recorded (0) would be indistinguishable from rows that genuinely fit, and dropping
-		// them server-side would hide a new user's whole backlog. `isEligible` decides instead.
-		return new FilteredTableRequest(CANDIDATE_PAGE_SIZE, 1, [], true, filter)
-	}
-
-	function projectRequest(): FilteredTableRequest<ActivityProjectProfileFilter> {
-		const filter = new ActivityProjectProfileFilter()
-		// "Needs shopping" is an errand, not a suggestion — excluded before it crosses the wire.
-		filter.readinessStatuses = [ReadinessStatus.ReadyToStart, ReadinessStatus.Planning]
-		return new FilteredTableRequest(CANDIDATE_PAGE_SIZE, 1, [], true, filter)
-	}
-
-	function bucketListRequest(): FilteredTableRequest<ActivityBucketListProfileFilter> {
-		// Nothing on this filter maps to a picker constraint; the whole (small) list is the pool.
-		return new FilteredTableRequest(CANDIDATE_PAGE_SIZE, 1, [], false, new ActivityBucketListProfileFilter())
-	}
-
-	async function fetchPool(): Promise<void> {
+	async function redraw(): Promise<void> {
 		const current = constraints.value
-		const token = ++fetchToken
+		const token = ++drawToken
+		inFlight?.abort()
+		const controller = new AbortController()
+		inFlight = controller
 		loading.value = true
 		try {
-			// A source that cannot contribute under the current time budget is not requested at all —
-			// at 30 minutes free, this is one request rather than three.
-			const [backlog, projects, bucketList] = await Promise.all([
-				fetchBacklog(backlogRequest(current)),
-				current.minutes >= PROJECT_MIN_MINUTES ? fetchProjects(projectRequest()) : Promise.resolve(null),
-				current.minutes >= BUCKET_LIST_MIN_MINUTES
-					? fetchBucketList(bucketListRequest())
-					: Promise.resolve(null),
-			])
-			if (token !== fetchToken) return
+			const result = await draw(
+				{
+					minutes: current.minutes,
+					energy: current.energy,
+					people: current.people,
+					maxCostTierId: current.maxCostTierId,
+					locationTypeId: current.locationTypeId,
+					seed: seed.value,
+					count: SUGGESTION_COUNT,
+				},
+				controller.signal,
+			)
+			if (token !== drawToken) return
 			loadFailed.value = false
-			pool.value = [
-				...backlog.items.map(backlogSuggestion),
-				...(projects?.items ?? []).map(projectSuggestion),
-				...(bucketList?.items ?? []).map(bucketListSuggestion),
-			]
-			poolSignature = signatureOf(current)
+			suggestions.value = result.items
+			poolCount.value = result.poolCount
+			hasWeatherDependentCandidates.value = result.hasWeatherDependentCandidates
 		} catch {
-			if (token !== fetchToken) return
-			// The axios interceptor has already told the user. Leave the previous pool in place rather
-			// than blanking the cards, and flag the failure so an empty one is not read as "you have
-			// nothing filed". Clearing the signature makes the next constraint change retry.
-			poolSignature = null
+			if (token !== drawToken) return
+			// The interceptor has already told the user (a cancellation shows nothing and never gets here — the
+			// token moved on). Leave the previous cards in place rather than blanking them, and flag the failure
+			// so an empty screen is not read as "you have nothing filed".
 			loadFailed.value = true
 		} finally {
-			if (token === fetchToken) loading.value = false
-		}
-	}
-
-	function redraw(): void {
-		const history = readSuggestionHistory()
-		const context = {
-			constraints: constraints.value,
-			lastSuggestedAt: history.suggestedAt,
-			lastCommittedEffort: history.lastCommittedEffort,
-			now: new Date(),
-			seed: seed.value,
-			weatherMatchIds: weatherFit.value?.matchingWeatherDependencyIds ?? null,
-		}
-		poolCount.value = pool.value.length
-		suggestions.value = pickSuggestions(pool.value, context)
-	}
-
-	async function ensurePool(): Promise<void> {
-		if (poolSignature !== signatureOf(constraints.value)) {
-			await fetchPool()
+			if (token === drawToken) {
+				loading.value = false
+				inFlight = null
+			}
 		}
 	}
 
 	onMounted(async () => {
-		// Awaited before the first pool fetch, not alongside it: the cost filter is built from the
-		// tiers' `sortOrder`, so a fetch made without them would silently ignore a cost constraint
-		// that arrived in the URL. Failures are swallowed rather than propagated — the lookups only
-		// populate two optional selects, and letting them reject here would leave the whole view
-		// stuck on its skeleton.
-		await Promise.all([
-			fetchCostTiers()
-				.then(tiers => (costTierOptions.value = tiers))
-				.catch(() => undefined),
-			fetchLocationTypes()
-				.then(types => (locationTypeOptions.value = types))
-				.catch(() => undefined),
-		])
-		await fetchPool()
-		redraw()
+		// The lookups only populate two optional selects. Failures are swallowed rather than propagated, so a
+		// broken lookup never leaves the whole view on its skeleton. Not awaited before the draw: the server
+		// resolves a cost tier through its own `sortOrder`, so the draw no longer needs them.
+		fetchCostTiers()
+			.then(tiers => (costTierOptions.value = tiers))
+			.catch(() => undefined)
+		fetchLocationTypes()
+			.then(types => (locationTypeOptions.value = types))
+			.catch(() => undefined)
+		await redraw()
 	})
 
-	watch(
-		constraints,
-		async () => {
-			await ensurePool()
-			redraw()
-		},
-		{ deep: true },
-	)
+	watch(constraints, redraw, { deep: true })
 	watch(seed, redraw)
-	// The weather fetch resolves independently of the pool fetch — redraw again once (or if) it lands,
-	// rather than gating the first draw on a call that may never come back.
-	watch(weatherFit, redraw)
 
 	return {
 		suggestions,

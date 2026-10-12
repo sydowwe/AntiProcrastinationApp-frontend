@@ -1,14 +1,14 @@
 import { onMounted, ref, watch, type Ref } from 'vue'
 import { useRoute, useRouter, type LocationQuery, type LocationQueryRaw } from 'vue-router'
 import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
-import type { PickerConstraints } from '@/core/leisure/composable/leisureScoring.ts'
+import type { PickerConstraints } from '@/core/leisure/composable/pickerConstraints.ts'
 
 /**
  * `/leisure/pick?minutes=45&energy=low` has to be a bookmark — "I'm bored, and this is usually the
  * shape of my evening" — so every constraint lives in the query, not in component state.
  *
- * `seed` is in there too, and that is not decoration. The draw is deliberately random (see
- * `leisureScoring.ts`), and a random draw that is not addressable means a page reload silently
+ * `seed` is in there too, and that is not decoration. The draw is deliberately random (the server's
+ * `LeisureDrawRanker` jitters on it), and a random draw that is not addressable means a page reload silently
  * replaces the three options the user was still deciding between. With the seed in the URL, reload
  * and back both reproduce the same three cards, and "something else" is a real navigation to a new
  * draw rather than a re-render.

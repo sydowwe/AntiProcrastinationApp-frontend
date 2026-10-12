@@ -129,11 +129,12 @@
 	import SuggestionCard from '@/core/leisure/component/picker/SuggestionCard.vue'
 	import WeatherLocationHint from '@/core/leisure/component/picker/WeatherLocationHint.vue'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
-	import { SUGGESTION_COUNT } from '@/core/leisure/composable/leisureScoring.ts'
+	import { SUGGESTION_COUNT } from '@/core/leisure/composable/pickerConstraints.ts'
 	import { TIME_OPTIONS, usePickerUrlState } from '@/core/leisure/composable/usePickerUrlState.ts'
-	import { useLeisurePicker, type LeisureSuggestion } from '@/core/leisure/composable/useLeisurePicker.ts'
+	import { useLeisurePicker } from '@/core/leisure/composable/useLeisurePicker.ts'
+	import type { LeisureSuggestion } from '@/core/leisure/dto/response/LeisureSuggestion.ts'
 	import { useLeisureCommitment, type PlannedSlot } from '@/core/leisure/composable/useLeisureCommitment.ts'
-	import { recordSuggested } from '@/core/leisure/composable/suggestionHistory.ts'
+	import { useLeisureSuggestionApi } from '@/core/leisure/api/leisureSuggestionApi.ts'
 	import { usePickerLabels } from '@/core/leisure/composable/usePickerLabels.ts'
 
 	const i18n = useI18n()
@@ -156,6 +157,7 @@
 	// reads the preference itself rather than inferring from an empty fit.
 	const { weatherLocation } = useUserPreferences()
 	const { commit } = useLeisureCommitment()
+	const { recordSeen } = useLeisureSuggestionApi()
 
 	/** Key of the card whose commit is in flight, so only that card shows a spinner. */
 	const busyKey = ref<string | null>(null)
@@ -198,9 +200,14 @@
 	 * "Something else" records the rejected draw before redrawing. That is the only place staleness is
 	 * written for a merely-shown suggestion: recording on render instead would mean a page reload
 	 * demoted the very cards on screen, and a `?seed=` link would stop reproducing its own draw.
+	 * Awaited, so the next draw already sees the rejection; it never rejects, so a lost record only
+	 * costs that draw some variety.
 	 */
-	function drawAgain(): void {
-		recordSuggested(suggestions.value.map(suggestion => suggestion.key))
+	async function drawAgain(): Promise<void> {
+		await recordSeen(
+			suggestions.value.map(suggestion => suggestion.key),
+			'rejected',
+		)
 		reroll()
 	}
 

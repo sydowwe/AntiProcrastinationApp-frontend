@@ -5,20 +5,16 @@ import { expect, test } from '../fixtures/auth'
  * leisure-backlog-picker O1: a backlog row's `maxParticipants` is shown (the *People* column on
  * `/leisure/backlog`) and read by the picker (`/leisure/pick`).
  *
- * **It does not exclude.** `leisureScoring.ts` keeps `maxParticipants` out of `isEligible` on purpose: more
- * people around than the activity takes is "doable, but leaves someone out", so it costs
- * `PARTY_TOO_BIG_PENALTY` (-2) in `scoreCandidate`. Only `minParticipants` is a hard constraint. The
- * ranking test below therefore pins a *demotion* out of the top three, not a filter, and the real-data
- * test pins that the seeded one-person row stays on screen for two people.
+ * **It does not exclude.** More people around than the activity takes is "doable, but leaves someone out",
+ * so it costs a flat -2 in the server's `LeisureDrawRanker`; only `minParticipants` is a hard constraint.
+ * Since F2-04 the picker ranks on the server, so the ranking itself — demoted, not dropped, and by exactly
+ * the penalty — is pinned in the API's `LeisureDrawRankerTests.MorePeopleThanTheActivityTakes_IsDemotedNotDropped`.
+ * This file keeps what only a browser can show: that the picker asks with the party size, and that the
+ * seeded one-person row stays on screen for two people against the real server.
  *
- * The seed has one backlog row (`Read a Novel`, min 1, max 1), so the ranges and the ranking are
- * route-patched on the backlog grid response, cloned from the server's own row so the shape stays real.
- * The fixture is never written.
- *
- * The ranking test fixes `seed=4` because the draw adds a deterministic per-(key, seed) jitter worth up to
- * 3 points, which is more than the 2-point penalty. For that seed and these four keys the jitter alone
- * leaves `Pick A` in the top three, and the penalty alone pushes it to last. If the scoring constants or
- * the jitter hash change, this seed must be re-found — the failure will say which side broke.
+ * The seed has one backlog row (`Read a Novel`, min 1, max 1), so the table's ranges are route-patched on
+ * the backlog grid response, cloned from the server's own row so the shape stays real. The fixture is never
+ * written.
  */
 
 type GridRow = Record<string, unknown> & { activityId: number; activity: Record<string, unknown> }
@@ -52,19 +48,12 @@ async function patchBacklogGrid(
 	})
 }
 
-/** The picker remembers what it has shown; a second load in one test must not inherit the first's. */
-async function forgetSuggestionHistory(page: Page) {
-	await page.evaluate(() => {
-		for (const key of Object.keys(localStorage)) {
-			if (key.includes('leisure.picker.history')) localStorage.removeItem(key)
-		}
-	})
-}
-
 async function openPicker(page: Page, query: string) {
-	const grid = page.waitForResponse('**/api/activity-backlog-profile/grid')
+	const draw = page.waitForResponse(
+		response => response.url().endsWith('/api/leisure-suggestion') && response.request().method() === 'POST',
+	)
 	await page.goto(`/leisure/pick?${query}`)
-	await grid
+	await draw
 	await page.getByRole('button', { name: 'Something else' }).waitFor({ state: 'visible' })
 }
 
@@ -109,27 +98,21 @@ test.describe('Picker and maxParticipants (/leisure/pick)', () => {
 		await expect(page.getByText('Read a Novel')).toBeVisible()
 	})
 
-	test('past the cap a candidate drops out of the top three; at the cap it stays', async ({
+	test('the draw is asked with the party size, and a change of party asks again', async ({
 		authenticatedPage: page,
 	}) => {
-		await patchBacklogGrid(page, [
-			{ id: 9101, name: 'Pick A', min: 1, max: 1 }, // below two people: penalised
-			{ id: 9102, name: 'Pick B', min: 1, max: 2 }, // exactly two people: not penalised
-			{ id: 9103, name: 'Pick C', min: 1, max: null },
-			{ id: 9104, name: 'Pick D', min: 1, max: null },
-		])
-		const cards = page.locator('#app').getByText(/^Pick [A-D]$/)
+		const people: number[] = []
+		page.on('request', request => {
+			if (request.url().endsWith('/api/leisure-suggestion') && request.method() === 'POST') {
+				people.push((request.postDataJSON() as { people: number }).people)
+			}
+		})
 
-		// Two people: A is last on score, so three cards remain and A is not one of them.
-		await openPicker(page, 'minutes=30&energy=low&people=2&seed=4')
-		await expect(cards).toHaveCount(3)
-		await expect(page.getByText('Pick A', { exact: true })).toHaveCount(0)
-		await expect(page.getByText('Pick B', { exact: true })).toBeVisible()
+		await openPicker(page, 'minutes=60&energy=low&people=2&seed=4')
+		await expect.poll(() => people.at(-1)).toBe(2)
 
-		// One person, same seed, same four rows: the penalty is gone and the jitter lets A back in.
-		await forgetSuggestionHistory(page)
-		await openPicker(page, 'minutes=30&energy=low&people=1&seed=4')
-		await expect(cards).toHaveCount(3)
-		await expect(page.getByText('Pick A', { exact: true })).toBeVisible()
+		// Party size is ranked server-side now, so changing it must cost a round trip rather than a local re-sort.
+		await openPicker(page, 'minutes=60&energy=low&people=1&seed=4')
+		await expect.poll(() => people.at(-1)).toBe(1)
 	})
 })

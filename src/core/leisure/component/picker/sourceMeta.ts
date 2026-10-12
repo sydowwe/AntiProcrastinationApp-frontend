@@ -1,4 +1,4 @@
-import type { SuggestionSource } from '@/core/leisure/composable/leisureScoring.ts'
+import type { SuggestionSource } from '@/core/leisure/composable/pickerConstraints.ts'
 
 /**
  * How each of the three pools reads on a card. The icons are the ones the sidebar already uses for

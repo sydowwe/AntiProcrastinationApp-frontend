@@ -177,9 +177,10 @@ test.describe('Picker ("What should I do?", /leisure/pick)', () => {
 		// non-empty match set, so on any day with a weather location Read a Novel (filed under None)
 		// was badged "Good weather for this today" and ranked up. The row now carries
 		// weatherDependencyCode, and a "none" code never reaches the weather logic. Reproduce the
-		// server's real non-empty answer: a set that contains the row's own id.
+		// server's real non-empty answer: a set that contains the row's own id. Since F2-04 the picker no
+		// longer fetches the backlog grid, so the row's lookup id is read off the backlog page instead.
 		const backlogGrid = authenticatedPage.waitForResponse('**/api/activity-backlog-profile/grid')
-		await authenticatedPage.reload()
+		await authenticatedPage.goto('/leisure/backlog')
 		const { items } = (await (await backlogGrid).json()) as {
 			items: { weatherDependencyId: number; weatherDependencyCode: string | null; activity: { name: string } }[]
 		}
@@ -189,14 +190,22 @@ test.describe('Picker ("What should I do?", /leisure/pick)', () => {
 		await authenticatedPage.route('**/api/leisure-weather-fit', route =>
 			route.fulfill({ json: { matchingWeatherDependencyIds: [novel!.weatherDependencyId] } }),
 		)
-		await authenticatedPage.reload()
+		const draw = authenticatedPage.waitForResponse(
+			response => response.url().endsWith('/api/leisure-suggestion') && response.request().method() === 'POST',
+		)
+		await authenticatedPage.goto('/leisure/pick')
+		const drawn = (await (await draw).json()) as {
+			items: { activity: { name: string }; weatherDependencyId: number | null }[]
+		}
+		// The server never hands the card a "none" row's id, so there is nothing for the badge to match.
+		expect(drawn.items.find(item => item.activity.name === 'Read a Novel')?.weatherDependencyId).toBeNull()
 		await expect(authenticatedPage.getByText('Read a Novel')).toBeVisible()
 		await expect(authenticatedPage.getByText('Good weather for this today')).toHaveCount(0)
 	})
 
 	test.fixme(
 		'ranking, staleness and the three empty states',
-		// Semantic: the ordering rule (leisureScoring.ts), the "nothingFiled" vs "nothingFits" vs
+		// Semantic: the ordering rule (the server's LeisureDrawRanker since F2-04), the "nothingFiled" vs "nothingFits" vs
 		// "failed" distinction (only "nothingFits" was reachable with the current seed — see findings.md
 		// U1), and the loading skeleton (U2) all need a human to confirm the *value*, not just the
 		// shape.

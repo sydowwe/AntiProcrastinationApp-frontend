@@ -153,7 +153,7 @@ Not DTO fields. They are listed because they are captured data with readers of t
 | `runningTimerSession` | localStorage | yes | `activityHistory/store/runningTimerStore.ts:875` | same file `:849`, re-read on `currentUser.id` change | |
 | `activityPickerRecency.v1` | localStorage | yes | `activity/composable/useActivityRecency.ts:66` | same file `:51` | |
 | `resolvedLeisureRewards` | localStorage | yes | `todoList/store/earnedRewardsStore.ts:63` | same file `:19` | day-keyed via `isoDateInUserZone` |
-| `leisure.picker.history` | localStorage | yes | `leisure/composable/suggestionHistory.ts:70` | same file `:54` | |
+| ~~`leisure.picker.history`~~ | localStorage | yes | none since F2-04 (2026-10-12) — the history is the server's `LeisureSuggestionRecord` | none | Retired. A value left in a browser is inert. |
 | `desktopSettingsHintDismissed` / `androidSettingsHintDismissed` | localStorage | yes | `activityTracking/component/settings/DismissibleMappingHint.vue:40` | same file `:36` | |
 | `dayPlanner` (Pinia: `viewedDate`, pending create-dialog state, template preview) | sessionStorage | no | `dayPlanner/store/dayPlannerStore.ts:279` | planner views on reload | per-tab |
 | `templateDayPlanner` (Pinia, `omit: ['tasks']`) | sessionStorage | no | `dayPlanner/store/templateDayPlannerStore.ts:80` | template editor on reload | per-tab; the secondary store is `persist: false` |

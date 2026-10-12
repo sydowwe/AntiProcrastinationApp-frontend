@@ -104,15 +104,16 @@ test.describe('Weather location preference (/user/settings — Preferences)', ()
 test.describe('"Set your town" hint (/leisure/pick)', () => {
 	/**
 	 * The seeded backlog row (Read a Novel) is filed under *None*, which takes no part in weather
-	 * matching, so the hint correctly stays hidden on the bare fixture. Rewriting that row's code to a
-	 * real dependency on the wire is the smallest change that makes the location matter — the same
-	 * technique `leisure-backlog-picker.draft.spec.ts` uses for the weather fit itself.
+	 * matching, so the hint correctly stays hidden on the bare fixture. Since F2-04 the server's draw says
+	 * whether any row in the pool depends on the weather (`hasWeatherDependentCandidates`); flipping that
+	 * flag on the wire is the smallest change that makes the location matter. Which rows set it is pinned
+	 * server-side (`LeisureSuggestionTests.APoolWithNoRealDependency_CostsNoCall_AndAsksForNoTown`).
 	 */
 	async function makeBacklogWeatherDependent(page: Page) {
-		await page.route('**/api/activity-backlog-profile/grid', async route => {
+		await page.route('**/api/leisure-suggestion', async route => {
 			const response = await route.fetch()
-			const body = (await response.json()) as { items: { weatherDependencyCode: string | null }[] }
-			for (const item of body.items) item.weatherDependencyCode = 'sunny'
+			const body = (await response.json()) as { hasWeatherDependentCandidates: boolean }
+			body.hasWeatherDependentCandidates = true
 			await route.fulfill({ response, json: body })
 		})
 	}

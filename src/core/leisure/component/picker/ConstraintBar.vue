@@ -121,7 +121,7 @@
 	import type { LookupResponse } from '@/_common/dto/response/general/LookupResponse.ts'
 	import { getEnumSelectOptions } from '@/_common/composable/general/EnumComposable.ts'
 	import { EnergyLevel } from '@/core/leisure/dto/enum/EnergyLevel.ts'
-	import type { PickerConstraints } from '@/core/leisure/composable/leisureScoring.ts'
+	import type { PickerConstraints } from '@/core/leisure/composable/pickerConstraints.ts'
 	import { PEOPLE_OPTIONS, TIME_OPTIONS } from '@/core/leisure/composable/usePickerUrlState.ts'
 	import { usePickerLabels } from '@/core/leisure/composable/usePickerLabels.ts'
 
