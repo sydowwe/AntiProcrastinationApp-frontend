@@ -33,14 +33,15 @@ const sw = vi.hoisted(() => {
 	const openWindow = vi.fn<(url: string) => Promise<unknown>>()
 	const getSubscription = vi.fn<() => Promise<unknown>>()
 	const subscribe = vi.fn<(options: unknown) => Promise<unknown>>()
+	const showNotification = vi.fn<(title: string, options: Record<string, unknown>) => Promise<void>>()
 
-	;(globalThis as { self?: unknown }).self = {
+	const self: Record<string, unknown> = {
 		addEventListener(type: string, handler: (event: any) => void) {
 			listeners[type] = handler
 		},
 		location: { origin },
 		registration: {
-			showNotification: vi.fn(),
+			showNotification,
 			pushManager: { getSubscription, subscribe },
 		},
 		clients: {
@@ -49,8 +50,9 @@ const sw = vi.hoisted(() => {
 			openWindow,
 		},
 	}
+	;(globalThis as { self?: unknown }).self = self
 
-	return { origin, listeners, state, openWindow, getSubscription, subscribe }
+	return { origin, self, listeners, state, openWindow, getSubscription, subscribe, showNotification }
 })
 
 // The order workbox gives the worker: the shared kind -> path map defines the globals `sw-push.js`
@@ -59,7 +61,7 @@ const sw = vi.hoisted(() => {
 import '../../../public/notification-subject-routes.js'
 import '../../../public/sw-push.js'
 
-const { origin: ORIGIN, listeners, state, openWindow, getSubscription, subscribe } = sw
+const { origin: ORIGIN, listeners, state, openWindow, getSubscription, subscribe, showNotification } = sw
 
 /** A window client. `canNavigate: false` models a tab this worker does not control. */
 function makeClient(url: string, { canNavigate = true }: { canNavigate?: boolean } = {}): StubClient {
@@ -96,12 +98,20 @@ async function dispatch(type: string, event: { settled(): Promise<unknown> }) {
 	await event.settled()
 }
 
-function clickEvent(data: unknown) {
-	return makeEvent({ notification: { data, close: vi.fn() } })
+/** A plain tap when `action` is omitted; a tap on that action button otherwise. */
+function clickEvent(data: unknown, action = '') {
+	return makeEvent({ action, notification: { data, close: vi.fn() } })
 }
 
 function openTabs(...clients: StubClient[]) {
 	state.clientList = clients
+}
+
+const API = 'https://api.test'
+const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<{ ok: boolean; status: number }>>()
+
+function respond(status: number) {
+	return Promise.resolve({ ok: status >= 200 && status < 300, status })
 }
 
 beforeEach(() => {
@@ -109,7 +119,149 @@ beforeEach(() => {
 	openWindow.mockReset().mockResolvedValue(null)
 	getSubscription.mockReset().mockResolvedValue(null)
 	subscribe.mockReset().mockResolvedValue({ endpoint: `${ORIGIN}/new-endpoint` })
+	showNotification.mockReset().mockResolvedValue(undefined)
+	// What `sw-config.js` defines in a real worker; a trailing slash, as an env value may carry one.
+	sw.self.SW_CONFIG = { apiUrl: `${API}/` }
+	fetchMock.mockReset()
+	vi.stubGlobal('fetch', fetchMock)
 	vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+
+describe('push shows the action buttons', () => {
+	function pushEvent(document: unknown) {
+		return makeEvent({ data: { json: () => document } })
+	}
+
+	it('passes the server-worded buttons to showNotification, and nothing else of theirs', async () => {
+		await dispatch(
+			'push',
+			pushEvent({
+				title: 'Pripomienka',
+				body: 'Zavolať do banky',
+				actions: [
+					{ action: 'snooze', title: 'Odložiť o 10 min', extra: 'dropped' },
+					{ action: 'dismiss', title: 'Zavrieť' },
+				],
+				data: { id: 42, type: 'PersonalReminder' },
+			}),
+		)
+
+		const options = showNotification.mock.calls[0]![1]
+		expect(options.actions).toEqual([
+			{ action: 'snooze', title: 'Odložiť o 10 min' },
+			{ action: 'dismiss', title: 'Zavrieť' },
+		])
+		expect(options.data).toEqual({ id: 42, type: 'PersonalReminder' })
+	})
+
+	it('sets no actions option for a kind without buttons', async () => {
+		await dispatch('push', pushEvent({ title: 'Test', body: 'plain', data: { id: 1, type: 'Test' } }))
+
+		expect(showNotification.mock.calls[0]![1]).not.toHaveProperty('actions')
+	})
+})
+
+describe('notificationclick on an action button', () => {
+	const DATA = { id: 42, type: 'TodoItemDue', subject: { kind: 'plannerTask', id: 91 } }
+	const ACTION_URL = `${API}/api/notification/42/action/done`
+
+	it('posts the action for that notification, with the cookie, and opens nothing', async () => {
+		fetchMock.mockReturnValueOnce(respond(204))
+		const event = clickEvent(DATA, 'done')
+
+		await dispatch('notificationclick', event)
+
+		expect(fetchMock).toHaveBeenCalledTimes(1)
+		expect(fetchMock).toHaveBeenCalledWith(ACTION_URL, { method: 'POST', credentials: 'include' })
+		expect(openWindow).not.toHaveBeenCalled()
+		expect(event.notification.close).toHaveBeenCalled()
+	})
+
+	it('tells every open tab what was done, without moving any of them', async () => {
+		fetchMock.mockReturnValueOnce(respond(204))
+		const tab = makeClient(`${ORIGIN}/leisure`)
+		openTabs(tab)
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(tab.postMessage).toHaveBeenCalledWith({
+			type: 'notification-action-done',
+			notificationId: 42,
+			notificationType: 'TodoItemDue',
+			action: 'done',
+		})
+		expect(tab.navigate).not.toHaveBeenCalled()
+		expect(tab.focus).not.toHaveBeenCalled()
+	})
+
+	it('refreshes an expired session once and retries', async () => {
+		fetchMock.mockReturnValueOnce(respond(401)).mockReturnValueOnce(respond(200)).mockReturnValueOnce(respond(204))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(fetchMock.mock.calls.map(call => call[0])).toEqual([ACTION_URL, `${API}/api/auth/refresh`, ACTION_URL])
+		expect(fetchMock.mock.calls[1]![1]).toEqual({ method: 'POST', credentials: 'include' })
+		expect(openWindow).not.toHaveBeenCalled()
+	})
+
+	it('opens the notification when the session cannot be refreshed', async () => {
+		fetchMock.mockReturnValueOnce(respond(401)).mockReturnValueOnce(respond(401))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(fetchMock).toHaveBeenCalledTimes(2)
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
+
+	it('does not refresh twice when the retry is refused again', async () => {
+		fetchMock.mockReturnValueOnce(respond(401)).mockReturnValueOnce(respond(200)).mockReturnValueOnce(respond(401))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(fetchMock).toHaveBeenCalledTimes(3)
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
+
+	it('opens the notification when the server says the thing is gone', async () => {
+		// 409: the task was deleted or already dealt with another way — the app is where to see what happened.
+		fetchMock.mockReturnValueOnce(respond(409))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
+
+	it('opens the notification when the network fails', async () => {
+		fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
+
+	it('opens the notification without trying when the worker has no API address', async () => {
+		sw.self.SW_CONFIG = undefined
+
+		await dispatch('notificationclick', clickEvent(DATA, 'done'))
+
+		expect(fetchMock).not.toHaveBeenCalled()
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
+
+	it('escapes the action id into the path', async () => {
+		fetchMock.mockReturnValueOnce(respond(204))
+
+		await dispatch('notificationclick', clickEvent(DATA, 'a/b?c'))
+
+		expect(fetchMock.mock.calls[0]![0]).toBe(`${API}/api/notification/42/action/a%2Fb%3Fc`)
+	})
+
+	it('a plain tap still only opens, and calls nothing', async () => {
+		await dispatch('notificationclick', clickEvent(DATA))
+
+		expect(fetchMock).not.toHaveBeenCalled()
+		expect(openWindow).toHaveBeenCalledWith(`${ORIGIN}/day-planner/task/91`)
+	})
 })
 
 describe('notificationclick picks the right tab', () => {

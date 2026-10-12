@@ -152,6 +152,10 @@
 	import { providePlannerLayout } from '@/core/dayPlanner/composable/usePlannerLayout.ts'
 	import { useDayPlannerSettingsStore } from '@/core/dayPlanner/store/dayPlannerSettingsStore.ts'
 	import { useQueryFocusTarget } from '@/_common/composable/general/useQueryFocusTarget.ts'
+	import {
+		changesSubject,
+		useNotificationActionDone,
+	} from '@/_common/modules/notifications/composable/useNotificationActions.ts'
 	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
 	import { useTemplatePreview } from '@/core/dayPlanner/composable/useTemplatePreview.ts'
 	import { useDayNavigation } from '@/core/dayPlanner/composable/useDayNavigation.ts'
@@ -294,6 +298,14 @@
 		// be scrolled to before it exists. Not awaited — the reveal polls for the element on its own and
 		// nothing below depends on it.
 		void revealFocusedTask()
+	})
+
+	// A block started, skipped, finished or extended from its push while this day sat open — or a to-do
+	// ticked there, which finishes its linked block on the server. Reload rather than patch: the server
+	// chose the times on the user's clock, and only it knows which block a to-do was linked to.
+	useNotificationActionDone(event => {
+		// A failed reload keeps the grid as it was; the interceptor has already said why.
+		if (changesSubject(event) && calendar.value) void loadTasks().catch(() => {})
 	})
 
 	// View-specific computed properties

@@ -176,6 +176,10 @@
 	import { useLeisurePairing } from '@/core/todoList/composable/useLeisurePairing.ts'
 	import type { ActivityBacklogProfile } from '@/core/leisure/dto/response/ActivityBacklogProfile.ts'
 	import { useEstimateFit } from '@/core/todoList/composable/useEstimateFit.ts'
+	import {
+		changesSubject,
+		useNotificationActionDone,
+	} from '@/_common/modules/notifications/composable/useNotificationActions.ts'
 	import { useEarnedRewardTracking } from '@/core/todoList/composable/useEarnedRewardTracking.ts'
 	import { useEarnedRewardsStore } from '@/core/todoList/store/earnedRewardsStore.ts'
 	import { SHORT_START_MINUTES } from '@/core/todoList/dto/enum/PlanHelpKind.ts'
@@ -298,6 +302,13 @@
 			// outlive the failure.
 			hideFullScreenLoading()
 		}
+	})
+
+	// A to-do ticked from its push, or a planned block finished there that the server carried over to
+	// its to-do, while this list sat open. The worker names the notification, not the item, so the
+	// list is re-read whole — `itemsChanged` with no ids does exactly that.
+	useNotificationActionDone(event => {
+		if (changesSubject(event) && !loadFailed.value) void itemsChanged([]).catch(() => {})
 	})
 
 	const totalProgress = computed(() => ({

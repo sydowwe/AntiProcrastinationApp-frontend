@@ -37,6 +37,16 @@ self.addEventListener('push', function (event) {
 		options.tag = data.tag
 	}
 
+	// Action buttons (backend P2-03): `[{ action, title }]`, already worded in the user's language and already
+	// capped at the two Chrome and Android show, so they go to showNotification as they are. Copied field by
+	// field so nothing else the server ever adds to an entry reaches the browser. Platforms that show no
+	// buttons (iOS, Safari) ignore the option, and the tap-to-open below stays the fallback everywhere.
+	if (Array.isArray(data.actions) && data.actions.length > 0) {
+		options.actions = data.actions.map(function (a) {
+			return {action: a.action, title: a.title}
+		})
+	}
+
 	event.waitUntil(self.registration.showNotification(title, options))
 })
 
@@ -54,18 +64,103 @@ self.addEventListener('push', function (event) {
 // place by construction rather than by two mappings agreeing.
 //
 // DO NOT add a second kind -> route mapping in this file.
+//
+// A tap on an ACTION BUTTON (`event.action` set) does the action instead, without opening anything —
+// that is the point of the button — and falls back to the same target as a plain tap when the action
+// does not go through, so the user lands on the thing to deal with it by hand.
 self.addEventListener('notificationclick', function (event) {
 	event.notification.close()
 
+	var data = event.notification.data
 	// The map is imported before this script, but a worker that somehow starts without it must still
 	// open something rather than throw inside an event handler.
 	var url =
 		typeof resolveNotificationTargetUrl === 'function'
-			? resolveNotificationTargetUrl(event.notification.data)
-			: (event.notification.data && event.notification.data.url) || '/'
+			? resolveNotificationTargetUrl(data)
+			: (data && data.url) || '/'
 
-	event.waitUntil(openNotificationTarget(url))
+	if (!event.action) {
+		event.waitUntil(openNotificationTarget(url))
+		return
+	}
+
+	event.waitUntil(
+		runNotificationAction(data, event.action).then(function (done) {
+			return done ? undefined : openNotificationTarget(url)
+		}),
+	)
 })
+
+// ─── ACTION BUTTONS ──────────────────────────────────────────────────────────────────────────────
+//
+// One request for every button of every kind: POST {api}/api/notification/{data.id}/action/{action},
+// no body. The server re-reads everything else off the notification row it owns — which kind, which
+// task or reminder, how many minutes — so there is nothing here to keep in step with it, and no second
+// kind -> endpoint map to drift.
+//
+// Where the API is: `sw-config.js`, generated at build time from VITE_API_URL and imported ahead of
+// this file (see vite.config.ts). That is the one thing the subscription-rotation note below says
+// this worker cannot know on its own.
+//
+// Auth is the app's httpOnly cookie, attached because of `credentials: 'include'` (the API is
+// same-site with the app, so SameSite=Strict lets it through). An expired access token is a 401:
+// refresh once — the same POST /auth/refresh the app's interceptor makes — and retry once. Anything
+// else that is not a 2xx (409: the thing is gone; 404: not a button this notification offered; a
+// network error; no config) reports failure, and the caller opens the app instead.
+
+/**
+ * Message name for an applied action. Mirrored in `_common/modules/notifications/composable/
+ * useNotificationActions.ts` (NOTIFICATION_ACTION_DONE) — kept in step by name only, since this file
+ * cannot import. Changing one means changing the other.
+ */
+var NOTIFICATION_ACTION_DONE = 'notification-action-done'
+
+function apiBaseUrl() {
+	var config = self.SW_CONFIG
+	return config && typeof config.apiUrl === 'string' && config.apiUrl !== '' ? config.apiUrl.replace(/\/+$/, '') : null
+}
+
+/** Resolves true when the server applied the action, false for anything else. Never rejects. */
+function runNotificationAction(data, action) {
+	var api = apiBaseUrl()
+	if (api === null || !data || data.id === undefined || data.id === null) return Promise.resolve(false)
+
+	var url = api + '/api/notification/' + encodeURIComponent(data.id) + '/action/' + encodeURIComponent(action)
+	var post = function () {
+		return fetch(url, {method: 'POST', credentials: 'include'})
+	}
+
+	return post()
+		.then(function (response) {
+			if (response.status !== 401) return response
+			return fetch(api + '/api/auth/refresh', {method: 'POST', credentials: 'include'}).then(function (refreshed) {
+				return refreshed.ok ? post() : response
+			})
+		})
+		.then(function (response) {
+			if (!response.ok) return false
+			return announceAction(data, action).then(function () {
+				return true
+			})
+		})
+		.catch(function (e) {
+			console.error('[sw-push] notification action failed:', e)
+			return false
+		})
+}
+
+/**
+ * An open tab may be showing state the action just changed (a task now started, a to-do now done, a
+ * bell row now read). Every tab is told which notification and which action; the bell, the home
+ * dashboard, the day planner and the to-do list refetch through `useNotificationActionDone`.
+ */
+function announceAction(data, action) {
+	return self.clients.matchAll({type: 'window', includeUncontrolled: true}).then(function (clientList) {
+		for (var i = 0; i < clientList.length; i++) {
+			clientList[i].postMessage({type: NOTIFICATION_ACTION_DONE, notificationId: data.id, notificationType: data.type, action: action})
+		}
+	})
+}
 
 /**
  * Absolute URL for a click target, or null when it does not belong to this app.
@@ -180,12 +275,13 @@ function openNotificationTarget(rawUrl) {
 // `withCredentials` on every request), and cookies ARE attached to a worker's own `fetch` with
 // `credentials: 'include'`. Two other things block it:
 //
-//   1. It does not know where the API is. `VITE_API_URL` is a different origin from the app, and it
-//      is substituted at BUNDLE time — this file is copied verbatim from public/ into dist/ and
-//      pulled in with importScripts, so nothing in it is ever substituted. There is no build step
-//      that could put the URL here.
-//   2. The access token may have expired, and the refresh-and-retry flow lives in the axios
-//      interceptor, in the app.
+//   1. It did not know where the API is when this was written. `VITE_API_URL` is a different origin
+//      from the app, substituted at BUNDLE time, and this file is copied verbatim. Since P2-03 a build
+//      step does put it in reach — `sw-config.js`, imported first — so this reason is gone; the action
+//      buttons above use it.
+//   2. The access token may have expired. The action buttons do their own refresh-and-retry-once, but
+//      the registration also has to land in the app's own state (`UsePushNotifications.ts` re-reads
+//      `getSubscription()` and keeps the switch honest), which only a client can do.
 //
 // So the worker does the one part only it can do — rebuild the subscription while the key of the
 // subscription being replaced is still reachable — and hands the registration to a client.

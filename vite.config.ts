@@ -35,10 +35,43 @@ function devServiceWorkerAlias(): Plugin {
 	}
 }
 
+/**
+ * `/sw-config.js` — the build-time values the service worker cannot get any other way.
+ *
+ * `public/sw-push.js` is copied verbatim and pulled in with `importScripts`, so `import.meta.env` never
+ * reaches it, yet its push action buttons (backend P2-03) must POST to the API, which is on another
+ * origin (`VITE_API_URL`). This generates a classic script defining `self.SW_CONFIG` — emitted into
+ * `dist/` on build (so workbox precaches it with the rest) and served by a middleware in `vite dev` —
+ * and the worker's `importScripts` lists it first.
+ *
+ * Only public values belong here: the file is served to anyone who asks.
+ */
+function serviceWorkerConfig(): Plugin {
+	let source = ''
+	return {
+		name: 'service-worker-config',
+		configResolved(config) {
+			const swConfig = { apiUrl: config.env.VITE_API_URL ?? '' }
+			source = `self.SW_CONFIG = Object.freeze(${JSON.stringify(swConfig)})\n`
+		},
+		configureServer(server) {
+			server.middlewares.use((req, res, next) => {
+				if (req.url !== '/sw-config.js' && !req.url?.startsWith('/sw-config.js?')) return next()
+				res.setHeader('Content-Type', 'text/javascript')
+				res.end(source)
+			})
+		},
+		generateBundle() {
+			this.emitFile({ type: 'asset', fileName: 'sw-config.js', source })
+		},
+	}
+}
+
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
 		devServiceWorkerAlias(),
+		serviceWorkerConfig(),
 		vue({
 			script: {},
 		}),
@@ -106,10 +139,11 @@ export default defineConfig({
 				],
 			},
 			workbox: {
-				// Order matters: this map defines the globals `sw-push.js` resolves clicks through, so it
-					// is imported first. It is the same map the in-app bell reads via the <script> tag in
-					// index.html — one mapping, two readers.
-					importScripts: ['/notification-subject-routes.js', '/sw-push.js'],
+				// Order matters: `sw-config.js` (generated, see serviceWorkerConfig) and this map define the
+				// globals `sw-push.js` reads — the API's address for the action buttons, and the routes it
+				// resolves clicks through — so both are imported first. The map is the same one the in-app
+				// bell reads via the <script> tag in index.html — one mapping, two readers.
+				importScripts: ['/sw-config.js', '/notification-subject-routes.js', '/sw-push.js'],
 				maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 				navigateFallback: '/index.html',

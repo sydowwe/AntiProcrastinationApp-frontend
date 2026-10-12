@@ -2,6 +2,11 @@ import { computed, effectScope, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { EffectScope, Ref } from 'vue'
 import { useCurrentTime } from '@/_common/composable/general/useCurrentTime.ts'
 import { isoDateInUserZone, userTimeZone } from '@/_common/composable/general/useUserClock.ts'
+import {
+	changesSubject,
+	type NotificationActionDone,
+	onNotificationActionDone,
+} from '@/_common/modules/notifications/composable/useNotificationActions.ts'
 
 /**
  * One place that decides WHEN the home dashboard refetches.
@@ -19,6 +24,7 @@ import { isoDateInUserZone, userTimeZone } from '@/_common/composable/general/us
  *    they all flip on the same edge instead of each freezing a `new Date()` at setup.
  * 3. **Coming back online** — retries only the subscribers currently showing an error.
  * 4. **A slow backstop poll** — opt-in per widget, in minutes, and paused entirely while hidden.
+ * 5. **A push action button** tapped on the lock screen — to the `onTodoItemsChanged` subscribers.
  *
  * Deliberately NOT here: `window.focus`. On some setups it fires alongside `visibilitychange` and
  * every trigger doubles.
@@ -190,6 +196,18 @@ export function notifyTodoItemsChanged({ except }: { except?: string } = {}): vo
 }
 
 // --- triggers ----------------------------------------------------------------
+/**
+ * A push action button went through on the lock screen (backend P2-03) — a to-do ticked, a planned block
+ * started, skipped, finished or extended — while this dashboard sat open, usually hidden. The data
+ * changed for certain, so it is a data-changed trigger, and its subscribers are exactly the
+ * `onTodoItemsChanged` ones: the to-do widgets and today's plan, which the server keeps in step with each
+ * other. Not held until the tab is visible: the user is about to come back to it, and the staleness
+ * gate on the visibility trigger would otherwise skip a refetch the write made necessary.
+ */
+function handleNotificationAction(event: NotificationActionDone) {
+	if (changesSubject(event)) notifyTodoItemsChanged()
+}
+
 function handleVisibilityChange() {
 	if (document.hidden) return
 	syncDate()
@@ -222,6 +240,7 @@ function handleTick() {
 // created inside whichever widget happened to mount first would die with that widget while the
 // registry it serves lives on.
 let scope: EffectScope | null = null
+let offNotificationAction: (() => void) | null = null
 
 function wire(currentTime: Ref<Date>) {
 	if (scope) return
@@ -239,6 +258,7 @@ function wire(currentTime: Ref<Date>) {
 	})
 	document.addEventListener('visibilitychange', handleVisibilityChange)
 	window.addEventListener('online', handleOnline)
+	offNotificationAction = onNotificationActionDone(handleNotificationAction)
 }
 
 function unwire() {
@@ -246,6 +266,8 @@ function unwire() {
 	scope = null
 	document.removeEventListener('visibilitychange', handleVisibilityChange)
 	window.removeEventListener('online', handleOnline)
+	offNotificationAction?.()
+	offNotificationAction = null
 }
 
 // HMR swaps this module for a fresh copy with a fresh registry; without this the previous copy's
