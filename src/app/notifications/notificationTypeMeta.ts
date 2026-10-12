@@ -160,5 +160,17 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 	// wrong most of the time. Landing nowhere beats landing on the wrong timer.
 	TimerBoundary: { icon: 'hourglass-end', color: 'primary' },
 
+	// P2-04: one of the user's trackers (desktop agent, browser extension, phone app) used to report and has
+	// gone quiet for two days while the user is still around. No subject — the server names the source only in
+	// the payload, which this app does not receive — so it lands on the merged dashboard, whose source filter
+	// shows all three trackers and which of them has data. Labelled app-side: the framework locale has no word
+	// for a kind only this backend raises.
+	TrackerSilent: {
+		icon: 'satellite-dish',
+		color: 'warning',
+		label: 'activityTracking.sources.silentNotificationType',
+		route: { name: 'unifiedActivityDashboard' },
+	},
+
 	Test: { icon: 'flask', color: 'textMuted' },
 }

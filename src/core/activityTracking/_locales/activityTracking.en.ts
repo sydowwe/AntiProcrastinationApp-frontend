@@ -33,6 +33,8 @@ const messages = {
 		// OP20: a unified card's source icons, and the accessible name of a card or bar.
 		recordedByList: `Recorded by: {sources}`,
 		withRecordedBy: `{name}, recorded by {sources}`,
+		// P2-04: the name of the "a tracker stopped reporting" notification type (inbox filter, delivery settings).
+		silentNotificationType: `Tracking went quiet`,
 	},
 	baseline: {
 		last7Days: `Last 7 days`,

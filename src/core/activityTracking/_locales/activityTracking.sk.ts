@@ -33,6 +33,8 @@ const messages = {
 		// OP20: ikony zdrojov na zlúčenej karte a prístupný názov karty alebo stĺpca.
 		recordedByList: `Zaznamenali: {sources}`,
 		withRecordedBy: `{name}, zaznamenali: {sources}`,
+		// P2-04: názov typu notifikácie „sledovač prestal posielať dáta“ (filter v schránke, nastavenia doručovania).
+		silentNotificationType: `Sledovanie aktivity stíchlo`,
 	},
 	baseline: {
 		last7Days: `Posledných 7 dní`,
