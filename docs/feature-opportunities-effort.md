@@ -40,10 +40,11 @@ None of FO1, FO2, FO4, FO6 or FO7 has an e2e spec. Only FO3 phase 1 does (`todo-
 | | ~~F3-06 (last-done seam)~~ built 2026-10-12 (backend `017595f`; frontend in the commit that carries this row) | **medium** | One keyed seam with three implementations. Done inline, not by a separate agent. |
 | **FO13** | ~~one session~~ built 2026-10-12 (backend `e2364cd`, frontend `250bdd22`) | **medium** | The handler is small. The one real choice is where the handoff link lives: a nullable column on the project profile, FK declared host-side. |
 
-**Wave F, left (2026-10-12):** the owner applies `20261012091415_ProjectShoppingTodoListItemLink` and restarts the
-API. Then browser-check FO13's handoff → tick → *Ready to start* and FO12's weather and "last time" line, and
-re-run the three picker e2e specs reworked for the server draw (`leisure-backlog-max-participants`,
-`weather-location`, `leisure-backlog-picker.draft`).
+**Wave F, closed (2026-10-12):**
+- Migration `20261012091415_ProjectShoppingTodoListItemLink` is applied and the API was restarted.
+- The three reworked picker specs pass (25 passed, 3 existing `fixme`s skipped).
+- FO13's handoff → tick → *Ready to start* and FO12's "last time" line were checked in the browser.
+- Real weather was not seen live, because the seed has no weather-dependent row. Stubbed-provider tests cover it.
 
 ## Rule of thumb
 
