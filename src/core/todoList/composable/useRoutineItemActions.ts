@@ -4,7 +4,6 @@ import { ChangeDisplayOrderRequest } from '@/core/todoList/dto/request/ChangeDis
 import { useRoutineTodoListItemCrud } from '@/core/todoList/api/routineTodoListApi.ts'
 import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 import { useUndoableListCrud } from '@/core/todoList/composable/useUndoableListCrud.ts'
-import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 import type { RoutineTodoListGroupedList } from '@/core/todoList/dto/response/routine/RoutineTodoListGroupedList.ts'
 import type { RoutineTodoListItemEntity } from '@/core/todoList/dto/response/routine/RoutineTodoListItemEntity.ts'
 import type { RoutineTimePeriodEntity } from '@/core/todoList/dto/response/routine/RoutineTimePeriodEntity.ts'
@@ -38,7 +37,6 @@ export function useRoutineItemActions(
 		uncheckAll: uncheckAllApi,
 	} = useRoutineTodoListItemCrud()
 	const { pushReorderUndo } = useTodoListUndo()
-	const { ensureLoaded: ensureCalibrationLoaded } = useEstimateCalibration()
 
 	/**
 	 * Re-reads the named items and reconciles them into the grouped list — the routine list's half of
@@ -89,12 +87,6 @@ export function useRoutineItemActions(
 		},
 		{ editedMessageKey: 'successFeedback.updated' },
 	)
-
-	async function add(request: RoutineTodoListItemRequest) {
-		const created = await listCrud.add(request)
-		void ensureCalibrationLoaded([created.activity.id])
-		return created
-	}
 
 	async function handleCrossListDrop(
 		sourceListId: number,
@@ -165,7 +157,7 @@ export function useRoutineItemActions(
 	}
 
 	return {
-		add,
+		add: listCrud.add,
 		edit: listCrud.edit,
 		deleteItem: listCrud.deleteItem,
 		handleOrderChange: listCrud.handleOrderChange,

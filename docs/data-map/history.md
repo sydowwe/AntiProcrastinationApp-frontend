@@ -18,7 +18,7 @@
 - **The plan never reaches the server.** The countdown's `durationMs` and the pomodoro's `focusMs`/`shortRestMs`/`longRestMs` live only in the client running-timer session (`localStorage runningTimerSession::u<id>`, dropped after 12 h). The session request sends actual lengths plus `outcome`, and for a pomodoro the `plannedFocusPeriods` count. For a countdown stopped early, the planned length is unrecoverable, so there is no plan-vs-actual for history the way `PlannerTask` has it.
 - **Sub-minute length is discarded when it is captured, not left unread later.** `sessionLengthFromMs` rounds to whole minutes, and `Time` carries no seconds. See *Contradictions*.
 - **Derived but unread:** `HistorySummaryCard.averageSeconds` (also mis-assigned as the *baseline* average by the backend, per its DTO comment), `HistoryTimeOfDayHour.entries` and `CalendarActivityRoleSummary.roleId`. (`HistoryTimeOfDayResponse.daysInRange` is spent since OP21.) `ActivityHistoryResponse.EndTimestamp` is sent and dropped; the client recomputes it from start + length in two places.
-- **Cross-module reads:** `todoList` is the only outside consumer of history *data*: `ActivityLoggedTimeAggregate`, for estimate calibration. `home` reads the pie-chart response (widget) and the running-timer **store** directly (`NowBar.vue`). History's calendar reads dayPlanner-owned day fields (`dayType`, `wakeUpTime`, `bedTime`, `label`).
+- **Cross-module reads:** no other module reads history *data* through this module's API any more. `ActivityLoggedTimeAggregate` (activity-keyed estimate calibration) was deleted on 2026-10-12. To-do and routine items now get their logged time on their own responses (FO8: F3-01, F2-06), keyed on the item link the server reads. `home` reads the pie-chart response (widget) and the running-timer **store** directly (`NowBar.vue`). History's calendar reads dayPlanner-owned day fields (`dayType`, `wakeUpTime`, `bedTime`, `label`).
 - **Time-bearing data sent to the server with no read path:** `ScheduleTimerAlarmsRequest` posts every pomodoro boundary (instant, phase, cycle/period indices) to the server, which is write-only by design. The backend notification audit should start there. It is the only time-bearing structure this group pushes server-side that is not a history row.
 
 ## Entities
@@ -41,11 +41,8 @@
 | `plannedFocusPeriods` | `number \| null` | **Pomodoro only** → setup panel periods × cycles | Detail → "n of m" pomodoro header (`HistorySessionGroup.vue:139-144`) | spent | — |
 | `completedFocusPeriods` | `number \| null` | **Pomodoro only** → segment log (`pomodoroSessionLog.ts:73`) | Detail → same header | spent | — |
 
-### ActivityLoggedTimeAggregate — `src/core/activityHistory/dto/response/ActivityLoggedTimeAggregate.ts` · request: inline `{ activityIds }` (`activityHistoryApi.ts:61`)
-| field | type | captured in | read in | status | time |
-| --- | --- | --- | --- | --- | --- |
-| `totalSeconds` | `number` | server (sum of history lengths per activity) | `todoList/composable/useEstimateCalibration.ts:57` → calibration ratio header (`TodoListTitleBar.vue:34`, `RoutineToDoListView.vue:57`); via `averageTime` → "usually" tooltip (`todoList/component/BaseTodoListItem.vue:69`) | derived · spent | yes |
-| `entryCount` | `number` | server | `todoList/composable/useEstimateCalibration.ts:40,56-57` (zero-guard + mean) | derived · spent | — |
+### ~~ActivityLoggedTimeAggregate~~: deleted 2026-10-12 (FO8)
+It summed an activity's whole history per sitting, and the client divided that by a per-item estimate (F3 *Out of scope* #2). Its last reader, the routine list, moved to the item-keyed `RoutineTodoListItemEntity.typicalSeconds` in F2-06. The server route `POST /activity-history/aggregate-by-activity` has no client caller now.
 
 ### TimerPreset (Quick Time / Activity Preset) — `src/core/activityHistory/dto/response/TimerPreset.ts` · request: `TimerPresetRequest.ts`
 | field | type | captured in | read in | status | time |
@@ -224,7 +221,6 @@ These are filters, not stored data. `echo`: set by a control and shown back by t
 ## Cross-module reads
 | field | owned by | read by (module → file) | what for |
 | --- | --- | --- | --- |
-| `ActivityLoggedTimeAggregate.totalSeconds`, `.entryCount` (+ `averageTime` getter) | activityHistory | todoList → `composable/useEstimateCalibration.ts`, shown in `component/BaseTodoListItem.vue`, `component/TodoListTitleBar.vue`, `view/RoutineToDoListView.vue` | estimate-vs-actual "usually takes" tooltip and calibration ratio |
 | `HistoryPieChartItem.{groupId,name,totalSeconds,color}`, `HistoryPieTotals.totalSeconds` | historyDashboard | home → `component/ActivityHistoryWidget.vue` (through `historyDashboard/component/pieChart/HistoryPieChart.vue`, the sanctioned library) | today's history pie + "Total tracked" on the dashboard |
 | running-timer session (`kind`, `activityName`, `paused`, `ended`, live remaining/elapsed) | activityHistory (store) | home → `component/NowBar.vue:251,330-363` (imports `activityHistory/store/runningTimerStore.ts` directly; also `App.vue:53,61`) | "Timer running for X — open it" chip with live countdown |
 | `HistoryWindow` + `HistoryGroupItem` (mapped to `StackedBarsInputWindow`) | historyDashboard | activityTracking → `component/stackedBars/StackedBarsChart.vue` / `StackedBarColumn.vue`, imported by `activityHistory/view/HistorySummaryView.vue:142` and `HistoryDetailView.vue` | history's stacked-bar chart is rendered by the tracking module's component |
@@ -238,7 +234,6 @@ Reverse direction, writes into this group's entity: dayPlanner `component/normal
 | --- | --- | --- | --- |
 | `ActivityHistory` | `ActivityHistoryResponse` (`AdhdTimeOrganizer.History/application/dto/response/ActivityHistoryResponse.cs`) | `EndTimestamp` | Client recomputes it as start + length in `HistoryRecordItem.vue:171-174` and `HistoryDetailView.vue:400-401`. Nested `Activity.IsArchived` is sent here too; whether `Activity.fromJson` keeps it belongs to the activity group |
 | `ActivityHistorySession` | `ActivityHistorySessionResponse` | none | |
-| `ActivityLoggedTimeAggregate` | `ActivityHistoryAggregateByActivityResponse` | none | |
 | `TimerPreset` | `TimerPresetResponse` (Core) | none | |
 | `PomodoroTimerPreset` | `PomodoroTimerPresetResponse` (Core) | none | |
 | `CalendarActivityDaySummary` | `CalendarActivityDaySummary` (History) | none | |

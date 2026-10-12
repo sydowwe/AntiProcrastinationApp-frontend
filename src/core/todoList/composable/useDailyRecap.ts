@@ -5,7 +5,7 @@ import type { DailyRecap } from '@/core/todoList/dto/response/DailyRecap.ts'
 
 /**
  * End-of-day recap (Amabile & Kramer's progress principle — see prompts/todo-motivation/N4-daily-recap.md).
- * Module-scoped like useEstimateCalibration/useLeisurePairing: the list view's recap card and the home
+ * Module-scoped like useLeisurePairing: the list view's recap card and the home
  * dashboard's waiting rewards read one copy, and share one request per day instead of one each.
  *
  * Nothing is pushed: a completion made anywhere shows up only on the next read, which is what

@@ -164,12 +164,6 @@ const todoList = {
 			unmark: `Odobrať z dnešného fokusu`,
 			capReached: `Naraz môžeš mať vo fokuse len {limit} úlohy — najprv jednu odober`,
 		},
-		// Kalibrácia odhad vs. skutočnosť — čisto informačné, nikdy hodnotiace (planning fallacy, Kahneman
-		// & Tversky). Pozri prompts/todo-motivation/S3-estimate-vs-actual.md.
-		calibration: {
-			usuallyTooltip: `Toto ti zvyčajne trvá {time}`,
-			header: `Úlohy trvajú približne {ratio}x tvojho odhadu`,
-		},
 		// F3-01. Opisuje odhad, nie človeka. Server nepošle skupinu pod päť úloh, takže {count} je vždy 5 a viac
 		// a tvar „úloh" platí vždy.
 		estimateFit: {
@@ -179,6 +173,11 @@ const todoList = {
 			plannedAsEstimated: `Ich naplánované bloky zodpovedali odhadu ({count} úloh)`,
 			loggedSoFar: `Na tejto úlohe zatiaľ zaznamenané: {time}`,
 			loggedTotal: `Na tejto úlohe zaznamenané: {time}`,
+			// F2-06. Bežné trvanie jednej rutinnej položky. Opisuje položku, nie človeka. Server nepošle nič pod tri
+			// odmerané opakovania, takže {count} je 3 a viac — a tu sa tvar mení (3 razy, 5 razov). Tvary v poradí
+			// 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
+			routineTypical: `Zvyčajne to trvá asi {time}, podľa času zaznamenaného naposledy | Zvyčajne to trvá asi {time}, podľa času zaznamenaného posledné {count} razy | Zvyčajne to trvá asi {time}, podľa času zaznamenaného posledných {count} razov`,
+			routineTypicalChip: `zvyčajne ~{time}`,
 		},
 		// Tvary v poradí 1 | 2–4 | 0 a 5+ (pravidlo v src/i18n.ts).
 		recap: {

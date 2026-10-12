@@ -249,7 +249,6 @@ Reads only. Rows marked C<n> were added or changed by this reconcile.
 | todoList | leisure (C1, C3) | `TodoListEntity.name`, `TaskPriority.text` (via `fetchSelectOptions`) | target list and priority for the shopping-list handoff |
 | dayPlanner | home | `PlannerTask.startTime/endTime/status/isBackground/color/activity/skipReason/skipReasonKey/todoListItemId/actualStartTime`; `DayPlan.hasPlan`; `PlannerStreak.currentStreak/bestStreak` | now bar, planner widget, day strip, linked to-do sync, flame chip |
 | dayPlanner | historyDashboard (C5) | `Calendar.dayType/label/wakeUpTime/bedTime/holidayKey/holidayName`, projected by the server into `CalendarActivityDaySummary` | sleep row and day-type marking on the history calendar |
-| activityHistory | todoList | `ActivityLoggedTimeAggregate.totalSeconds/entryCount` | estimate-vs-actual calibration |
 | activityHistory (store) | home | `runningTimerStore` session: `kind`, `activityName`, `paused`, `ended`, live clock | the "timer running" chip |
 | historyDashboard | home | `HistoryPieChartItem.*`, `HistoryPieTotals.totalSeconds` | today's pie and "Total tracked" |
 | leisure | todoList (home passes the DTO through) | `ActivityBacklogProfile.activity.name/durationMinutes/activityId` | reward pairing, gift chip, earned-reward label, reward timer length |
@@ -355,7 +354,7 @@ What the flow shows:
 | `PomodoroTimerPreset.focusDuration`, `.shortBreakDuration`, `.longBreakDuration` (3) | activityHistory | duration (plan): phase lengths | spent |
 | `PomodoroTimerPreset.focusPeriodInCycleCount`, `.numberOfCycles` (2) | activityHistory | duration (plan): session structure, in periods | spent |
 | `ActivityHistory.length` | activityHistory | duration (actual): whole minutes | spent |
-| `ActivityLoggedTimeAggregate.totalSeconds` | activityHistory | duration (actual): lifetime per activity | derived · spent |
+| `RoutineTodoListItemEntity.typicalSeconds` | todoList | duration (actual): median occurrence per routine item (F2-06) | derived · spent |
 | `CalendarActivityDaySummary.totalSeconds`, `CalendarActivityRoleSummary.totalSeconds` (2) | historyDashboard | duration (actual): per day, per role | derived · spent |
 | `HistoryGroupItem.totalSeconds`, `HistoryPieChartItem.totalSeconds`, `HistoryPieTotals.totalSeconds`, `HistorySummaryCard.totalSeconds` (4) | historyDashboard | duration (actual): aggregates | derived · spent |
 | `HistoryPeriodComparison.previousPeriodTotalSeconds`, `.currentPeriodTotalSeconds` (2) | historyDashboard | duration (actual): period totals | derived · spent |

@@ -22,10 +22,25 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 		public suggestedDays: DayOfWeek[] = [],
 		public suggestedDayOfMonth: number | null = null,
 		public steps: TodoListItemStepEntity[] = [],
+		/**
+		 * F2-06: how long one occurrence of this item usually takes, from the time logged against it per cycle of
+		 * its period. `null` until the server has enough timed occurrences (three). Information only — it never
+		 * replaces `suggestedTime`, which also decides when the tracker completes the item.
+		 */
+		public typicalSeconds: number | null = null,
+		/** The occurrences behind `typicalSeconds`; `null` whenever that is. */
+		public sampleCount: number | null = null,
 	) {}
 
 	get isMultipleCount() {
 		return !!this.totalCount && this.totalCount !== 1
+	}
+
+	/** `typicalSeconds` as a `Time`. Under a minute reads as nothing, the way the chip's `getNice` would render it. */
+	get typicalTime(): Time | null {
+		if (!this.typicalSeconds) return null
+		const time = Time.fromSeconds(this.typicalSeconds)
+		return time.isNotZero() ? time : null
 	}
 
 	static fromJson(json: any) {
@@ -48,6 +63,8 @@ export class RoutineTodoListItemEntity implements IBaseToDoListItem {
 			json.suggestedDays ?? [],
 			json.suggestedDayOfMonth ?? null,
 			TodoListItemStepEntity.listFromObjects(json.steps ?? []),
+			json.typicalSeconds ?? null,
+			json.sampleCount ?? null,
 		)
 	}
 

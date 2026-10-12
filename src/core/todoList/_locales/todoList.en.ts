@@ -157,10 +157,6 @@ const todoList = {
 			unmark: `Remove from today's focus`,
 			capReached: `You can only focus on {limit} tasks at once — unmark one first`,
 		},
-		calibration: {
-			usuallyTooltip: `You usually spend {time} on this`,
-			header: `Tasks take about {ratio}x your estimate`,
-		},
 		// F3-01. Describes the estimate, never the person. The server sends no group under five items, so
 		// {count} is always 5 or more and needs no plural forms.
 		estimateFit: {
@@ -170,6 +166,10 @@ const todoList = {
 			plannedAsEstimated: `Their planned blocks matched the estimate ({count} tasks)`,
 			loggedSoFar: `{time} logged on this task so far`,
 			loggedTotal: `{time} logged on this task`,
+			// F2-06. A routine item's typical occurrence. Describes the item, never the person. The server sends
+			// nothing under three timed occurrences, so {count} is 3 or more; both forms are there anyway.
+			routineTypical: `Usually takes about {time}, going by the last time it was timed | Usually takes about {time}, going by the last {count} times it was timed`,
+			routineTypicalChip: `usually ~{time}`,
 		},
 		recap: {
 			summary: `{count} thing finished today — {time} logged | {count} things finished today — {time} logged`,

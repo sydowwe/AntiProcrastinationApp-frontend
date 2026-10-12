@@ -6,8 +6,9 @@ import type { EstimateFit, EstimateFitGroup } from '@/core/todoList/dto/response
 
 /**
  * F3-01: how this user's to-do estimates compared with what happened, keyed on the item itself. Replaces the
- * activity-keyed `useEstimateCalibration` on the normal list, which compared a per-sitting mean of the activity's
- * whole history with a per-item estimate. The routine list still uses that one until F2-06.
+ * activity-keyed `useEstimateCalibration`, which compared a per-sitting mean of the activity's whole history with a
+ * per-item estimate. Routine items need no read of their own: since F2-06 each one arrives with its typical
+ * occurrence on the routine response (`RoutineTodoListItemEntity.typicalTime`), and only the wording below is shared.
  *
  * Per instance, not module-scoped: the list view owns the read and hands each row its figure, so nothing outlives
  * the view into another account's session.
@@ -69,5 +70,18 @@ export function useEstimateFitWording() {
 				})
 	}
 
-	return { describeLogged, describePlanned }
+	/**
+	 * F2-06: a routine item's typical occurrence, said of the item ("usually takes about 18m"). The count takes
+	 * plural forms, unlike the to-do group's: it starts at three, and Slovak changes form between 4 and 5.
+	 */
+	function describeRoutineTypical(time: Time, sampleCount: number): string {
+		return t('toDoList.estimateFit.routineTypical', { time: time.getNice, count: sampleCount }, sampleCount)
+	}
+
+	/** The short form, for a routine item with no estimate to set it beside. */
+	function routineTypicalChip(time: Time): string {
+		return t('toDoList.estimateFit.routineTypicalChip', { time: time.getNice })
+	}
+
+	return { describeLogged, describePlanned, describeRoutineTypical, routineTypicalChip }
 }

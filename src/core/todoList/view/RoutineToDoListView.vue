@@ -50,12 +50,6 @@
 				/>
 			</div>
 		</div>
-		<div
-			v-if="calibration"
-			class="mx-auto w-100 w-lg-66 px-3 pb-2 text-caption text-medium-emphasis text-center"
-		>
-			{{ $t('toDoList.calibration.header', { ratio: calibration.ratio.toFixed(1) }) }}
-		</div>
 		<RoutineWeeklyReviewCard
 			v-if="showWeeklyReview"
 			class="mx-auto w-100 w-lg-66 px-3 pb-3"
@@ -128,7 +122,7 @@
 	import PlannerTaskDialog from '@/core/dayPlanner/component/normal/PlannerTaskDialog.vue'
 	import BaseTodoListLogTimeController from '@/core/todoList/component/BaseTodoListLogTimeController.vue'
 	import TodoListUndoBtn from '@/core/todoList/component/TodoListUndoBtn.vue'
-	import { computed, onMounted, ref } from 'vue'
+	import { onMounted, ref } from 'vue'
 	import { useI18n } from 'vue-i18n'
 	import { useDisplay } from 'vuetify'
 	import { Time } from '@/_common/dto/dto/Time.ts'
@@ -141,7 +135,6 @@
 	import { useLoading } from '@/_common/composable/general/LoadingComposable.ts'
 	import { useTodoListUndo } from '@/core/todoList/composable/useTodoListUndo.ts'
 	import { useRoutineWeeklyReview } from '@/core/todoList/composable/useRoutineWeeklyReview.ts'
-	import { useEstimateCalibration } from '@/core/todoList/composable/useEstimateCalibration.ts'
 	import { useRoutineGroups } from '@/core/todoList/composable/useRoutineGroups.ts'
 	import { useRoutineCelebration } from '@/core/todoList/composable/useRoutineCelebration.ts'
 	import { useRoutineItemActions } from '@/core/todoList/composable/useRoutineItemActions.ts'
@@ -163,7 +156,6 @@
 	const freezeOffer = useNotificationFreezeOffer()
 	const { showFullScreenLoading } = useLoading()
 	const { isNewWeek, ensureLoaded: ensureReviewDismissalLoaded, dismissForThisWeek } = useRoutineWeeklyReview()
-	const { ensureLoaded: ensureCalibrationLoaded, calibrationRatio } = useEstimateCalibration()
 	const plannerStore = useDayPlannerStore()
 
 	const { undo, canUndo, stackSize, nextUndoDescription, pushLogTimeUndo } = useTodoListUndo()
@@ -267,18 +259,8 @@
 		showFullScreenLoading()
 		return getAllGrouped().then(response => {
 			groupedItems.value = response
-			void ensureCalibrationLoaded(response.flatMap(group => group.items.map(item => item.activity.id)))
 		})
 	}
-
-	const calibration = computed(() =>
-		calibrationRatio(
-			groupedItems.value
-				.flatMap(group => group.items)
-				.filter(item => item.suggestedTime?.isNotZero())
-				.map(item => ({ activityId: item.activity.id, suggestedSeconds: item.suggestedTime!.getInSeconds })),
-		),
-	)
 
 	function openAddToPlanner(item: RoutineTodoListItemEntity) {
 		plannerStore.openCreateDialogWithActivity(
