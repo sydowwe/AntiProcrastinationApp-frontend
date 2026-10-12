@@ -163,7 +163,7 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, high. Frontend Sonnet 5.5, medium.
 
 ### FO2. Time logged anywhere ticks off the plan, not only desktop-tracked time
-- **Closed (2026-10-12)** (backend `882cdf5`, frontend `0317e802`, no migration; needs an API restart). The open
+- **Closed (2026-10-12)** (backend `882cdf5`, frontend `0317e802`, no migration; the API was restarted on it the same day). The open
   question was that a linked pomodoro finished a "4×" item in one go: the fallback set `DoneCount = TotalCount`
   once the day total reached the suggested time. Now:
   - Time alone never finishes a step-counted item; the threshold fallback is for plain items only.
@@ -439,7 +439,7 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** backend Opus 5.5, high. Frontend Sonnet 5.5, high.
 
 ### FO6. Recurring commitments put themselves on the plan (opt-in, today and tomorrow only)
-- **Closed (2026-10-12)** (backend `bd3faa9`, no migration; needs an API restart). Both migrations below were applied
+- **Closed (2026-10-12)** (backend `bd3faa9`, no migration; the API was restarted on it the same day). Both migrations below were applied
   by 2026-10-11 (wave C). The two open gaps:
   - **A destructive conflict mode from a read.** The materialiser now reads `Overwrite` as `Ignore` and
     `MergeOverwrite` as `MergeIgnore`, so a GET never deletes or carves a block the user placed. Template apply
@@ -501,7 +501,7 @@ never ships a call to a route or field that the running API does not have yet.
 ### FO7. Every user can connect the desktop tracker, browser extension or phone app
 - **Closed (2026-10-08):** reviewed and found complete, the hub follow-up included. **2026-10-12:** the unread
   `User.HasExtensionAccess` column is dropped (backend `8a2e0e4`, migration
-  `20261012161330_DropUserHasExtensionAccess`, the owner's to apply). **Pairing codes are rejected**, no longer
+  `20261012161330_DropUserHasExtensionAccess`, applied 2026-10-12). **Pairing codes are rejected**, no longer
   deferred: a Google-only account sets a password through *Forgot password*. No e2e spec yet:
   `prompts/fo-close/e2e-fo7-trackers-card.md`.
 - **Status (2026-10-07): built and committed, no migration.** Backend `bcf8671` deletes the `HasExtensionAccess`

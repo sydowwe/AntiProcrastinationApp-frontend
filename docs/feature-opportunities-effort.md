@@ -12,9 +12,9 @@ What remains is the owner's (migrations, restart) or a re-run.
 | FO | Backend | Frontend | Left |
 |---|---|---|---|
 | FO1 | `ab5f0e7` | `ec4b7a30` | Nothing. Migration `20261006183310_RoutinePeriodCompletionIsExcused` was applied on 2026-10-11 (wave A's row in `feature-opportunities.md`). |
-| FO2 (closed 2026-10-12) | `9058535`, `882cdf5` | `4e16f51a`, `0317e802` | Restart the API on `882cdf5`. Until then the to-do timer's sitting ticks nothing, because the client no longer toggles and an older API ignores `countsAsRepetition`. |
-| FO6 (closed 2026-10-12) | `5c17788`, `bd3faa9` | `0e2c9bcf` | Restart the API on `bd3faa9`. Lanes (two overlapping blocks side by side) are a separate, later item: `prompts/fo-close/04-planner-lanes.md`. |
-| FO7 (re-closed 2026-10-12) | + `8a2e0e4` | — | Owner applies migration `20261012161330_DropUserHasExtensionAccess`. Pairing codes are **rejected**, no longer deferred. |
+| FO2 (closed 2026-10-12) | `9058535`, `882cdf5` | `4e16f51a`, `0317e802` | Nothing. The API was restarted on 2026-10-12. |
+| FO6 (closed 2026-10-12) | `5c17788`, `bd3faa9` | `0e2c9bcf` | Nothing; the API was restarted on 2026-10-12. Lanes (two overlapping blocks side by side) are a separate, later item: `prompts/fo-close/04-planner-lanes.md`. |
+| FO7 (re-closed 2026-10-12) | + `8a2e0e4` | — | Nothing. Migration `20261012161330_DropUserHasExtensionAccess` was applied on 2026-10-12. Pairing codes are **rejected**, no longer deferred. |
 | FO3 phase 1 | `2748772` | `7557fe30` | Nothing. |
 | FO3 phase 2 | `410dced` | `b929602b` | Nothing. Migration `20261007200704` is applied, and `todo-motivation.spec.ts` was re-run against the new route, 12/12 (`8b0595ad`). |
 | FO7 | `bcf8671`, `dc5059c` (notification hub closed to tracker tokens) | `ba3e54ea` (`_common` → `a0d8095`) | See the 2026-10-12 row below: the column is dropped and pairing codes are rejected. |
