@@ -33,6 +33,9 @@ export const FIRST_DAY_OF_WEEK_DEFAULT: 0 | 1 = 1
 /** 08:00 and midnight: the server's own defaults (`UserSleepWindow.Fallback`), so an unhydrated read agrees with it. */
 export const DEFAULT_WAKE_UP_TIME_DEFAULT = { hours: 8, minutes: 0 }
 export const DEFAULT_BED_TIME_DEFAULT = { hours: 0, minutes: 0 }
+/** P2-01. The server's own defaults: the briefing is on, sent right at wake-up. Absent is *on*, never off. */
+export const MORNING_BRIEFING_ENABLED_DEFAULT = true
+export const MORNING_BRIEFING_OFFSET_MINUTES_DEFAULT = 0
 
 export function useUserPreferences(): {
 	askBeforeDelete: ComputedRef<boolean>
@@ -40,6 +43,8 @@ export function useUserPreferences(): {
 	weatherLocation: ComputedRef<string | null>
 	defaultWakeUpTime: ComputedRef<Time>
 	defaultBedTime: ComputedRef<Time>
+	morningBriefingEnabled: ComputedRef<boolean>
+	morningBriefingOffsetMinutes: ComputedRef<number>
 } {
 	const userStore = useUserStore()
 
@@ -59,6 +64,20 @@ export function useUserPreferences(): {
 	const defaultBedTime = computed(() =>
 		Time.fromJson(userStore.currentUser.defaultBedTime ?? DEFAULT_BED_TIME_DEFAULT),
 	)
+	const morningBriefingEnabled = computed(
+		() => userStore.currentUser.morningBriefingEnabled ?? MORNING_BRIEFING_ENABLED_DEFAULT,
+	)
+	const morningBriefingOffsetMinutes = computed(
+		() => userStore.currentUser.morningBriefingOffsetMinutes ?? MORNING_BRIEFING_OFFSET_MINUTES_DEFAULT,
+	)
 
-	return { askBeforeDelete, firstDayOfWeek, weatherLocation, defaultWakeUpTime, defaultBedTime }
+	return {
+		askBeforeDelete,
+		firstDayOfWeek,
+		weatherLocation,
+		defaultWakeUpTime,
+		defaultBedTime,
+		morningBriefingEnabled,
+		morningBriefingOffsetMinutes,
+	}
 }

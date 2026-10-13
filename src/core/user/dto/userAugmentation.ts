@@ -23,6 +23,12 @@
 // through as-is and the persisted store rehydrates them as plain objects, so no method is guaranteed
 // to exist. `useUserPreferences` turns them into `Time`.
 //
+// `morningBriefingEnabled` / `morningBriefingOffsetMinutes` (P2-01) govern the one `MorningBriefing`
+// notification the server sends at the day's wake-up plus the offset (0–180 minutes; anything else is a
+// 400). Set from `MorningBriefingField.vue`. With the briefing on, the server stops sending the routine
+// `RoutineSuggestedToday` digest, and turning it off brings that digest back. The server default is on,
+// so an absent `morningBriefingEnabled` means *on*, never off.
+//
 // All of them are **optional on the response side**, and that is load-bearing rather than defensive.
 // Interface merging declares a type; it cannot create a value, so neither field exists on a fresh
 // `new User()` — which is what the store holds until `hydrateFromServer()` resolves (from `login()`
@@ -42,6 +48,8 @@ declare module '@/_common/modules/user/dto/response/User.ts' {
 		weatherLocation?: string | null
 		defaultWakeUpTime?: { hours: number; minutes: number }
 		defaultBedTime?: { hours: number; minutes: number }
+		morningBriefingEnabled?: boolean
+		morningBriefingOffsetMinutes?: number
 	}
 }
 
@@ -52,6 +60,8 @@ declare module '@/_common/modules/user/dto/request/UserPreferencesRequest.ts' {
 		weatherLocation?: string
 		defaultWakeUpTime?: { hours: number; minutes: number }
 		defaultBedTime?: { hours: number; minutes: number }
+		morningBriefingEnabled?: boolean
+		morningBriefingOffsetMinutes?: number
 	}
 }
 

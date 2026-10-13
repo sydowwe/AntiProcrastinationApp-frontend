@@ -20,6 +20,17 @@ const user = {
 			bedTime: `Bed time`,
 			hint: `Every day in the planner starts with these, and "re-plan the rest of today" stops at your bed time. Changing them updates today and later days, except days where you set the times yourself.`,
 		},
+		// P2-01 — one notification at the start of the day, timed off the wake-up time above. The hint names
+		// the routine reminder because turning the briefing off is what brings that one back.
+		morningBriefing: {
+			label: `Morning briefing`,
+			hint: `One notification when your day starts: today's plan, what's due and overdue, and today's routines. Turning it off brings back the separate routine reminder.`,
+			offsetLabel: `Send it`,
+			atWakeUp: `At wake-up`,
+			afterWakeUp: `{minutes} min after wake-up`,
+			// Inbox type-filter name and notification-settings row for `MorningBriefing`.
+			notificationType: `Morning briefing`,
+		},
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
 			title: `Per-module settings`,
@@ -197,7 +208,7 @@ You can download it at any time (Settings → Export my data). How we handle you
 					},
 					{
 						heading: `2. Account data`,
-						body: `When you register we store your e-mail address and your password as a cryptographic hash — we never see the password itself. We also store whether two-factor authentication is on, the dates your account was created and last signed in to, and your preferences: language, theme, time zone, first day of the week, when you usually get up and go to bed, whether we should ask before deleting things, and — if you enter one — the town you set for the weather.`,
+						body: `When you register we store your e-mail address and your password as a cryptographic hash — we never see the password itself. We also store whether two-factor authentication is on, the dates your account was created and last signed in to, and your preferences: language, theme, time zone, first day of the week, when you usually get up and go to bed, whether and when to send you a morning briefing, whether we should ask before deleting things, and — if you enter one — the town you set for the weather.`,
 					},
 					{
 						heading: `3. The content you put into the app`,

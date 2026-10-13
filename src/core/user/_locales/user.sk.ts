@@ -23,6 +23,17 @@ const user = {
 			bedTime: `Spánok`,
 			hint: `Každý deň v plánovači začína s týmito časmi a „preplánovať zvyšok dňa“ končí pri čase spánku. Zmena upraví dnešok a ďalšie dni, okrem dní, kde ste si časy nastavili sami.`,
 		},
+		// P2-01 — jedna notifikácia na začiatku dňa, načasovaná podľa času vstávania vyššie. Nápoveda
+		// spomína pripomienku rutín, lebo vypnutie prehľadu ju vráti.
+		morningBriefing: {
+			label: `Ranný prehľad`,
+			hint: `Jedna notifikácia na začiatku dňa: dnešný plán, čo je dnes v termíne a po termíne, a dnešné rutiny. Ak ho vypnete, vráti sa samostatná pripomienka rutín.`,
+			offsetLabel: `Poslať`,
+			atWakeUp: `Pri vstávaní`,
+			afterWakeUp: `{minutes} min po vstávaní`,
+			// Názov typu vo filtri schránky a riadok v nastaveniach notifikácií pre `MorningBriefing`.
+			notificationType: `Ranný prehľad`,
+		},
 		// Module settings — links out to preference pages other modules own
 		moduleSettings: {
 			title: `Nastavenia jednotlivých častí`,
@@ -210,7 +221,7 @@ Kedykoľvek si ho môžete stiahnuť (Nastavenia → Exportovať moje dáta). Ak
 					},
 					{
 						heading: `2. Údaje o účte`,
-						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa, kedy zvyčajne vstávate a chodíte spať, či sa vás máme pýtať pred mazaním a — ak ho zadáte — mesto, ktoré ste nastavili pre počasie.`,
+						body: `Pri registrácii ukladáme vašu e-mailovú adresu a heslo v podobe kryptografického odtlačku — samotné heslo nevidíme. Ďalej ukladáme, či máte zapnuté dvojfaktorové overenie, dátum vytvorenia účtu a posledného prihlásenia a vaše predvoľby: jazyk, tému, časové pásmo, prvý deň týždňa, kedy zvyčajne vstávate a chodíte spať, či a kedy vám máme posielať ranný prehľad, či sa vás máme pýtať pred mazaním a — ak ho zadáte — mesto, ktoré ste nastavili pre počasie.`,
 					},
 					{
 						heading: `3. Obsah, ktorý do aplikácie vložíte`,

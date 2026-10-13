@@ -88,10 +88,16 @@ describe('the map stays in step with the route table', () => {
 	})
 })
 
-describe('the planner and to-do kinds are registered', () => {
+describe('the planner, to-do and briefing kinds are registered', () => {
 	// An unregistered type is not an error, which is exactly why it goes unnoticed: a grey bell, no link,
 	// no row in the inbox's type filter, and a raw enum name in the notification settings.
-	const types = ['PlannedBlockStarting', 'PlannedBlocksMissed', 'PlannedBlockOverrun', 'TodoItemDue']
+	const types = [
+		'PlannedBlockStarting',
+		'PlannedBlocksMissed',
+		'PlannedBlockOverrun',
+		'TodoItemDue',
+		'MorningBriefing',
+	]
 
 	it.each(types)('%s has an icon, a colour and a label key', type => {
 		const meta = notificationTypeMeta[type]
@@ -217,6 +223,11 @@ describe('resolving a subject', () => {
 		expect(notificationRoute(notification('RoutineSuggestedToday'))).toEqual({ name: 'routineToDoList' })
 	})
 
+	it('lands the morning briefing on home, since it is about the whole day', () => {
+		// P2-01: the briefing never carries a subject, so the type route is the destination.
+		expect(notificationRoute(notification('MorningBriefing'))).toEqual({ name: 'home' })
+	})
+
 	it('still navigates nowhere for a failure with no run row', () => {
 		// ScheduledJobFailed omits the subject when the failure has no run (handler not found), and
 		// there is nothing useful to open. Same no-navigation behaviour it had before B2.
@@ -277,6 +288,9 @@ describe('both deliveries of one event land in the same place', () => {
 		// no per-type route, so a push click lands on home. Home's routine widget shows exactly today's
 		// suggested items, so the asymmetry is accepted rather than fixed with a second type map here.
 		expect(globalThis.resolveNotificationTargetUrl?.({ type: 'RoutineSuggestedToday' })).toBe('/')
+		// P2-01: the briefing's root is not a fallback but its destination — the same place as the bell's
+		// `{ name: 'home' }`, so for this type the two deliveries agree.
+		expect(globalThis.resolveNotificationTargetUrl?.({ type: 'MorningBriefing' })).toBe('/')
 		expect(globalThis.resolveNotificationTargetUrl?.(undefined)).toBe('/')
 	})
 

@@ -128,6 +128,20 @@ export const notificationTypeMeta: Record<string, NotificationTypeMeta> = {
 		route: n => subjectRoute(n, { name: 'routineToDoList' }),
 	},
 
+	// P2-01: the once-a-morning summary of the whole day — today's blocks, carry-over, due and overdue
+	// to-dos, today's routines — sent in place of several separate morning pings (with it on, the server
+	// stops sending `RoutineSuggestedToday` above). Constant on purpose, like `ReminderDigest`: it is
+	// about the day rather than one row, so it never carries a subject. Home, because home shows each of
+	// those on one screen, and because it is where the push click lands too (`/`, the service worker's
+	// no-subject fallback), so both deliveries open the same place. Title and body arrive already worded
+	// in the user's locale; nothing here reads the payload.
+	MorningBriefing: {
+		icon: 'sun',
+		color: 'primary',
+		label: 'user.morningBriefing.notificationType',
+		route: { name: 'home' },
+	},
+
 	// The one kind that actually deep-links today: `scheduledJobRun` → `/planovac/behy/:id`.
 	//
 	// (The comment that used to sit here said this app has no scheduler admin screen. That was wrong
