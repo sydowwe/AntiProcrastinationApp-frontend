@@ -317,6 +317,9 @@ never ships a call to a route or field that the running API does not have yet.
 - **Model / effort:** Opus 5.5, high, for both. The framing (offer help, never a score) is the hard part.
 
 ### FO4. "Re-plan the rest of today": one tap moves what slipped into the time that's left
+- **Closed (2026-10-13)** (frontend only, no backend change). All three callers the spec named now place with
+  `next-free-slot`, so "one placement rule for three modules" holds. N5's notification is still not built; it is
+  audit N5's, not a gap in this one.
 - **Checked live (2026-10-11)** against the running API, with no mocks. A block missed at 22:00 was offered at
   23:33–23:43 by `ReplanTodayBanner` → `POST …/replan` (200). The seed's 11:00 block came up under *No room
   left today*, defaulting to *Tomorrow*. `…/replan/apply` returned 200, and the stored task read 23:33–23:43.
@@ -344,10 +347,23 @@ never ships a call to a route or field that the running API does not have yet.
     - Entry points: the now bar (missed mode), the planner card header, and `ReplanTodayBanner` on today's day
       view. All three are offered only when `isMissedAndMovable` matches a block.
     - Home's *Move later* asks `next-free-slot`.
-  - **Not done:** the leisure and to-do handoff callers of `next-free-slot`; the N5 notification. **2026-10-12:**
-    the callers are leisure *Plan it for later* and the to-do → planner handoff. *Do it now* stays "now" on
-    purpose, because it records that the user started at this minute. Prompt:
-    `prompts/fo-close/01-fo4-next-free-slot-callers.md`. No e2e spec yet: `prompts/fo-close/e2e-fo4-replan-today.md`.
+  - **Built (2026-10-13): the other two `next-free-slot` callers.** Both use the server's slot only as a better
+    default. The request is `_silent`, and on a failure or `found: false` the old local default stays.
+    - Leisure *Plan it for later* (`PlanLaterDialog.vue`) asks for today with `notBeforeMinute` set to its old
+      local guess, so the slot is still "later" and on the picker's grid. A late answer never moves a picker the
+      user has already turned.
+    - The to-do / routine → planner handoff (`PlannerTaskDialog.vue`) prefills start and end for the item's
+      suggested time (at least 10 minutes; 60 without one). On today it searches from now rounded up to the
+      start picker's 10-minute grid. Moving the dialog's date asks again for that day, but only while the start
+      is still the prefilled one, and a past day is never asked. Blocks drawn on the grid are untouched. The
+      grid rules are in `utils/handoffFreeSlot.ts`, with tests.
+    - *Do it now* stays "now" on purpose, because it records that the user started at this minute. A comment
+      beside `isStartingNow` in `useLeisureCommitment.ts` says so.
+    - Checked live against the running API: with a block over 20:00–21:30, both dialogs defaulted to 21:30
+      (leisure's old guess was 20:30). The handoff moved to tomorrow's 08:00 when the date changed, came back
+      on return, and kept a start the user had typed. One `next-free-slot` call per open, no console errors.
+      No e2e spec yet: `prompts/fo-close/e2e-fo4-replan-today.md`.
+  - **Not done:** the N5 notification.
 - **Source:** F1-01. It can later read FO10's bed time and F3-04's typical-load figure (both noted in *Rejected* /
   FO10).
 - **Moment:** 11:30, after the 10:00 and 11:00 blocks both slipped.

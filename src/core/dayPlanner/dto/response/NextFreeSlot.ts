@@ -13,6 +13,14 @@ export class NextFreeSlot {
 		public readonly endTime: Time | null,
 	) {}
 
+	/**
+	 * The slot's start as a default for a time picker, or `fallbackMinutes` when there is no room. A caller
+	 * that places a block uses the server's slot only as a better default, never as a gate.
+	 */
+	startMinutesOr(fallbackMinutes: number): number {
+		return this.found && this.startTime != null ? this.startTime.getInMinutes : fallbackMinutes
+	}
+
 	static fromJson(json: any): NextFreeSlot {
 		const { date = '', minutes = 0, found = false, startTime = null, endTime = null } = json ?? {}
 		return new NextFreeSlot(

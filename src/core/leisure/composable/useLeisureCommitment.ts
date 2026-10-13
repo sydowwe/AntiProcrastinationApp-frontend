@@ -95,6 +95,9 @@ export function useLeisureCommitment() {
 	): Promise<PlannedSlot> {
 		const now = new Date()
 		const nowTime = timeInUserZone(now)
+		// "Do it now" stays at now on purpose, and does not ask `next-free-slot` the way "Plan it for later"
+		// does (FO4): it records that the user started at this minute (`InProgress`, `actualStartTime`), and a
+		// block moved to the next free slot would make that record false.
 		const isStartingNow = startTime === null
 		const startMinutes = isStartingNow
 			? Math.min(Math.ceil(nowTime.getInMinutes / START_GRID_MINUTES) * START_GRID_MINUTES, LAST_MINUTE_OF_DAY)

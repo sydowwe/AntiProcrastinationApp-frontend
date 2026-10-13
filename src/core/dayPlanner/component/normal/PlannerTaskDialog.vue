@@ -65,6 +65,9 @@
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 	import { formatDateForApi, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone, timeInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { useDayReplanApi } from '@/core/dayPlanner/api/dayReplanApi.ts'
+	import { handoffSearchFloor, isStillPrefilledStart } from '@/core/dayPlanner/utils/handoffFreeSlot.ts'
 
 	const { showDatePicker = false } = defineProps<{
 		showDatePicker?: boolean
@@ -92,6 +95,16 @@
 
 	const statusOptions = usePlannerTaskStatusOptions()
 
+	// FO4 handoff state (see `prefillFromFreeSlot`).
+	const { fetchNextFreeSlot } = useDayReplanApi()
+	const DEFAULT_HANDOFF_MINUTES = 60
+	// The default length the dialog was opened with, from the item's suggested time. Null when the dialog
+	// was not opened by a handoff, which is what keeps a block drawn on the grid out of this.
+	let handoffMinutes: number | null = null
+	// The start the dialog last wrote by itself. While the form still shows it (`isStillPrefilledStart`), the
+	// user has not chosen a time, so a date change may ask again; once they have, their time stands.
+	let autoStartMinutes: number | null = null
+
 	function createEmptyRequest(suggestedDurationMinutes?: number): PlannerTaskRequest {
 		const req = PlannerTaskRequest.createEmpty()
 		if (store.pendingInitialTodoListItemId !== undefined) {
@@ -102,6 +115,8 @@
 		if (suggestedDurationMinutes !== undefined) {
 			req.endTime = Time.fromMinutes(req.startTime.getInMinutes + suggestedDurationMinutes)
 		}
+		// The default the free-slot answer may replace (FO4, below), as long as the form still shows it.
+		if (handoffMinutes != null) autoStartMinutes = req.startTime.getInMinutes
 		return req
 	}
 
@@ -133,6 +148,46 @@
 		}
 	}
 
+	// ---------------------------------------------------------------- FO4: start where the day is free
+	//
+	// A block handed over from a to-do or routine item has no time of its own, so the dialog used to
+	// start it now, on top of whatever was planned there. The server's `next-free-slot` uses the re-plan's
+	// packing rule, so the default lands in free time. It is only a better default: on a failure or a full
+	// day the old default stays, silently. Its state is declared above `createEmptyRequest`, which records
+	// the default start.
+
+	async function prefillFromFreeSlot(date: string) {
+		const minutes = handoffMinutes
+		const today = isoDateInUserZone()
+		// A past day is a 400, and the route has nothing to say about it anyway.
+		if (minutes == null || date < today) return
+		// On today the server searches from the exact minute; start it on the time picker's grid instead.
+		const options = date === today ? { notBeforeMinute: handoffSearchFloor(timeInUserZone().getInMinutes) } : {}
+		try {
+			const slot = await fetchNextFreeSlot(date, minutes, options, { _silent: true })
+			// Closed, re-dated or edited while the request was out: the answer no longer applies.
+			if (handoffMinutes == null || !startIsPrefilled() || date !== currentDialogDate()) return
+			if (!slot.found || slot.startTime == null || slot.endTime == null) return
+			baseDialog.value?.setTimes(slot.startTime, slot.endTime)
+			autoStartMinutes = slot.startTime.getInMinutes
+		} catch {
+			// a better default only
+		}
+	}
+
+	function currentDialogDate(): string {
+		return showDatePicker ? formatDateForApi(selectedDate.value) : isoDateInUserZone()
+	}
+
+	function startIsPrefilled(): boolean {
+		return isStillPrefilledStart(baseDialog.value?.currentStartTime()?.getInMinutes ?? null, autoStartMinutes)
+	}
+
+	watch(selectedDate, () => {
+		if (handoffMinutes == null || !startIsPrefilled()) return
+		void prefillFromFreeSlot(currentDialogDate())
+	})
+
 	watch(pickerMode, newMode => {
 		if (newMode === 'all') {
 			baseDialog.value?.resetActivityField()
@@ -148,9 +203,15 @@
 				initialPickerActivityId.value = undefined
 				initialPickerTodoListItemId.value = undefined
 				store.$patch({ pendingSuggestedDuration: undefined })
+				handoffMinutes = null
+				autoStartMinutes = null
 				return
 			}
 			if (store.editedId === undefined && store.pendingInitialActivityId !== undefined) {
+				// Set before the base dialog builds its request (after its own `nextTick`), so
+				// `createEmptyRequest` records the default start this answer may replace.
+				handoffMinutes = suggestedDurationMinutes.value ?? DEFAULT_HANDOFF_MINUTES
+				void prefillFromFreeSlot(currentDialogDate())
 				const activityId = store.pendingInitialActivityId
 				const initialPickerMode = store.pendingPickerMode
 				store.$patch({ pendingInitialActivityId: undefined, pendingPickerMode: undefined })

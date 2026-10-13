@@ -1,4 +1,5 @@
 import type { InjectionKey, Ref } from 'vue'
+import type { Time } from '@/_common/dto/dto/Time.ts'
 
 /**
  * The grid element of one planner, published by `PlannerTasksColumn` and provided by `DayPlanner`.
@@ -51,4 +52,7 @@ export interface PlannerTaskDialogApi {
 	prefillActivity: (activityId: number) => void
 	resetActivityField: () => void
 	applySuggestedTime: (durationMinutes: number) => void
+	/** The start currently in the form, or null before the form has one. */
+	currentStartTime: () => Time | null
+	setTimes: (startTime: Time, endTime: Time) => void
 }

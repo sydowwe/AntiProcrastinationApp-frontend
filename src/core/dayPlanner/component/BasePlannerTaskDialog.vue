@@ -253,5 +253,10 @@
 		prefillActivity: (activityId: number) => activityFormField.value?.onOpenEdit(activityId),
 		resetActivityField: () => activityFormField.value?.reset(),
 		applySuggestedTime: (durationMinutes: number) => setDuration(durationMinutes),
+		currentStartTime: () => (data.value.startTime ? Time.fromJson(data.value.startTime) : null),
+		setTimes: (startTime: Time, endTime: Time) => {
+			data.value.startTime = startTime
+			data.value.endTime = endTime
+		},
 	})
 </script>

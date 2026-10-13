@@ -20,12 +20,11 @@ What remains is the owner's (migrations, restart) or a re-run.
 | FO7 | `bcf8671`, `dc5059c` (notification hub closed to tracker tokens) | `ba3e54ea` (`_common` → `a0d8095`) | See the 2026-10-12 row below: the column is dropped and pairing codes are rejected. |
 | FO10 (closed 2026-10-12) | `3e8f0e7` | `8b0595ad` | Nothing. Migration `20261011212220_UserDefaultSleepWindow` is applied, and the settings card was browser-checked against the real API: future unmarked days move, past and custom days don't. |
 | FO5 (closed 2026-10-12) | `8863158` (greeting), `1aa7f2b` + framework `5646e89` (back-off) | `874ee396` | Nothing. Migration `20261008080300_UserLastActiveAndWelcomeBack` is applied. No e2e spec; the card was checked in the browser on 2026-10-08. |
+| FO4 (closed 2026-10-13) | `565f3e6` (xhigh agent) | `d0b24eda`, then the 2026-10-13 close-out (`prompts/fo-close/01-fo4-next-free-slot-callers.md`) | Nothing in FO4. Leisure *Plan it for later* and the to-do handoff now ask `next-free-slot` too, checked live on 2026-10-13. Leisure *Do it now* stays "now" on purpose: it records that the user started at this minute. N5's notification is audit N5's. |
 
 ## Built, not closed
 
-| FO | Backend | Frontend | Why it is not closed |
-|---|---|---|---|
-| FO4 | `565f3e6` (xhigh agent) | `d0b24eda` | Checked live against the real routes on 2026-10-11 (`8b0595ad`). Still open: the spec's other `next-free-slot` callers (leisure *Plan it for later*, the to-do handoff) are not built, so "one placement rule for three modules" holds for one module. Prompt: `prompts/fo-close/01-fo4-next-free-slot-callers.md`. Leisure *Do it now* stays "now" on purpose: it records that the user started at this minute. |
+None since 2026-10-13, when FO4 moved to the table above.
 
 **Closed on 2026-10-12** (moved to the table above): FO2's counted-item rule, after the owner chose "the server owns
 the step" with an explicit `countsAsRepetition` flag on the history creates. Only the to-do timer sends it, because
