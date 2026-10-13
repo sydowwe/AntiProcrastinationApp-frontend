@@ -180,8 +180,20 @@ never ships a call to a route or field that the running API does not have yet.
     send it: there the link is recap credit, and the block decides the item.
   - The planner-block → to-do fan-out stays absolute (a linked block done means the item done), because the sync is
     two-way and `CompletionFanOutTests` pins it.
-  - Tests: six new cases in `HistoryTicksOffThePlanTests`. No e2e spec yet:
-    `prompts/fo-close/e2e-fo2-time-ticks-the-plan.md`.
+  - Tests: six new cases in `HistoryTicksOffThePlanTests`.
+- **e2e (2026-10-13):** `e2e/tests/todo-log-time-ticks.spec.ts`, 3/3 on two runs in a row. Each sitting is logged
+  through the item's menu → *Log time* → *Manual entry*, on rows the spec makes through the API and deletes after.
+  A "4×" item reads 1 of 4 after its first full-length sitting and is done only after the fourth. A plain item is
+  done after one 5-minute sitting against a 1-hour estimate. A sitting as long as a block on the same activity
+  completes the block: home's row is pressed and the planner block's name reads *status: Completed*. Every request
+  is checked to carry `countsAsRepetition: true`. Home's planner-block timer is **not** driven: a sitting long enough
+  to matter needs a real timer to run out, or a faked browser clock under the server's durable timer session.
+  `RecapOnlyLink_LeavesACountedItemAlone` stays its only test. Two things found on the way:
+  - The block sits at the day's wake-up time and lasts 30 minutes. The planner grid draws nothing before wake-up,
+    and a block shorter than one grid slot gets no rows, so it is never drawn (`setGridPositionFromSpan`).
+    The UI cannot make such a block, but the API can.
+  - Two sittings of one activity with the same start answer 409: the history table is unique on user + activity +
+    start.
 - **Status (2026-10-06): built and checked live (backend `9058535`), no migration.**
   Backend: History's `ActivityTimeRecordedPublisher` (behind `IActivityTimeRecordedPublisher`) runs after both
   creates commit and before the 201. It publishes one event per (local day, activity), with the window clipped at
