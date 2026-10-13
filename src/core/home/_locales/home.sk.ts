@@ -65,6 +65,9 @@ const home = {
 		saveStatusFailed: `Stav úlohy „{task}“ sa nepodarilo uložiť`,
 		snoozeFailed: `Úlohu „{task}“ sa nepodarilo posunúť`,
 		extendFailed: `Úlohu „{task}“ sa nepodarilo predĺžiť`,
+		// Pravidlo pruhov na serveri: v každej minúte najviac dva bloky jedného druhu.
+		snoozeLaneConflict: `V tom čase sú už naplánované dve úlohy, preto sa úloha „{task}“ neposunula`,
+		extendLaneConflict: `V tom čase sú už naplánované dve úlohy, preto sa úloha „{task}“ nepredĺžila`,
 		toggleTaskFailed: `Stav úlohy „{task}“ sa nepodarilo uložiť`,
 		retry: `Skúsiť znova`,
 		loadFailed: `Nepodarilo sa načítať dáta`,

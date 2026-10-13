@@ -1,5 +1,8 @@
 import { computed, effectScope, ref, watch } from 'vue'
 import type { Ref } from 'vue'
+import axios, { HttpStatusCode } from 'axios'
+import { extractServerErrorType } from '@/_common/axiosConfig.ts'
+import { ServerErrorType } from '@/_common/composable/general/ErrorHandlingFunctions.ts'
 import { useCalendarQuery } from '@/core/activityHistory/api/calendarApi.ts'
 import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 import type { Calendar } from '@/core/dayPlanner/dto/response/Calendar.ts'
@@ -25,6 +28,7 @@ import {
 import { togglesLinkedTodoItem } from '@/core/home/composable/linkedTodoItemSync.ts'
 import { useDayReplanApi } from '@/core/dayPlanner/api/dayReplanApi.ts'
 import { isMissedAndMovable } from '@/core/dayPlanner/utils/replanCandidates.ts'
+import { extendableMinutes, extendSteps } from '@/core/home/composable/extendRoom.ts'
 import i18n from '@/i18n.ts'
 
 export type FocusMode = 'now' | 'upNext' | 'missed' | 'allDone' | 'noPlan'
@@ -303,6 +307,27 @@ function reportSaveFailure(key: string, task: PlannerTask) {
 	useSnackbar().showErrorSnackbar(i18n.global.t(key, { task: task.activity.name }))
 }
 
+/**
+ * The server's lane rule refusing a move: a 409 `Conflict` because the write would make a third block of its
+ * kind at some minute (`PlannerTaskLaneRule` in the API). Today's plan here can be stale — another device, the
+ * day view in another tab — so a move that looked free on this side can still meet it.
+ */
+function isLaneConflict(error: unknown): boolean {
+	return (
+		axios.isAxiosError(error) &&
+		error.response?.status === HttpStatusCode.Conflict &&
+		extractServerErrorType(error) === ServerErrorType.Conflict
+	)
+}
+
+/**
+ * The span writes below are sent `_silent` and word their own failure, so one failure is one toast: the
+ * interceptor's generic sentence used to land beside this file's own. A lane refusal says why it was refused.
+ */
+function reportMoveFailure(error: unknown, fallbackKey: string, laneKey: string, task: PlannerTask) {
+	reportSaveFailure(isLaneConflict(error) ? laneKey : fallbackKey, task)
+}
+
 async function setStatus(task: PlannerTask, status: PlannerTaskStatus, request?: PatchPlannerTaskStatusRequest) {
 	const previous = task.status
 	task.status = status
@@ -388,7 +413,8 @@ export async function skipTask(task: PlannerTask, reason: BuiltInSkipReason) {
  *
  * With no free stretch left today, or no answer from the server, it falls back to the plain shift it
  * always was, clamped so it cannot spill past midnight. The user asked for "later"; a tap that does
- * nothing because the day is full would read as broken.
+ * nothing because the day is full would read as broken. That shift can land where two blocks already
+ * are, and the server refuses a third (409): the task goes back and the toast says why.
  */
 export async function snoozeTask(task: PlannerTask, minutes: number) {
 	const span = task.endTime.getInMinutes - task.startTime.getInMinutes
@@ -401,11 +427,11 @@ export async function snoozeTask(task: PlannerTask, minutes: number) {
 	task.startTime = Time.fromMinutes(start)
 	task.endTime = Time.fromMinutes(Math.min(start + span, 24 * 60 - 1))
 	try {
-		await planner().update(task.id, PlannerTaskRequest.fromEntity(task))
-	} catch {
+		await planner().update(task.id, PlannerTaskRequest.fromEntity(task), { _silent: true })
+	} catch (error) {
 		task.startTime = previousTimes.startTime
 		task.endTime = previousTimes.endTime
-		reportSaveFailure('home.snoozeFailed', task)
+		reportMoveFailure(error, 'home.snoozeFailed', 'home.snoozeLaneConflict', task)
 	}
 }
 
@@ -427,15 +453,30 @@ async function findFreeStart(task: PlannerTask, span: number, notBefore: number)
 	}
 }
 
-/** Give a running task more room instead of letting it silently eat the rest of the plan. */
+/**
+ * The "give it longer" steps the task menu offers: each of `EXTEND_OPTIONS`, capped to the room before
+ * 23:59 and before a third block of the task's kind (the day grid's lane rule), with repeats and "+0"
+ * dropped. Empty when there is no room at all, and the menu then offers no extension. Reads the
+ * module's `tasks`, so a computed over it follows the plan.
+ */
+export function extendStepsFor(task: PlannerTask): number[] {
+	return extendSteps(task, EXTEND_OPTIONS, tasks.value)
+}
+
+/**
+ * Give a running task more room instead of letting it silently eat the rest of the plan. Never further
+ * than the room there is (see `extendStepsFor`), so an extension the menu offered as "+20m" adds 20.
+ */
 export async function extendTask(task: PlannerTask, minutes: number) {
+	const by = extendableMinutes(task, minutes, tasks.value)
+	if (by === 0) return
 	const previousEnd = task.endTime
-	task.endTime = Time.fromMinutes(Math.min(task.endTime.getInMinutes + minutes, 24 * 60 - 1))
+	task.endTime = Time.fromMinutes(task.endTime.getInMinutes + by)
 	try {
-		await planner().update(task.id, PlannerTaskRequest.fromEntity(task))
-	} catch {
+		await planner().update(task.id, PlannerTaskRequest.fromEntity(task), { _silent: true })
+	} catch (error) {
 		task.endTime = previousEnd
-		reportSaveFailure('home.extendFailed', task)
+		reportMoveFailure(error, 'home.extendFailed', 'home.extendLaneConflict', task)
 	}
 }
 

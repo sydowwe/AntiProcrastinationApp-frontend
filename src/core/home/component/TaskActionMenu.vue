@@ -42,11 +42,13 @@
 				@click="openTracker(task)"
 			/>
 
-			<template v-if="isRunning(task)">
+			<!-- Only the steps there is room for: two blocks side by side is the most a minute may hold,
+				 so an extension stops short of a third (or is not offered), rather than being refused. -->
+			<template v-if="isRunning(task) && extendSteps.length > 0">
 				<VDivider class="my-1" />
 				<VListSubheader>{{ $t('home.giveLonger') }}</VListSubheader>
 				<VListItem
-					v-for="minutes in EXTEND_OPTIONS"
+					v-for="minutes in extendSteps"
 					:key="`extend-${minutes}`"
 					:title="`+${minutesLabel(minutes)}`"
 					prependIcon="fa-hourglass-half"
@@ -86,7 +88,7 @@
 	// `useTodayPlan()` call registers a `useDashboardRefresh` consumer that resets the entry's
 	// staleness clock. See the note above `nowMinutes` in useTodayPlan.ts.
 	import {
-		EXTEND_OPTIONS,
+		extendStepsFor,
 		extendTask,
 		finishTask,
 		isFinished,
@@ -118,6 +120,7 @@
 
 	const { t } = useI18n()
 
+	const extendSteps = computed(() => extendStepsFor(task))
 	const actionsLabel = computed(() => t('home.taskActions', { task: task.activity.name }))
 	const buttonTitle = computed(() => (shortcutHint ? `${actionsLabel.value} — ${shortcutHint}` : actionsLabel.value))
 </script>

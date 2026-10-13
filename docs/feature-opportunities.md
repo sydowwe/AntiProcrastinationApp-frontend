@@ -524,7 +524,11 @@ never ships a call to a route or field that the running API does not have yet.
     overdue banner's *Ignore* refuses one, and the MiniTimeline splits two blocks into two rows. **Server rule, by
     the owner's choice:** create, the PUT and the span PATCH answer 409 `Conflict` for a third block of a kind
     (backend `6dcce27`, `PlannerTaskLaneRule`; no migration, live once the API is restarted). Only a write that moves a block is judged, so a day that already has three can
-    still be edited. The bulk paths are deliberately unchecked. **Still open (owner's call):** with lanes in place,
+    still be edited. The bulk paths are deliberately unchecked. Home's *Give it longer* now offers only the steps
+    that keep a third block out (capped, or not offered), both it and *Move later* word a 409 as
+    "Two tasks are already planned then" in one toast, and `e2e/tests/planner-lanes.spec.ts` covers the side-by-side
+    layout, the refused and the saved drag, the dialog warning (both kinds), a copy-to-days clash and those two home
+    behaviours. **Still open (owner's call):** with lanes in place,
     the materialiser could place an occurrence *beside* a user's block instead of skipping or carving it, as long as
     that leaves two (`RepeatingTaskMaterialiser`, non-destructive mode).
 - **Status (2026-10-07): built and committed (backend `5c17788`, frontend the commit after it); two migrations to

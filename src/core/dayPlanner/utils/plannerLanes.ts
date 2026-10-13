@@ -4,7 +4,8 @@
  * Up to two foreground blocks may share a minute, and separately up to two background blocks. The day
  * grid draws a two-lane stretch as two half-width blocks (two narrow strips for background), so both
  * stay visible and the user can decide which one to keep. A third is refused by every grid gesture and
- * by the task dialog, but the server has no such rule, so one can still arrive from another path. The
+ * by the task dialog, and the server refuses it too (409 `Conflict`) on its three single-task writes, but
+ * not on the bulk paths (copy-to-days, template apply, the materialiser), so one can still arrive. The
  * renderer then keeps it on screen, on top of lane 1 and marked as a clash, rather than hiding it.
  *
  * Everything here is pure and works on one linear axis of minutes, so the day grid (minutes from the

@@ -65,6 +65,9 @@ const home = {
 		saveStatusFailed: `Could not save the status of "{task}"`,
 		snoozeFailed: `Could not move "{task}"`,
 		extendFailed: `Could not extend "{task}"`,
+		// The server's lane rule: at most two blocks of a kind at any minute (planner lanes).
+		snoozeLaneConflict: `Two tasks are already planned then, so "{task}" was not moved`,
+		extendLaneConflict: `Two tasks are already planned then, so "{task}" was not extended`,
 		toggleTaskFailed: `Could not save the status of "{task}"`,
 		retry: `Retry`,
 		loadFailed: `Couldn't load this data`,
