@@ -41,7 +41,7 @@
 
 	const { t } = useI18n()
 	const store = useDayPlannerStore()
-	const { isShown, nowTask, minutesLeft, nextTask, minutesUntilNext } = usePlannerNowNext(store)
+	const { isShown, nowTask, alsoNowCount, minutesLeft, nextTask, minutesUntilNext } = usePlannerNowNext(store)
 
 	/**
 	 * Under an hour the count is spelled out, because Slovak declines it three ways (1 / 2–4 / 5+) and
@@ -67,7 +67,9 @@
 	const nowLine = computed(() => {
 		const task = nowTask.value
 		if (task === null) return ''
-		const label = t('planner.nowNext.now', { name: task.activity.name })
+		const named = t('planner.nowNext.now', { name: task.activity.name })
+		const label =
+			alsoNowCount.value > 0 ? `${named} ${t('planner.nowNext.andMore', { count: alsoNowCount.value })}` : named
 		// Null while a ticked-in-progress task is past its slot: no countdown at all is more honest
 		// than a negative one, and quieter than an "overrun" badge.
 		return minutesLeft.value === null ? label : `${label} · ${timeLeftLabel(minutesLeft.value)}`

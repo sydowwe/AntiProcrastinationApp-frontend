@@ -5,6 +5,7 @@ import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
 import { CreationPreviewType, SLOT_HEIGHT } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
 import { type AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
+import { type LaneMove, NEW_TASK_ID } from '@/core/dayPlanner/composable/useDayPlannerCommon.ts'
 import { useI18n } from 'vue-i18n'
 
 const MOVEMENT_THRESHOLD = 5
@@ -69,12 +70,30 @@ export function usePlannerPointerInteractions(
 		return Math.max(0, Math.min(store.totalGridRows - 1, Math.floor(relativeY / SLOT_HEIGHT)))
 	}
 
-	function checkTaskConflictByRow(newStartRow: number, newEndRow: number, taskId?: number): boolean {
-		return store.tasks.some(task => {
-			if (taskId !== undefined && (taskId ^ task.id) < 0) return false
-			if (task.id === taskId || task.isBackground) return false
-			return !(newEndRow <= task.gridRowStart || newStartRow >= task.gridRowEnd)
-		})
+	/**
+	 * Whether `task` over rows `[startRow, endRow)` would be a third block of its kind at some minute. Two
+	 * side by side are allowed; see `utils/plannerLanes.ts`. Only tasks with the same id sign count, so a
+	 * template preview and the real day do not block each other.
+	 */
+	function exceedsLanesAtRows(task: AnyPlannerTask, startRow: number, endRow: number): boolean {
+		const move = {
+			id: task.id,
+			startTime: store.slotIndexToTime(startRow - 1),
+			endTime: store.slotIndexToTime(endRow - 1),
+			isBackground: task.isBackground,
+		}
+		return store.exceedsLaneLimit([move], { sign: Math.sign(task.id) })
+	}
+
+	/** The same for a block being drawn, whose preview rows are inclusive at both ends. */
+	function creationExceedsLanes(startRow: number, endRow: number): boolean {
+		const move = {
+			id: NEW_TASK_ID,
+			startTime: store.slotIndexToTime(startRow - 1),
+			endTime: store.slotIndexToTime(endRow),
+			isBackground: false,
+		}
+		return store.exceedsLaneLimit([move], { sign: 1 })
 	}
 
 	function beginTouch(e: PointerEvent, arm: PendingTouch['arm'], tap: PendingTouch['tap']): void {
@@ -232,7 +251,8 @@ export function usePlannerPointerInteractions(
 		const { tasks: clipTasks, mode } = store.pendingClipboard
 		const sorted = [...clipTasks].sort((a, b) => a.startTime.getInMinutes - b.startTime.getInMinutes)
 		const previewIds = clipboard.previewTaskIds.value
-		let anyConflict = false
+		let outOfBounds = false
+		const moves: LaneMove[] = []
 
 		for (const task of sorted) {
 			const previewId = mode === 'cut' ? task.id : -task.id
@@ -241,24 +261,25 @@ export function usePlannerPointerInteractions(
 			const newStartRow = hoverRow + rowOffset
 			const newEndRow = newStartRow + duration
 
-			const outOfBounds = newStartRow < 1 || newEndRow > store.totalGridRows + 1
-			const hasConflict =
-				outOfBounds ||
-				store.tasks.some(t => {
-					if (previewIds.has(t.id) || t.isBackground) return false
-					return !(newEndRow <= t.gridRowStart || newStartRow >= t.gridRowEnd)
-				})
-			if (hasConflict) anyConflict = true
+			if (newStartRow < 1 || newEndRow > store.totalGridRows + 1) outOfBounds = true
 
-			store.redrawTask(previewId, {
+			const placed = {
 				gridRowStart: Math.max(1, newStartRow),
 				gridRowEnd: Math.max(2, newEndRow),
 				startTime: store.slotIndexToTime(Math.max(0, newStartRow - 1)),
 				endTime: store.slotIndexToTime(Math.max(1, newEndRow - 1)),
+			}
+			store.redrawTask(previewId, placed)
+			moves.push({
+				id: previewId,
+				startTime: placed.startTime,
+				endTime: placed.endTime,
+				isBackground: task.isBackground,
 			})
 		}
 
-		store.clipboardConflict = anyConflict
+		// All of them at once: pasted blocks count against each other as well as against the day.
+		store.clipboardConflict = outOfBounds || store.exceedsLaneLimit(moves, { excludeIds: previewIds, sign: 1 })
 	}
 
 	/** The touch path's placement: the mouse's hover preview and click, in one tap. */
@@ -312,7 +333,7 @@ export function usePlannerPointerInteractions(
 			const newEndRow = newStartRow + taskDuration
 
 			const fitsInView = newStartRow >= 1 && newEndRow <= store.totalGridRows + 1
-			const hasConflict = checkTaskConflictByRow(newStartRow, newEndRow, store.draggingTaskId)
+			const hasConflict = exceedsLanesAtRows(task, newStartRow, newEndRow)
 
 			store.dragConflict = hasConflict || !fitsInView
 
@@ -334,10 +355,7 @@ export function usePlannerPointerInteractions(
 
 			if (resizeDirection.value === 'top') {
 				const newStartRow = slotIndex + 1
-				if (
-					newStartRow <= task.gridRowEnd &&
-					!checkTaskConflictByRow(newStartRow, task.gridRowEnd, store.resizingTaskId)
-				) {
+				if (newStartRow <= task.gridRowEnd && !exceedsLanesAtRows(task, newStartRow, task.gridRowEnd)) {
 					store.redrawTask(store.resizingTaskId, {
 						gridRowStart: newStartRow,
 						startTime: store.slotIndexToTime(newStartRow - 1),
@@ -345,10 +363,7 @@ export function usePlannerPointerInteractions(
 				}
 			} else {
 				const newEndRow = slotIndex + 2
-				if (
-					newEndRow >= task.gridRowStart &&
-					!checkTaskConflictByRow(task.gridRowStart, newEndRow, store.resizingTaskId)
-				) {
+				if (newEndRow >= task.gridRowStart && !exceedsLanesAtRows(task, task.gridRowStart, newEndRow)) {
 					store.redrawTask(store.resizingTaskId, {
 						gridRowEnd: newEndRow,
 						endTime: store.slotIndexToTime(newEndRow - 1),
@@ -364,12 +379,12 @@ export function usePlannerPointerInteractions(
 
 		if (slotIndex >= localCreationPreview.value.initRow - 1) {
 			const newEndRow = slotIndex + 1
-			if (!checkTaskConflictByRow(localCreationPreview.value.startRow, newEndRow)) {
+			if (!creationExceedsLanes(localCreationPreview.value.startRow, newEndRow)) {
 				localCreationPreview.value.endRow = newEndRow
 			}
 		} else {
 			const newStartRow = slotIndex + 1
-			if (!checkTaskConflictByRow(newStartRow, localCreationPreview.value.endRow)) {
+			if (!creationExceedsLanes(newStartRow, localCreationPreview.value.endRow)) {
 				localCreationPreview.value.startRow = newStartRow
 			}
 		}
@@ -415,12 +430,12 @@ export function usePlannerPointerInteractions(
 					task.gridRowEnd !== originalTaskState.value.gridRowEnd)
 
 			if (didMove) {
-				if (
-					task &&
-					(store.dragConflict || task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows + 1)
-				) {
+				const outsideGrid = task.gridRowStart < 1 || task.gridRowEnd > store.totalGridRows + 1
+				if (store.dragConflict || outsideGrid) {
 					store.redrawTask(store.draggingTaskId, originalTaskState.value)
-					showErrorSnackbar(t('planner.feedback.taskDraggedOutsideGrid'))
+					showErrorSnackbar(
+						t(outsideGrid ? 'planner.feedback.taskDraggedOutsideGrid' : 'planner.feedback.laneLimit'),
+					)
 				} else {
 					const capturedOriginal = { ...originalTaskState.value }
 					const capturedId = task.id

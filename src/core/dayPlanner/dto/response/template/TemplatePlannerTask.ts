@@ -18,7 +18,6 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 		public color: string,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
-		public isDuringBackgroundTask: boolean = false,
 	) {}
 
 	get isTaskOneRow(): boolean {
@@ -47,7 +46,6 @@ export class TemplatePlannerTask implements IBasePlannerTask<TemplatePlannerTask
 			json.color,
 			json.gridRowStart,
 			json.gridRowEnd,
-			json.isDuringBackgroundTask,
 		)
 	}
 }

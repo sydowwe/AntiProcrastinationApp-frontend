@@ -61,7 +61,7 @@
 
 	const store = useDayPlannerStore()
 	const { carryOver, batchDelete, fetchCarryOverCandidates } = useTaskPlannerCrud()
-	const { showSuccessSnackbar } = useSnackbar()
+	const { showSuccessSnackbar, showErrorSnackbar } = useSnackbar()
 	const { confirm } = useDialog()
 	const { shouldConfirm } = useDeleteConfirmation()
 	const { t } = useI18n()
@@ -144,6 +144,11 @@
 		const overlapping = getOverlappingTasks(task)
 		if (overlapping.length > 0) {
 			if (resolution === ApplyTemplateConflictResolution.MergeIgnore) return false
+			// "Ignore" lands it beside what is there, which the grid can draw for one block but not for two.
+			if (resolution === ApplyTemplateConflictResolution.Ignore && store.exceedsLaneLimit([task], { sign: 1 })) {
+				showErrorSnackbar(t('planner.feedback.carryOverWouldClash', { name: task.activity.name }))
+				return false
+			}
 			if (
 				resolution === ApplyTemplateConflictResolution.Overwrite ||
 				resolution === ApplyTemplateConflictResolution.MergeOverwrite
@@ -154,11 +159,6 @@
 			}
 		}
 		const moved = await carryOver(task.id, store.viewedDate)
-		if (moved.isBackground) {
-			store.updateIsDuringBackgroundFlags(moved)
-		} else {
-			moved.isDuringBackgroundTask = store.checkOverlapsBackground(moved)
-		}
 		store.setGridPositionFromSpan(moved)
 		store.tasks.push(moved)
 		candidates.value = candidates.value.filter(c => c.task.id !== task.id)

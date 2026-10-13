@@ -112,7 +112,10 @@ const dayPlanner = {
 			setStartEndTimeError: `Nastavte čas začiatku a konca`,
 			taskTooShortToSplit: `Úloha je príliš krátka na rozdelenie`,
 			taskDraggedOutsideGrid: `Úlohu nie je možné presunúť mimo mriežky`,
-			placementConflict: `Úlohy sem nemožno vložiť: prekrývali by sa s inou úlohou alebo by presiahli mriežku`,
+			// Dva bloky vedľa seba sú povolené; tieto hlásenia sú o treťom.
+			laneLimit: `Na tento čas sú už naplánované dve úlohy`,
+			placementConflict: `Úlohy sem nemožno vložiť: na tento čas sú už naplánované dve úlohy alebo by presiahli mriežku`,
+			carryOverWouldClash: `Úloha {name} sa nepreniesla: na tento čas sú už naplánované dve úlohy`,
 			taskMoved: `Úloha presunutá`,
 			tasksDuplicated: `Úlohy duplikované`,
 			taskMovedToOtherTemplate: `Úloha presunutá do inej šablóny`,
@@ -139,6 +142,8 @@ const dayPlanner = {
 		dialog: {
 			// Prístupný názov skupiny čipov s trvaním v dialógu úlohy (F49).
 			durationPresetsLabel: `Trvanie`,
+			laneLimit: `Na časť tohto času sú už naplánované dve úlohy. Presuňte ju alebo zmeňte jednu z nich:`,
+			laneLimitBackground: `Na časť tohto času sú už naplánované dve aktivity na pozadí. Presuňte ju alebo zmeňte jednu z nich:`,
 			skipTaskTitle: `Preskočiť úlohu`,
 			rescheduleTasksTitle: `Preplánovať úlohy`,
 			nothingToUndo: `Nie je čo vrátiť späť`,
@@ -460,6 +465,8 @@ const dayPlanner = {
 			timeLeft: `zostáva {duration}`,
 			inMinutes: `o {count} minútu | o {count} minúty | o {count} minút`,
 			inTime: `o {duration}`,
+			// Dva bloky vedľa seba: riadok menuje ten, ktorý začal skôr.
+			andMore: `a ešte {count}`,
 		},
 		// FO4. Hovorí, kam ide zvyšok dňa, nikdy nie o koľko je používateľ pozadu: žiadne počty.
 		replan: {
@@ -516,11 +523,13 @@ const dayPlanner = {
 			importancePart: `dôležitosť: {importance}`,
 			locationPart: `miesto: {location}`,
 			notesPart: `má poznámku`,
-			conflictPart: `v konflikte s inou úlohou`,
+			conflictPart: `bola by treťou úlohou v rovnakom čase`,
+			overlapPart: `vedľa úlohy {names}`,
+			clashPart: `kolízia: tretia úloha v rovnakom čase ako {names}`,
 			previewPart: `náhľad šablóny`,
 			fromTemplatePart: `zo šablóny dňa`,
 			fromRepeatingTaskPart: `pridala ju opakujúca sa úloha`,
-			moveConflict: `Posun je v konflikte s inou úlohou`,
+			moveConflict: `Posunom by vznikla tretia úloha v rovnakom čase`,
 			moveOk: `Posun je bez konfliktu`,
 			currentTime: `Aktuálny čas: {time}`,
 			midnight: `Polnoc`,

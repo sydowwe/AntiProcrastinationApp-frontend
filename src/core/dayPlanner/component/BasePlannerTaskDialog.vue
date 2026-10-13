@@ -39,6 +39,27 @@
 				</VChip>
 			</div>
 
+			<!-- Two blocks may share a minute, a third may not (`utils/plannerLanes.ts`). Shown as soon as
+			     the times make one, and Save stays refused while it is shown. -->
+			<VAlert
+				v-if="laneCollisions.length > 0"
+				type="warning"
+				variant="tonal"
+				density="compact"
+				class="mb-3"
+				role="alert"
+			>
+				{{ data.isBackground ? $t('planner.dialog.laneLimitBackground') : $t('planner.dialog.laneLimit') }}
+				<ul class="ml-5 mt-1">
+					<li
+						v-for="other in laneCollisions"
+						:key="other.id"
+					>
+						{{ other.activity.name }} · {{ other.startTime.getString() }} – {{ other.endTime.getString() }}
+					</li>
+				</ul>
+			</VAlert>
+
 			<VCard
 				class="pa-4"
 				color="background"
@@ -114,6 +135,8 @@
 	import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 	import type { AnyDayPlannerStore } from '@/core/dayPlanner/store/IBaseDayPlannerStore.ts'
 	import type { PlannerTaskDialogApi } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+	import type { AnyPlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
+	import { NEW_TASK_ID } from '@/core/dayPlanner/composable/useDayPlannerCommon.ts'
 
 	const props = defineProps<{
 		title: string
@@ -121,6 +144,11 @@
 		createEmptyRequest: (suggestedDurationMinutes?: number) => TTaskRequest
 		hideActivitySelector?: boolean
 		suggestedDurationMinutes?: number
+		/**
+		 * Set when the dialog can save to a day other than the one in `store.tasks` (the to-do lists'
+		 * date picker): the lane check would then compare against the wrong day.
+		 */
+		skipLaneCheck?: boolean
 	}>()
 
 	const emit = defineEmits<{
@@ -226,7 +254,28 @@
 		return Number.isInteger(h) ? `${h}h` : `${Math.floor(h)}½h`
 	}
 
+	/**
+	 * The blocks this one would be a third beside, or none. Editing leaves the task itself out of the day;
+	 * creating and duplicating add a block. A template preview's tasks (negative ids) count only against
+	 * each other, as on the grid.
+	 */
+	const laneCollisions = computed<AnyPlannerTask[]>(() => {
+		if (props.skipLaneCheck || !props.store.dialog || !data.value.startTime || !data.value.endTime) return []
+		const editedId = isEdit.value ? props.store.editedId! : undefined
+		const move = {
+			id: editedId ?? NEW_TASK_ID,
+			startTime: Time.fromJson(data.value.startTime),
+			endTime: Time.fromJson(data.value.endTime),
+			isBackground: !!data.value.isBackground,
+		}
+		const options = { sign: editedId === undefined ? 1 : Math.sign(editedId) }
+		if (!props.store.exceedsLaneLimit([move], options)) return []
+		return props.store.laneCollisions(move, options)
+	})
+
 	async function save() {
+		if (laneCollisions.value.length > 0) return
+
 		const isValid = await form.value?.validate()
 		if (!isValid?.valid) {
 			return

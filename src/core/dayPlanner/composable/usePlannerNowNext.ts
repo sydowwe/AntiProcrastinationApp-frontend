@@ -87,7 +87,9 @@ export function usePlannerNowNext(store: IDayPlannerStore) {
 	 * 1. **An explicit `InProgress` tick wins**, even past the task's end time. The user has said what
 	 *    they are doing; no derived guess beats that, and a task left running past its slot is the
 	 *    single most likely thing to actually be happening.
-	 * 2. **Otherwise the earliest-starting task whose window contains now.**
+	 * 2. **Otherwise the earliest-starting task whose window contains now.** Two blocks side by side
+	 *    (`utils/plannerLanes.ts`) are both under way; the first to start is named and the other is
+	 *    counted in `alsoNowCount`.
 	 *
 	 * Importance is deliberately *not* consulted. It is null on most tasks, so it would decide some
 	 * overlaps and not others; and `useTodayPlan` already answers this question for the home page with
@@ -112,6 +114,22 @@ export function usePlannerNowNext(store: IDayPlannerStore) {
 		return slots.value.find(slot => slot !== current && slot.start > nowOffset.value) ?? null
 	})
 
+	/**
+	 * How many other blocks are under way beside `nowTask` — the second lane of a side-by-side stretch, or a
+	 * block ticked in progress elsewhere. The line keeps naming one task and says "and 1 more" rather than
+	 * growing a second name: it is one quiet line, and choosing between the two is the user's job.
+	 */
+	const alsoNowCount = computed(() => {
+		const current = nowSlot.value
+		if (current === null) return 0
+		return slots.value.filter(
+			slot =>
+				slot !== current &&
+				(slot.task.status === PlannerTaskStatus.InProgress ||
+					(slot.start <= nowOffset.value && slot.end > nowOffset.value)),
+		).length
+	})
+
 	const nowTask = computed<PlannerTask | null>(() => nowSlot.value?.task ?? null)
 	const nextTask = computed<PlannerTask | null>(() => nextSlot.value?.task ?? null)
 
@@ -132,6 +150,7 @@ export function usePlannerNowNext(store: IDayPlannerStore) {
 	return {
 		isShown,
 		nowTask,
+		alsoNowCount,
 		minutesLeft,
 		nextTask,
 		minutesUntilNext,

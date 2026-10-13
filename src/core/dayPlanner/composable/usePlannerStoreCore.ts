@@ -167,10 +167,10 @@ export function usePlannerStoreCore<
 	}
 
 	const {
+		taskLanes,
+		exceedsLaneLimit,
+		laneCollisions,
 		setGridPositionFromSpan,
-		checkOverlapsBackground,
-		checkConflict,
-		updateIsDuringBackgroundFlags,
 		initializeTaskGridPositions,
 		redrawTask,
 	} = useDayPlannerCommon(viewStartTime, totalGridRows, tasks, timeSlotDuration)
@@ -245,6 +245,7 @@ export function usePlannerStoreCore<
 		isOverMidnight,
 		isDraggingAny,
 		isResizingAny,
+		taskLanes,
 
 		// Actions
 		openDeleteDialog,
@@ -258,9 +259,8 @@ export function usePlannerStoreCore<
 		resetStore,
 
 		setGridPositionFromSpan,
-		checkOverlapsBackground,
-		checkConflict,
-		updateIsDuringBackgroundFlags,
+		exceedsLaneLimit,
+		laneCollisions,
 		initializeTaskGridPositions,
 		redrawTask,
 	}

@@ -4,7 +4,14 @@
 		:style="style"
 		:data-task-id="task.id"
 		class="base-task-block background-task-block"
-		:class="[{ 'past-task': isPast, selected: isSelected }]"
+		:class="[
+			{
+				'past-task': isPast,
+				selected: isSelected,
+				narrow: (lane?.laneCount ?? 1) > 1,
+				'lane-clash': lane?.clash,
+			},
+		]"
 		:tabindex="0"
 		role="button"
 		:aria-pressed="isSelected"
@@ -49,11 +56,11 @@
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
 	import { useTaskBlockKeyboard } from '@/core/dayPlanner/composable/useTaskBlockKeyboard.ts'
+	import { backgroundLaneStyle } from '@/core/dayPlanner/utils/plannerLanes.ts'
 
-	const { task, isPast, marginLeft } = defineProps<{
+	const { task, isPast } = defineProps<{
 		task: IBasePlannerTask<IBasePlannerTaskRequest>
 		isPast?: boolean
-		marginLeft?: string
 	}>()
 
 	// The foreground block's key map minus the arrow moves, which act on the selection from the
@@ -73,6 +80,9 @@
 
 	const backgroundColorComp = computed(() => getBgColor(task.activity?.role?.color) || '#4287f5')
 
+	// Two strips side by side are each narrower than one alone; see `backgroundLaneStyle`.
+	const lane = computed(() => store.taskLanes.get(task.id))
+
 	const accessibleLabel = computed(() => {
 		const parts = [
 			t('planner.a11y.backgroundTaskLabel', {
@@ -81,6 +91,12 @@
 				end: Time.getString(task.endTime),
 			}),
 		]
+		const overlapNames = (lane.value?.overlapsWith ?? [])
+			.map(id => store.tasks.find(other => other.id === id)?.activity.name)
+			.filter(Boolean)
+			.join(', ')
+		if (lane.value?.clash) parts.push(t('planner.a11y.clashPart', { names: overlapNames }))
+		else if (overlapNames) parts.push(t('planner.a11y.overlapPart', { names: overlapNames }))
 		if (task.importance?.text) parts.push(t('planner.a11y.importancePart', { importance: task.importance.text }))
 		if (task.location) parts.push(t('planner.a11y.locationPart', { location: task.location }))
 		return parts.join(', ')
@@ -89,7 +105,7 @@
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
 		return {
-			marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
+			...backgroundLaneStyle(lane.value),
 			gridRow: `${task.gridRowStart} / span ${span}`,
 		}
 	})
@@ -104,12 +120,16 @@
 		position: absolute;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 		transition: all 0.2s ease;
-		left: 0;
 		top: 2px;
 		bottom: 0;
 		z-index: 5;
-		width: 36px;
 		cursor: pointer;
+	}
+
+	.background-task-block.lane-clash {
+		z-index: 6;
+		outline: 2px dashed rgb(var(--v-theme-error));
+		outline-offset: -2px;
 	}
 
 	.background-task-block:focus {
@@ -154,5 +174,10 @@
 		border: 2px double rgba(255, 255, 255, 0.5);
 		font-size: 0.9rem;
 		font-weight: 600;
+	}
+
+	.narrow .background-task-label {
+		padding: 8px 2px;
+		font-size: 0.8rem;
 	}
 </style>

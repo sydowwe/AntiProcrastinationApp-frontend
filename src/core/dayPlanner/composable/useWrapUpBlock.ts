@@ -10,6 +10,7 @@ import { PlannerTaskStatus } from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.
 import { PatchPlannerTaskStatusRequest } from '@/core/dayPlanner/dto/request/PatchPlannerTaskStatusRequest.ts'
 import { TaskSpan } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { PlannerTask } from '@/core/dayPlanner/dto/response/PlannerTask.ts'
+import { NEW_TASK_ID } from '@/core/dayPlanner/composable/useDayPlannerCommon.ts'
 
 /** The latest end a span may have: the server's span validator wants start before end, so no wrap past midnight. */
 const LAST_MINUTE_OF_DAY = 1439
@@ -65,13 +66,28 @@ export function useWrapUpBlock() {
 
 	/**
 	 * How many of `minutes` the block can actually be extended by: up to 23:59, since a span may not wrap past
-	 * midnight. 0 when there is no room, or when the block already wraps (a row from before that rule).
+	 * midnight, and only as far as it stays one of at most two blocks at any minute — the grid's lane rule, which
+	 * a resize by hand would hit at the same place. 0 when there is no room, or when the block already wraps (a
+	 * row from before that rule).
 	 */
 	function extendableMinutes(task: PlannerTask, minutes: number): number {
 		const start = task.startTime.getInMinutes
 		const end = task.endTime.getInMinutes
 		if (end <= start) return 0
-		return Math.max(0, Math.min(minutes, LAST_MINUTE_OF_DAY - end))
+		let by = Math.max(0, Math.min(minutes, LAST_MINUTE_OF_DAY - end))
+		while (by > 0 && extensionClashes(task, end, by)) by--
+		return by
+	}
+
+	/** The added stretch alone, as a block of its own: a clash already inside the block is not this extend's doing. */
+	function extensionClashes(task: PlannerTask, end: number, by: number): boolean {
+		const extension = {
+			id: NEW_TASK_ID,
+			startTime: Time.fromMinutes(end),
+			endTime: Time.fromMinutes(end + by),
+			isBackground: task.isBackground,
+		}
+		return store.exceedsLaneLimit([extension], { sign: 1 })
 	}
 
 	/** Moves the block's planned end later, as a resize would, with the same undo. */
@@ -110,7 +126,6 @@ export function useWrapUpBlock() {
 		if (!task) return
 		task.endTime = endTime
 		store.setGridPositionFromSpan(task)
-		task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
 	}
 
 	return { completeNow, extend, extendableMinutes, completing, extending }

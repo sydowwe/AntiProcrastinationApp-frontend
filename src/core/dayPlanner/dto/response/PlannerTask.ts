@@ -36,7 +36,6 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 		public todoListItemId: number | null = null,
 		public gridRowStart: number = -1,
 		public gridRowEnd: number = -1,
-		public isDuringBackgroundTask: boolean = false,
 		/** The day (`YYYY-MM-DD`) the task was first planned for, once it has been carried over; else null. */
 		public originalDate: string | null = null,
 		/** How many times the task has been carried over to a later day. "Pushed 4×" is the cue to split or drop it. */
@@ -113,7 +112,6 @@ export class PlannerTask implements IBasePlannerTask<PlannerTaskRequest> {
 			json.todolistItemId ?? null,
 			0,
 			0,
-			false,
 			json.originalDate ?? null,
 			json.carryOverCount ?? 0,
 			json.sourceRepeatingTaskId ?? null,

@@ -47,7 +47,7 @@ cheap.
 | Question | Decision |
 |---|---|
 | **FO2:** what does timed work do to a step-counted ("4×") item? | **The server owns the step.** A sitting logged *from the item* carries `countsAsRepetition` and ticks it once; time alone never finishes a counted item. Only the to-do timer sends the flag: home's planner-block timer links its time for the recap and its block decides the item. (The first proposal, "every linked sitting ticks", was withdrawn: the server cannot tell those two surfaces apart without the flag.) |
-| **FO6:** a destructive conflict mode on auto-placement | **Never destructive from a read**: `Overwrite` → `Ignore`, `MergeOverwrite` → `MergeIgnore`. Showing both blocks side by side ("lanes", two foreground + two background) is wanted, but **later** (`prompts/fo-close/04-planner-lanes.md`). |
+| **FO6:** a destructive conflict mode on auto-placement | **Never destructive from a read**: `Overwrite` → `Ignore`, `MergeOverwrite` → `MergeIgnore`. Showing both blocks side by side ("lanes", two foreground + two background) was built on 2026-10-13 (`prompts/fo-close/04-planner-lanes.md`, see FO6 below). Placing an occurrence *beside* a block instead of skipping it is still open. |
 | **FO7:** tracker pairing codes | **Rejected.** A Google-only account sets a password through *Forgot password*. The unread column is dropped. |
 | **F4 Q5:** is a named stretch wanted? | **Yes, the full `TimeAway` entity (option C).** |
 | **F4 Q6–Q9** | The recommendations: the name is `TimeAway`; deleting a stretch keeps the cycles it excused excused; its template is only suggested first, never applied; existing labels are not converted. |
@@ -480,9 +480,23 @@ never ships a call to a route or field that the running API does not have yet.
   - **A day marked away after placement.** `AwayDayOccurrenceWithdrawalHandler` (Planning) takes
     `CalendarDayTypesChangedEvent` and removes **untouched** occurrences from away days, today on. The day stays
     decided, so un-marking it brings nothing back. A moved, started or linked occurrence is the user's and stays.
-  - Tests: three new cases in `RepeatingTaskMaterialisationTests`. Showing two overlapping blocks side by side is
-    a later item (`prompts/fo-close/04-planner-lanes.md`). No e2e spec yet:
+  - Tests: three new cases in `RepeatingTaskMaterialisationTests`. No e2e spec yet:
     `prompts/fo-close/e2e-fo6-auto-placed-repeats.md`.
+  - **Planner lanes (2026-10-13, `prompts/fo-close/04-planner-lanes.md`).** Up to two foreground and two background
+    blocks may now share a minute, drawn side by side; a third is refused. The rule is one pure function,
+    `src/core/dayPlanner/utils/plannerLanes.ts` (`assignLanes`, `exceedsLaneLimit`), wired through
+    `useDayPlannerCommon` for both planners. It replaced the four "overlaps anything" copies (drag, resize, draw,
+    clipboard, arrow keys) and the dead `checkConflict`, and `isDuringBackgroundTask` is gone because lanes are derived
+    and no longer stored. The task dialog warns and names the blocks it would collide with, and won't save. A
+    third block that arrives anyway (template apply, copy-to-days, the materialiser) is drawn over lane 1 with a
+    dashed outline, an icon and a "clashes" label, not hidden. Home's now bar and the day view's now line name the
+    block that started first and add "and 1 more". The overrun banner's *+15 min* stops short of a third block, the
+    overdue banner's *Ignore* refuses one, and the MiniTimeline splits two blocks into two rows. **Server rule, by
+    the owner's choice:** create, the PUT and the span PATCH answer 409 `Conflict` for a third block of a kind
+    (backend `6dcce27`, `PlannerTaskLaneRule`; no migration, live once the API is restarted). Only a write that moves a block is judged, so a day that already has three can
+    still be edited. The bulk paths are deliberately unchecked. **Still open (owner's call):** with lanes in place,
+    the materialiser could place an occurrence *beside* a user's block instead of skipping or carving it, as long as
+    that leaves two (`RepeatingTaskMaterialiser`, non-destructive mode).
 - **Status (2026-10-07): built and committed (backend `5c17788`, frontend the commit after it); two migrations to
   apply,** FO3 phase 2's `20261007200704` first. Backend: `RepeatingTaskMaterialiser` (Planning)
   runs from `GET /calendar/day-plan/{date}` (home) and `GET /calendar/by-Date/{date}` (the day planner) for the user's

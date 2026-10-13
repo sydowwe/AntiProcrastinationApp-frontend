@@ -48,7 +48,6 @@ export function useClipboardHandling<
 					request.endTime = newEnd
 					const response = await api.createWithResponse(request)
 					store.setGridPositionFromSpan(response)
-					response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
 					store.tasks.push(response)
 				}
 				await api.batchDelete(ids)
@@ -65,7 +64,6 @@ export function useClipboardHandling<
 					task.startTime = newStart
 					task.endTime = newEnd
 					store.setGridPositionFromSpan(task)
-					task.isDuringBackgroundTask = store.checkOverlapsBackground(task)
 					store.tasks.push(task)
 					await store.updateTaskSpan(task.id, TaskSpan.fromTask(task))
 				}
@@ -98,7 +96,6 @@ export function useClipboardHandling<
 				request.endTime = newEnd
 				const response = await api.createWithResponse(request)
 				store.setGridPositionFromSpan(response)
-				response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
 				store.tasks.push(response)
 				created.push(response)
 			}

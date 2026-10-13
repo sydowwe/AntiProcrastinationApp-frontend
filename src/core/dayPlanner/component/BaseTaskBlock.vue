@@ -4,7 +4,6 @@
 		v-bind="$attrs"
 		:task
 		:isPast
-		:marginLeft
 	/>
 
 	<VSheet
@@ -37,10 +36,28 @@
 			@click.stop
 			@pointerdown="emit('resizeStart', { taskId: task.id, direction: 'top', pointerEvent: $event })"
 		/>
-		<div class="task-content pl-5 pr-3 pointer-events-none flex-fill d-flex align-center">
-			<div class="task-content-main w-100 d-flex justify-space-between align-center">
-				<div class="d-flex ga-4 align-center flex-wrap">
+		<!-- Half width at 360 px leaves ~85 px: less padding, and the content wraps rather than clipping. -->
+		<div
+			class="task-content pointer-events-none flex-fill d-flex align-center"
+			:class="isHalfLane ? 'pl-3 pr-1' : 'pl-5 pr-3'"
+		>
+			<div
+				class="task-content-main w-100 d-flex justify-space-between align-center"
+				:class="{ 'flex-wrap': isHalfLane }"
+			>
+				<div
+					class="d-flex align-center flex-wrap"
+					:class="isHalfLane ? 'ga-1' : 'ga-4'"
+				>
 					<slot name="prepend"></slot>
+					<!-- A third block at the same time, which arrived from outside the grid. Said by an icon
+					     as well as the dashed outline, so it does not rest on colour alone. -->
+					<VIcon
+						v-if="lane?.clash"
+						icon="fa-triangle-exclamation"
+						color="error"
+						:size="task.isTaskOneRow ? 16 : 20"
+					></VIcon>
 					<div
 						v-if="!!task.importance"
 						class="d-flex"
@@ -145,17 +162,16 @@
 	import { useColor } from '@/_common/composable/general/useColor.ts'
 	import BackgroundTaskBlock from '@/core/dayPlanner/component/BackgroundTaskBlock.vue'
 	import { useTaskBlockKeyboard } from '@/core/dayPlanner/composable/useTaskBlockKeyboard.ts'
+	import { foregroundLaneStyle } from '@/core/dayPlanner/utils/plannerLanes.ts'
 
 	const {
 		task,
 		isPast,
-		marginLeft,
 		extraLabelParts = [],
 		extraKeyShortcuts,
 	} = defineProps<{
 		task: TTask
 		isPast?: boolean
-		marginLeft?: string
 		/**
 		 * Localized descriptors only the concrete block knows about — the normal planner's status,
 		 * for instance. They are appended to the accessible name because `role="button"` makes the
@@ -204,13 +220,23 @@
 
 	const isOutOfView = computed(() => task.gridRowStart === 1 && task.gridRowEnd === 1)
 
+	const lane = computed(() => store.taskLanes.get(task.id))
+	const isHalfLane = computed(() => (lane.value?.laneCount ?? 1) > 1)
+
 	const style = computed(() => {
 		const span = Math.max(1, (task.gridRowEnd || 1) - (task.gridRowStart || 1))
 		return {
-			marginLeft: marginLeft ?? `${task.isDuringBackgroundTask ? 36 : 0}px`,
+			...foregroundLaneStyle(lane.value),
 			gridRow: `${task.gridRowStart} / span ${span}`,
 		}
 	})
+
+	function namesOf(ids: number[]): string {
+		return ids
+			.map(id => store.tasks.find(other => other.id === id)?.activity.name)
+			.filter(Boolean)
+			.join(', ')
+	}
 
 	const formattedTime = computed(() => {
 		// Default time formatting (can be overridden via slot)
@@ -224,6 +250,8 @@
 			'past-task': isPast,
 			selected: isSelected.value,
 			conflict: isConflict.value,
+			'lane-clash': !!lane.value?.clash,
+			'half-lane': isHalfLane.value,
 			'no-hover': isAnyTaskBeingManipulated.value,
 		},
 	])
@@ -249,6 +277,12 @@
 			}),
 			...extraLabelParts,
 		]
+		// The halves are only beside each other on screen; the label says so, in time order like the focus order.
+		const overlapNames = namesOf(lane.value?.overlapsWith ?? [])
+		// A drag that would clash already says so through `conflictPart` below; once is enough.
+		if (lane.value?.clash) {
+			if (!isConflict.value) parts.push(t('planner.a11y.clashPart', { names: overlapNames }))
+		} else if (overlapNames) parts.push(t('planner.a11y.overlapPart', { names: overlapNames }))
 		if (task.activity.role?.name) parts.push(t('planner.a11y.rolePart', { role: task.activity.role.name }))
 		if (task.activity.category?.name) {
 			parts.push(t('planner.a11y.categoryPart', { category: task.activity.category.name }))
@@ -331,6 +365,13 @@
 		cursor: grabbing !important;
 	}
 
+	/* Drawn over lane 1, so it must read as "on top of" the block there rather than as part of it. */
+	.task-block.lane-clash {
+		z-index: 13;
+		outline: 2px dashed rgb(var(--v-theme-error));
+		outline-offset: -2px;
+	}
+
 	.task-block.conflict {
 		opacity: 0.7 !important;
 		background: rgba(244, 67, 54, 0.7) !important;
@@ -376,6 +417,12 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		line-height: 1.2;
+	}
+
+	/* Half width: the name is the one thing that must stay readable, so it wraps instead of ellipsising. */
+	.half-lane .task-title {
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 
 	.task-time {

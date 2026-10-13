@@ -42,6 +42,9 @@ const home = {
 		pickSomethingRestful: `Vyber si niečo príjemné`,
 		wasDue: `Malo skončiť pred {time}`,
 		overrunBy: `Beží o {time} dlhšie`,
+		// Dva bloky vedľa seba: lišta menuje ten, ktorý začal skôr.
+		alsoNow: `a ešte {count}`,
+		alsoNowLabel: `Teraz aj: {names}`,
 		leftOfPlan: `Zostáva {time}`,
 		planOver: `Plán sa skončil`,
 		start: `Spustiť`,

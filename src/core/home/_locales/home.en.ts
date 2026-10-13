@@ -42,6 +42,9 @@ const home = {
 		pickSomethingRestful: `Pick something to enjoy`,
 		wasDue: `Was due {time} ago`,
 		overrunBy: `Running {time} over`,
+		// Two blocks side by side: the bar names the one that started first.
+		alsoNow: `and {count} more`,
+		alsoNowLabel: `Also now: {names}`,
 		leftOfPlan: `{time} left`,
 		planOver: `Plan is over`,
 		start: `Start`,

@@ -10,6 +10,7 @@
 					left: `${getPosition(task).left}%`,
 					width: `${getPosition(task).width}%`,
 					backgroundColor: task.color || '#5c2caa',
+					...laneRowStyle(index),
 				}"
 			/>
 			<div
@@ -33,6 +34,7 @@
 	import { computed } from 'vue'
 	import type { ITimelineTask } from '@/core/dayPlanner/dto/ITimelineTask.ts'
 	import type { Time } from '@/_common/dto/dto/Time.ts'
+	import { assignLanes } from '@/core/dayPlanner/utils/plannerLanes.ts'
 
 	const {
 		tasks,
@@ -56,6 +58,27 @@
 
 	const nonBackgroundTasks = computed(() => tasks.filter(t => !t.isBackground))
 	const backgroundTasks = computed(() => tasks.filter(t => t.isBackground))
+
+	/**
+	 * Two blocks side by side on the day grid (`plannerLanes.ts`) share the strip's height here, one row
+	 * each, instead of the later one hiding the earlier. Keyed by index: timeline tasks carry no id.
+	 */
+	const lanes = computed(() =>
+		assignLanes(
+			nonBackgroundTasks.value.map((task, index) => {
+				const start = (task.startTime.getInMinutes - startTime.getInMinutes + 1440) % 1440
+				const end = start + ((task.endTime.getInMinutes - task.startTime.getInMinutes + 1440) % 1440)
+				return { id: index, start, end, isBackground: false }
+			}),
+		),
+	)
+
+	/** Half of the 14 px segment each: 5 px plus a 1 px border, on rows starting at 1 px and 8 px. */
+	function laneRowStyle(index: number): Record<string, string> {
+		const lane = lanes.value.get(index)
+		if (!lane || lane.laneCount < 2) return {}
+		return { top: `${1 + lane.lane * 7}px`, height: '5px', borderWidth: '1px' }
+	}
 
 	function getPosition(task: ITimelineTask) {
 		const rangeStart = startTime.getInMinutes

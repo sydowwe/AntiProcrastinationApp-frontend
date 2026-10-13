@@ -60,7 +60,7 @@
 		/>
 
 		<slot
-			v-for="task in store.tasks"
+			v-for="task in tasksInTimeOrder"
 			:key="task.id"
 			name="task-block"
 			:task="task"
@@ -128,6 +128,17 @@
 			removePreviewTasksFromGrid,
 		})
 	usePlannerKeyboard(store, tasksColumnRef, removePreviewTasksFromGrid)
+
+	// DOM order is Tab order. `store.tasks` is in arrival order — a block created or pasted lands at the
+	// end — and two blocks side by side sit at one height, so the order is the lanes' time order instead.
+	// Held still while a block is dragged or resized: a keyed move re-inserts the node, which restarts the
+	// block's slide-in animation under the pointer every time it passes a neighbour.
+	const tasksInTimeOrder = computed<typeof store.tasks>(previous => {
+		if (previous && (store.isDraggingAny || store.isResizingAny)) return previous
+		return [...store.tasks].sort(
+			(a, b) => (store.taskLanes.get(a.id)?.order ?? 0) - (store.taskLanes.get(b.id)?.order ?? 0),
+		)
+	})
 
 	const gridLabel = computed(() =>
 		t('planner.a11y.gridLabel', {

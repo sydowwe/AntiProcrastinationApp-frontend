@@ -44,20 +44,14 @@ export function usePlannerKeyboard(
 				if (newStart < 1 || newEnd > store.totalGridRows + 1) return
 			}
 
-			let hasConflict = false
-			for (const task of selectedTasks) {
-				const newStart = task.gridRowStart + delta
-				const newEnd = task.gridRowEnd + delta
-				if (
-					store.tasks.some(t => {
-						if (selectedIds.has(t.id) || t.isBackground) return false
-						return !(newEnd <= t.gridRowStart || newStart >= t.gridRowEnd)
-					})
-				) {
-					hasConflict = true
-					break
-				}
-			}
+			// The whole selection at its new place, at most two blocks at any minute (`utils/plannerLanes.ts`).
+			const moves = selectedTasks.map(task => ({
+				id: task.id,
+				startTime: store.slotIndexToTime(task.gridRowStart + delta - 1),
+				endTime: store.slotIndexToTime(task.gridRowEnd + delta - 1),
+				isBackground: task.isBackground,
+			}))
+			const hasConflict = store.exceedsLaneLimit(moves, { sign: Math.sign(selectedTasks[0]!.id) })
 
 			if (!arrowOriginals) arrowOriginals = selectedTasks.map(t => ({ ...t }))
 

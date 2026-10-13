@@ -111,6 +111,18 @@
 							>
 								{{ $t('home.overrunBy', { time: minutesLabel(overrunMinutes) }) }}
 							</VChip>
+							<!-- A second block side by side. Named on hover and to a screen reader; the
+								 actions stay on the first one, and the planner card lists both. -->
+							<span
+								v-if="focusMode === 'now' && alsoActiveTasks.length > 0"
+								class="text-caption text-medium-emphasis"
+								:title="alsoNowLabel"
+							>
+								<span aria-hidden="true">
+									{{ $t('home.alsoNow', { count: alsoActiveTasks.length }) }}
+								</span>
+								<span class="d-sr-only">{{ alsoNowLabel }}</span>
+							</span>
 						</div>
 						<div class="nowbar__title">{{ headline }}</div>
 						<div
@@ -290,6 +302,7 @@
 		loading,
 		focusTask,
 		focusMode,
+		alsoActiveTasks,
 		focusIcon,
 		focusCountdown,
 		overrunMinutes,
@@ -335,6 +348,10 @@
 	const accentColor = computed(() =>
 		focusMode.value === 'missed' ? 'error' : focusMode.value === 'allDone' ? 'success' : 'primary',
 	)
+	const alsoNowLabel = computed(() =>
+		t('home.alsoNowLabel', { names: alsoActiveTasks.value.map(task => task.activity.name).join(', ') }),
+	)
+
 	const headline = computed(() => {
 		if (focusTask.value) return focusTask.value.activity.name
 		// `hasPlan`, not the calendar: a seeded-but-untouched day has a calendar and no plan, and

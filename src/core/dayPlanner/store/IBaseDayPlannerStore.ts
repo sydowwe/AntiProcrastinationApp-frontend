@@ -4,6 +4,8 @@ import type { AnyPlannerTask, TaskSpan } from '@/core/dayPlanner/dto/response/IB
 import { type IBasePlannerTask } from '@/core/dayPlanner/dto/response/IBasePlannerTask.ts'
 import type { IBasePlannerTaskRequest } from '@/core/dayPlanner/dto/request/IBasePlannerTaskRequest.ts'
 import type { CreationPreviewType, PlacingItem, PlannerClipboard } from '@/core/dayPlanner/component/DayPlannerTypes.ts'
+import type { LaneCheckOptions, LaneMove } from '@/core/dayPlanner/composable/useDayPlannerCommon.ts'
+import type { TaskLane } from '@/core/dayPlanner/utils/plannerLanes.ts'
 
 /**
  * The surface both planner stores share.
@@ -16,7 +18,7 @@ import type { CreationPreviewType, PlacingItem, PlannerClipboard } from '@/core/
  *
  * Note the task-shaped parameters take `AnyPlannerTask`, not `TTask`. They only ever read the
  * shared surface (`useDayPlannerCommon` touches id / startTime / endTime / isBackground and the
- * three grid fields), and typing them on `TTask` made the whole interface invariant in its task
+ * two grid fields), and typing them on `TTask` made the whole interface invariant in its task
  * type — which is what stopped a concrete store from being assignable to the injected contract.
  */
 export interface IBaseDayPlannerStore<
@@ -77,9 +79,10 @@ export interface IBaseDayPlannerStore<
 	clearSelection: () => void
 
 	setGridPositionFromSpan: (task: AnyPlannerTask) => void
-	checkOverlapsBackground: (task: AnyPlannerTask) => boolean
-	updateIsDuringBackgroundFlags: (task: AnyPlannerTask) => void
-	checkConflict: (task: AnyPlannerTask, currentEventId?: number) => boolean
+	/** Which lane each task is drawn in; see `utils/plannerLanes.ts`. */
+	taskLanes: Map<number, TaskLane>
+	exceedsLaneLimit: (moves: readonly LaneMove[], options?: LaneCheckOptions) => boolean
+	laneCollisions: (move: LaneMove, options?: LaneCheckOptions) => AnyPlannerTask[]
 	initializeTaskGridPositions: () => void
 	redrawTask: (taskId: number, updates: Partial<AnyPlannerTask>) => void
 

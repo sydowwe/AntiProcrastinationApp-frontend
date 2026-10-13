@@ -33,11 +33,6 @@ export function usePlannerCrud<
 		if (!request.startTime || !request.endTime) return
 		api.applyContext(request)
 		const response = await api.createWithResponse(request)
-		if (response.isBackground) {
-			store.updateIsDuringBackgroundFlags(response)
-		} else {
-			response.isDuringBackgroundTask = store.checkOverlapsBackground(response)
-		}
 		store.setGridPositionFromSpan(response)
 		store.tasks.push(response)
 		push({
@@ -58,18 +53,11 @@ export function usePlannerCrud<
 		}
 		const index = store.tasks.findIndex(e => e.id === id)
 		const originalTask = { ...store.tasks[index]! } as TTask
-		const wasBackground = store.tasks[index]?.isBackground
 		api.applyContext(request)
 		await api.update(id, request)
 		const updatedItem = await api.fetchById(id)
-		if (request.isBackground !== wasBackground) {
-			store.updateIsDuringBackgroundFlags(updatedItem)
-		}
 		store.setGridPositionFromSpan(updatedItem)
 		store.tasks[index] = updatedItem
-		if (!request.isBackground) {
-			updatedItem.isDuringBackgroundTask = store.checkOverlapsBackground(updatedItem)
-		}
 		push({
 			description: t('planner.undo.taskUpdated'),
 			date: undoDate(),
@@ -116,11 +104,6 @@ export function usePlannerCrud<
 					const request = api.buildRequestFromEntity(task)
 					api.applyContext(request)
 					const recreated = await api.createWithResponse(request)
-					if (recreated.isBackground) {
-						store.updateIsDuringBackgroundFlags(recreated)
-					} else {
-						recreated.isDuringBackgroundTask = store.checkOverlapsBackground(recreated)
-					}
 					store.setGridPositionFromSpan(recreated)
 					store.tasks.push(recreated)
 				}
@@ -167,7 +150,6 @@ export function usePlannerCrud<
 		store.tasks[index] = updatedOriginal
 
 		store.setGridPositionFromSpan(newTask)
-		newTask.isDuringBackgroundTask = store.checkOverlapsBackground(newTask)
 		store.tasks.push(newTask)
 
 		store.selectedTaskIds.clear()

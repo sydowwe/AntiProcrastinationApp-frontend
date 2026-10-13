@@ -183,6 +183,14 @@ const activeTask = computed(
 		sortedTasks.value.find(isActive) ??
 		null,
 )
+/**
+ * The other blocks under way beside `activeTask`. The day grid allows two side by side (`plannerLanes.ts`),
+ * so "now" can be two things; the bar names the one that started first and counts these, rather than
+ * picking one silently.
+ */
+const alsoActiveTasks = computed(() =>
+	activeTask.value === null ? [] : sortedTasks.value.filter(task => task !== activeTask.value && isRunning(task)),
+)
 const nextTask = computed(
 	() => sortedTasks.value.find(task => !isFinished(task) && task.startTime.getInMinutes > nowMinutes.value) ?? null,
 )
@@ -667,6 +675,7 @@ export function useTodayPlan() {
 		completedCount,
 		progressPercent,
 		activeTask,
+		alsoActiveTasks,
 		nextTask,
 		missedTasks,
 		lastMissedTask,

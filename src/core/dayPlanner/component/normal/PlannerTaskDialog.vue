@@ -12,6 +12,7 @@
 		:createEmptyRequest="createEmptyRequest"
 		:hideActivitySelector="!isEdit && pickerMode !== 'all'"
 		:suggestedDurationMinutes
+		:skipLaneCheck="showDatePicker"
 		@edit="(id: number, task: PlannerTaskRequest) => emit('edit', id, task)"
 		@create="handleCreate"
 	>

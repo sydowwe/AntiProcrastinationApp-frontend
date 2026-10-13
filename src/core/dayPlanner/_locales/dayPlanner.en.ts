@@ -105,7 +105,10 @@ const dayPlanner = {
 			setStartEndTimeError: `Set start time and end time`,
 			taskTooShortToSplit: `Task is too short to split`,
 			taskDraggedOutsideGrid: `Task cannot be dragged outside of the grid`,
-			placementConflict: `The tasks can't go there: they would overlap another task or run past the grid`,
+			// Two blocks side by side are allowed; these are about a third.
+			laneLimit: `Two tasks are already planned at that time`,
+			placementConflict: `The tasks can't go there: two tasks are already planned at that time, or they would run past the grid`,
+			carryOverWouldClash: `{name} was not carried over: two tasks are already planned at that time`,
 			taskMoved: `Task moved`,
 			tasksDuplicated: `Tasks duplicated`,
 			taskMovedToOtherTemplate: `Task moved to other template`,
@@ -132,6 +135,8 @@ const dayPlanner = {
 		dialog: {
 			// Accessible name of the duration chip group in the task dialog (F49).
 			durationPresetsLabel: `Duration`,
+			laneLimit: `Two tasks are already planned for part of this time. Move it, or change one of them:`,
+			laneLimitBackground: `Two background activities are already planned for part of this time. Move it, or change one of them:`,
 			skipTaskTitle: `Skip task`,
 			rescheduleTasksTitle: `Reschedule tasks`,
 			nothingToUndo: `Nothing to undo`,
@@ -453,6 +458,8 @@ const dayPlanner = {
 			timeLeft: `{duration} left`,
 			inMinutes: `in {count} min`,
 			inTime: `in {duration}`,
+			// Two blocks side by side: the line names the one that started first.
+			andMore: `and {count} more`,
 		},
 		// FO4. Says where the rest of the day goes, never how far behind the user is: no counts.
 		replan: {
@@ -507,11 +514,13 @@ const dayPlanner = {
 			importancePart: `importance: {importance}`,
 			locationPart: `location: {location}`,
 			notesPart: `has a note`,
-			conflictPart: `conflicts with another task`,
+			conflictPart: `would be a third task at the same time`,
+			overlapPart: `side by side with {names}`,
+			clashPart: `clashes: a third task at the same time as {names}`,
 			previewPart: `template preview`,
 			fromTemplatePart: `from a day template`,
 			fromRepeatingTaskPart: `placed by a repeating task`,
-			moveConflict: `The move conflicts with another task`,
+			moveConflict: `The move would make a third task at the same time`,
 			moveOk: `The move is free of conflicts`,
 			currentTime: `Current time: {time}`,
 			midnight: `Midnight`,
