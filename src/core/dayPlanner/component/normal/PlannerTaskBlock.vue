@@ -107,6 +107,9 @@
 		usePlannerTaskStatusOptions,
 	} from '@/core/dayPlanner/dto/enum/PlannerTaskStatus.ts'
 	import { Time } from '@/_common/dto/dto/Time.ts'
+	import { formatDateForApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { isoDateInUserZone, minutesOfDayInUserZone } from '@/_common/composable/general/useUserClock.ts'
+	import { isBlockPast } from '@/core/dayPlanner/utils/pastBlock.ts'
 
 	const { task } = defineProps<{
 		task: PlannerTask
@@ -135,11 +138,17 @@
 		return `${Time.getString(startTime)} - ${Time.getString(endTime)}`
 	})
 
-	const isPast = computed(() => {
-		const dateTime = new Date()
-		dateTime.setHours(task.endTime.hours, task.endTime.minutes)
-		return dateTime < currentTime.value
-	})
+	// On the viewed day and the user's clock — see `isBlockPast`. `viewedDate` comes back from sessionStorage
+	// as an ISO string after a reload, hence the `new Date`.
+	const isPast = computed(() =>
+		isBlockPast(
+			formatDateForApi(new Date(store.viewedDate)),
+			task.startTime,
+			task.endTime,
+			isoDateInUserZone(currentTime.value),
+			minutesOfDayInUserZone(currentTime.value),
+		),
+	)
 
 	// The status is the one thing on the block that is signalled purely by a coloured chip, and the
 	// base block's `role="button"` keeps that chip out of the accessibility tree entirely. Hand the
