@@ -20,7 +20,7 @@ What remains is the owner's (migrations, restart) or a re-run.
 | FO7 | `bcf8671`, `dc5059c` (notification hub closed to tracker tokens) | `ba3e54ea` (`_common` → `a0d8095`) | See the 2026-10-12 row below: the column is dropped and pairing codes are rejected. |
 | FO10 (closed 2026-10-12) | `3e8f0e7` | `8b0595ad` | Nothing. Migration `20261011212220_UserDefaultSleepWindow` is applied, and the settings card was browser-checked against the real API: future unmarked days move, past and custom days don't. |
 | FO5 (closed 2026-10-12) | `8863158` (greeting), `1aa7f2b` + framework `5646e89` (back-off) | `874ee396` | Nothing. Migration `20261008080300_UserLastActiveAndWelcomeBack` is applied. No e2e spec; the card was checked in the browser on 2026-10-08. |
-| FO4 (closed 2026-10-13) | `565f3e6` (xhigh agent) | `d0b24eda`, then the 2026-10-13 close-out (`prompts/fo-close/01-fo4-next-free-slot-callers.md`) | Nothing in FO4. Leisure *Plan it for later* and the to-do handoff now ask `next-free-slot` too, checked live on 2026-10-13. Leisure *Do it now* stays "now" on purpose: it records that the user started at this minute. N5's notification is audit N5's. |
+| FO4 (closed 2026-10-13) | `565f3e6` (xhigh agent) | `d0b24eda`, then the 2026-10-13 close-out (`prompts/fo-close/01-fo4-next-free-slot-callers.md`) | Nothing in FO4. Leisure *Plan it for later* and the to-do handoff now ask `next-free-slot` too, checked live on 2026-10-13. Leisure *Do it now* stays "now" on purpose: it records that the user started at this minute. N5's notification is audit N5's. e2e: `planner-replan-today.spec.ts`, 9/9 twice on 2026-10-13. |
 
 ## Built, not closed
 
@@ -34,8 +34,8 @@ to-do fan-out stays absolute: a linked block done means the item done, and the t
 `CompletionFanOutTests` depend on that.
 
 FO1 has an e2e spec since 2026-10-12 (`routine-away-days.spec.ts`), and so does FO3 phase 1
-(`todo-stuck-item-offer.spec.ts`). FO2 has one since 2026-10-13 (`todo-log-time-ticks.spec.ts`). None of FO4, FO6 or
-FO7 has one yet. One prompt per spec is in
+(`todo-stuck-item-offer.spec.ts`). FO2 and FO4 have one since 2026-10-13 (`todo-log-time-ticks.spec.ts`,
+`planner-replan-today.spec.ts`). Neither FO6 nor FO7 has one yet. One prompt per spec is in
 `prompts/fo-close/` (`e2e-*.md`); run them **one at a time** (that folder's README says why).
 
 ## Remaining steps

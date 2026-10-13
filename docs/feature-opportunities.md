@@ -374,8 +374,26 @@ never ships a call to a route or field that the running API does not have yet.
     - Checked live against the running API: with a block over 20:00–21:30, both dialogs defaulted to 21:30
       (leisure's old guess was 20:30). The handoff moved to tomorrow's 08:00 when the date changed, came back
       on return, and kept a start the user had typed. One `next-free-slot` call per open, no console errors.
-      No e2e spec yet: `prompts/fo-close/e2e-fo4-replan-today.md`.
   - **Not done:** the N5 notification.
+- **e2e (2026-10-13):** `e2e/tests/planner-replan-today.spec.ts`, 9/9 on two runs in a row, against the real API
+  and its real clock (no mocks, no `page.clock`). Every block is built around the real minute in the account's zone,
+  and a test with no room on either side of now skips with the reason. The re-plan runs as the **secondary**
+  account, whose today is empty: on the primary's, the fixture's missed 11:00 block (`16003`) is in every re-plan.
+  Covered: the day view's banner (absent with only an upcoming block, shown once one is missed). Preview and apply:
+  the text row and the before/after timelines, and the stored block at the previewed slot. *No room left today*:
+  around an unavoidable block holding the rest of the evening, a required block defaults to *Tomorrow* and lands
+  there at the same time of day, and an optional one defaults to *Skip* and is stored `Cancelled` / `NoTime`. A
+  block moved through the API between preview and apply: a 409, the fresh preview in place, nothing written, then
+  the fresh one applies. Home's now bar (missed mode) and planner card both offer it, and neither does with only
+  an upcoming block. *Move later* +15m lands right after the block in its way. Leisure *Plan it for later* and the
+  to-do handoff (primary account, nothing applied) default to the `next-free-slot` answer, after a block over
+  their old guess. Found on the way:
+  - **The seed's accounts are on UTC until the app first loads.** `syncBrowserTimeZone` then writes the browser's
+    zone, and right after a cold sign-in that write can still be in flight, so a spec that reads
+    `/api/user/data` at once builds every block two hours off. The spec waits until the server holds the
+    browser's zone.
+  - **The fixture's leisure profiles match nothing for a 30-minute ask**, so the leisure check uses the default
+    hour and only has room until about 22:15.
 - **Source:** F1-01. It can later read FO10's bed time and F3-04's typical-load figure (both noted in *Rejected* /
   FO10).
 - **Moment:** 11:30, after the 10:00 and 11:00 blocks both slipped.
