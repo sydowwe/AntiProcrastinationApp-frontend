@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test'
+import type { Locator, Page, Response } from '@playwright/test'
 import { apiUrl, expect, test } from '../fixtures/auth'
 import type { SeedResponse } from '../fixtures/auth'
 
@@ -540,7 +540,7 @@ test.describe('Free time defaults for leisure and the to-do handoff (/leisure/pi
 	})
 
 	/** The start a `next-free-slot` answer names, or null for none. */
-	async function slotStart(response: import('@playwright/test').Response): Promise<number | null> {
+	async function slotStart(response: Response): Promise<number | null> {
 		expect(response.status()).toBe(200)
 		const { found, startTime } = (await response.json()) as { found: boolean; startTime: Hm | null }
 		return found && startTime ? toMinutes(startTime) : null
@@ -607,7 +607,7 @@ test.describe('Free time defaults for leisure and the to-do handoff (/leisure/pi
 		// A closed "Add New Task" dialog can stay mounted beside the open one.
 		const dialog = page.getByRole('dialog', { name: 'Add New Task' }).filter({ visible: true })
 		// The picker rounds to its 10-minute grid; the block ends on it, so the slot does too.
-		await expect(dialog.getByRole('textbox', { name: 'Start' })).toHaveValue(clock(ceilTo(slot!, 10)))
+		await expect(dialog.getByRole('textbox', { name: 'Start' })).toHaveValue(clock(Math.round(slot! / 10) * 10))
 		await dialog.getByRole('button', { name: 'Cancel' }).click()
 	})
 })
