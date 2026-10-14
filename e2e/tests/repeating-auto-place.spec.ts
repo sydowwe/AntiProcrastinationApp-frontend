@@ -221,10 +221,21 @@ async function setDayType(page: Page, calendarId: number, dayType: string) {
 	expect(response.ok(), `day-type batch: ${response.status()} ${await response.text()}`).toBe(true)
 }
 
+/**
+ * A new start in `TimeRangePicker`'s duration mode, which keeps the duration on screen. It used to keep the old
+ * *end* instead, so a new rule's 07:00 + 1 h with a start of 18:00 became 18:00 → 08:00 overnight, and the server
+ * refused it ("StartTime must be before EndTime").
+ */
+async function setRuleStart(dialog: Locator, start: string) {
+	const toDuration = dialog.getByRole('button', { name: 'Switch to duration' })
+	if (await toDuration.isVisible()) await toDuration.click()
+	const startField = dialog.getByRole('textbox', { name: 'Start' })
+	await startField.fill(start)
+	await startField.press('Tab')
+}
+
 /** The From/To pair of `TimeRangePicker`, switched out of its duration mode if it opened in it. */
 async function setRuleSpan(dialog: Locator, from: string, to: string) {
-	// In duration mode a new start keeps the old *end*, so the span silently wraps past midnight and the server
-	// refuses it ("StartTime must be before EndTime"). The range mode sets both ends as typed.
 	const toRange = dialog.getByRole('button', { name: 'Switch to time range' })
 	if (await toRange.isVisible()) await toRange.click()
 	const toField = dialog.getByRole('textbox', { name: 'To' })
@@ -275,7 +286,10 @@ test.describe('Repeating tasks that put themselves on the plan (FO6)', () => {
 
 			await dialog.getByRole('combobox', { name: '* Activity' }).fill(activity.name)
 			await page.getByRole('option', { name: activity.name }).click()
-			await setRuleSpan(dialog, '18:00', '18:30')
+			// A new rule opens at 07:00 for 1 h; the hour goes with the new start.
+			await setRuleStart(dialog, '18:00')
+			await expect(dialog.getByRole('textbox', { name: 'h', exact: true })).toHaveValue('1')
+			await expect(dialog.getByRole('textbox', { name: 'min', exact: true })).toHaveValue('0')
 			await dialog.locator('.v-select').filter({ hasText: 'Importance' }).locator('.v-field__input').click()
 			// Scoped to the select's list: the sidebar's items are options too.
 			await page.getByRole('listbox', { name: '* Importance' }).getByRole('option').first().click()
@@ -293,7 +307,12 @@ test.describe('Repeating tasks that put themselves on the plan (FO6)', () => {
 			await dialog.getByRole('button', { name: 'Confirm' }).click()
 			const response = await created
 			expect(response.status(), await response.text()).toBe(201)
-			expect(response.request().postDataJSON()).toMatchObject({ autoPlace: true, scheduledDays: EVERY_DAY })
+			expect(response.request().postDataJSON()).toMatchObject({
+				autoPlace: true,
+				scheduledDays: EVERY_DAY,
+				startTime: hm('18:00'),
+				endTime: hm('19:00'),
+			})
 			const ruleId = Number(await response.json())
 
 			for (const day of [today, tomorrow]) {
@@ -301,14 +320,14 @@ test.describe('Repeating tasks that put themselves on the plan (FO6)', () => {
 				expect(
 					occurrences.map(t => [clock(t.startTime), clock(t.endTime)]),
 					`occurrences on ${day}`,
-				).toEqual([['18:00', '18:30']])
+				).toEqual([['18:00', '19:00']])
 			}
 
 			await page.goto('/')
 			await expect(page.locator('.planner-card').getByText(activity.name, { exact: true })).toBeVisible()
 
 			await openDay(page, today)
-			const block = blockNamed(page, activity.name, '18:00', '18:30')
+			const block = blockNamed(page, activity.name, '18:00', '19:00')
 			await expect(block).toHaveAccessibleName(/placed by a repeating task/)
 			const mark = block.locator('.from-template-mark')
 			await expect(mark.locator('svg[data-icon="repeat"]')).toBeAttached()
