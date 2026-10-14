@@ -234,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, nextTick, onMounted, ref } from 'vue'
 	import MyBtnToggle from '@/_common/component/inputs/MyBtnToggle.vue'
 	import MyDialog from '@/_common/component/dialog/MyDialog.vue'
 	import ActivitySelectOrQuickEditFormField from '@/core/activity/component/ActivitySelectOrQuickEditFormField.vue'
@@ -329,7 +329,7 @@
 		dialog.value = true
 	}
 
-	function openEditDialog(task: RepeatingPlannerTask) {
+	async function openEditDialog(task: RepeatingPlannerTask) {
 		editedId.value = task.id
 		data.value = RepeatingPlannerTaskRequest.fromEntity(task)
 		fromDate.value = task.activeFromDate ? new Date(task.activeFromDate) : null
@@ -337,8 +337,12 @@
 		hasActiveWindow.value =
 			(task.recurrenceType === RecurrenceType.DayOfWeek || task.recurrenceType === RecurrenceType.DayOfMonth) &&
 			!!(task.activeFromDate || task.activeToDate)
-		activityFormField.value?.onOpenEdit(task.activity.id)
 		dialog.value = true
+		// The activity field lives inside the dialog's content, which is not mounted until the dialog opens.
+		// Called before that, the ref was undefined and every edit opened with no activity, so Confirm
+		// stopped on "This field is required" (found by the FO6 e2e spec).
+		await nextTick()
+		activityFormField.value?.onOpenEdit(task.activity.id)
 	}
 
 	function reset() {

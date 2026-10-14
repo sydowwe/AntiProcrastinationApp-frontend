@@ -510,8 +510,14 @@ never ships a call to a route or field that the running API does not have yet.
   - **A day marked away after placement.** `AwayDayOccurrenceWithdrawalHandler` (Planning) takes
     `CalendarDayTypesChangedEvent` and removes **untouched** occurrences from away days, today on. The day stays
     decided, so un-marking it brings nothing back. A moved, started or linked occurrence is the user's and stays.
-  - Tests: three new cases in `RepeatingTaskMaterialisationTests`. No e2e spec yet:
-    `prompts/fo-close/e2e-fo6-auto-placed-repeats.md`.
+  - Tests: three new cases in `RepeatingTaskMaterialisationTests`. **e2e (2026-10-14):**
+    `e2e/tests/repeating-auto-place.spec.ts`, 7/7 twice, as the secondary account on its real today and tomorrow.
+    It covers the switch and the `repeat` mark, a deleted occurrence staying deleted, a day marked sick losing its
+    occurrence (and not getting it back), the conflict modes as lanes now read them (beside one block under
+    `Overwrite`, a would-be third skipped, `MergeOverwrite` cut to the free minutes), and a rule edit moving an
+    untouched occurrence while leaving a moved one. Writing it found that `RepeatingTaskDialog`'s **edit opened
+    without the rule's activity** (it called the field before the dialog had mounted it), so no rule could be edited
+    in the UI; fixed in the same commit.
   - **Planner lanes (2026-10-13, `prompts/fo-close/04-planner-lanes.md`).** Up to two foreground and two background
     blocks may now share a minute, drawn side by side; a third is refused. The rule is one pure function,
     `src/core/dayPlanner/utils/plannerLanes.ts` (`assignLanes`, `exceedsLaneLimit`), wired through

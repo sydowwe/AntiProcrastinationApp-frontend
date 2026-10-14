@@ -13,7 +13,7 @@ What remains is the owner's (migrations, restart) or a re-run.
 |---|---|---|---|
 | FO1 | `ab5f0e7` | `ec4b7a30` | Nothing. Migration `20261006183310_RoutinePeriodCompletionIsExcused` was applied on 2026-10-11 (wave A's row in `feature-opportunities.md`). e2e: `routine-away-days.spec.ts`, 4/4 twice on 2026-10-12. |
 | FO2 (closed 2026-10-12) | `9058535`, `882cdf5` | `4e16f51a`, `0317e802` | Nothing. The API was restarted on 2026-10-12. e2e: `todo-log-time-ticks.spec.ts`, 3/3 twice on 2026-10-13. |
-| FO6 (closed 2026-10-12) | `5c17788`, `bd3faa9` | `0e2c9bcf` | Nothing; the API was restarted on 2026-10-12. Lanes (two overlapping blocks side by side) are a separate, later item: `prompts/fo-close/04-planner-lanes.md`. |
+| FO6 (closed 2026-10-12) | `5c17788`, `bd3faa9` | `0e2c9bcf` | Nothing; the API was restarted on 2026-10-12. Lanes (two overlapping blocks side by side) are a separate, later item: `prompts/fo-close/04-planner-lanes.md`. e2e: `repeating-auto-place.spec.ts`, 7/7 twice on 2026-10-14. Writing it fixed `RepeatingTaskDialog`'s edit, which opened without the rule's activity and could not be saved. |
 | FO7 (re-closed 2026-10-12) | + `8a2e0e4` | — | Nothing. Migration `20261012161330_DropUserHasExtensionAccess` was applied on 2026-10-12. Pairing codes are **rejected**, no longer deferred. |
 | FO3 phase 1 | `2748772` | `7557fe30` | Nothing. |
 | FO3 phase 2 | `410dced` | `b929602b` | Nothing. Migration `20261007200704` is applied, and `todo-motivation.spec.ts` was re-run against the new route, 12/12 (`8b0595ad`). |
@@ -35,7 +35,7 @@ to-do fan-out stays absolute: a linked block done means the item done, and the t
 
 FO1 has an e2e spec since 2026-10-12 (`routine-away-days.spec.ts`), and so does FO3 phase 1
 (`todo-stuck-item-offer.spec.ts`). FO2 and FO4 have one since 2026-10-13 (`todo-log-time-ticks.spec.ts`,
-`planner-replan-today.spec.ts`). Neither FO6 nor FO7 has one yet. One prompt per spec is in
+`planner-replan-today.spec.ts`), and FO6 since 2026-10-14 (`repeating-auto-place.spec.ts`). FO7 has none yet. One prompt per spec is in
 `prompts/fo-close/` (`e2e-*.md`); run them **one at a time** (that folder's README says why).
 
 ## Remaining steps
