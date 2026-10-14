@@ -487,7 +487,7 @@
 	 * scheduled" chip and the header nudge read — reflects the booking. This used to write the block's
 	 * date into an empty `dueDate` instead, which made a missed block turn the to-do overdue and left a
 	 * moved block's time stale on the item: `dueDate` is the user's deadline, and the planner owns the
-	 * schedule (bugs-to-investigate #8).
+	 * schedule (F1 feature-discovery, *Out of scope* #10).
 	 */
 	async function refreshPlannedItem(itemId: number | null) {
 		if (itemId == null) return

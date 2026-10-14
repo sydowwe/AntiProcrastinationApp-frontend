@@ -476,8 +476,8 @@ One structural finding runs under all six: **the server has no concept of a miss
 
 ## Out of scope, but noticed
 
-The bugs below (#3, #5, #6, #7, #9, and the design note #10) are also in `docs/bugs-to-investigate.md`, each with how to
-confirm it and a direction for the fix.
+The bugs below (#3, #5, #6, #7, #9, and the design note #10) were tracked in `docs/bugs-to-investigate.md` until every
+one was fixed (frontend `733028ae`); that file has since been deleted. Each item carries its own "Fixed since" note.
 
 1. **Frontend-only: one-field capture.** Chain the activity quick-create and `POST /todo-list-item`, using the user's
    default list and priority, so that "Call the dentist" lands from a single field. Both endpoints exist; the friction is
@@ -538,5 +538,5 @@ confirm it and a direction for the fix.
     the item's `dueTime`. F1-03's risks cover the consequence.
     **Decided and fixed since (checked 2026-10-06):** the planner no longer writes the item's date. `dueDate` stays the
     user's deadline, and "scheduled" is read from the planner as `nextPlannedSlot` through `ITodoListItemPlanSource`
-    (`TodoListView.vue:452-453`; `docs/bugs-to-investigate.md` #8). The double-count risk in F1-03's last bullet no
+    (`TodoListView.vue:452-453`). The double-count risk in F1-03's last bullet no
     longer applies.

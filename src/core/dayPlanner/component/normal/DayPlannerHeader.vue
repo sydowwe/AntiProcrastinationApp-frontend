@@ -145,7 +145,7 @@
 	import type { PlannerSidePanelTab } from '@/core/dayPlanner/composable/useRoutinePlacement.ts'
 	import { useDayPlannerStore } from '@/core/dayPlanner/store/dayPlannerStore.ts'
 	import { useUndoStack } from '@/_common/composable/general/useUndoStack.ts'
-	import { formatDateForApi, formatToDateWithDay, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import { formatDateForApi, formatToDateWithDay } from '@/_common/utils/DateTimeHelper.ts'
 	import DayPlannerProgressBlock from '@/core/dayPlanner/component/normal/DayPlannerProgressBlock.vue'
 	import DayPlannerPlanVsActualBlock from '@/core/dayPlanner/component/normal/DayPlannerPlanVsActualBlock.vue'
 	import NowNextIndicator from '@/core/dayPlanner/component/normal/NowNextIndicator.vue'
@@ -170,16 +170,22 @@
 	// The panel toggles show when the planner itself is narrow, not the window (F88).
 	const compact = usePlannerCompact()
 	const { canUndo, stackSize, nextUndoDescription, nextUndoDate } = useUndoStack()
-	const { fetchByDate } = useCalendarQuery()
+	const { fetchDayPlan } = useCalendarQuery()
 	const { fetchFiltered } = useTaskPlannerCrud()
 	const { t } = useI18n()
 
 	const prevDayCount = ref<number | null>(null)
 	const nextDayCount = ref<number | null>(null)
 
+	// The day-plan read, not the by-date one: a neighbour with no calendar row is a 200 with `calendar: null`
+	// there, where the by-date read 404s into the console. A day with no row has no tasks to count.
 	async function fetchCountForDate(date: Date): Promise<number> {
-		const cal = await fetchByDate(usStringToUrlString(formatDateForApi(date)))
-		const tasks = await fetchFiltered(new PlannerTaskFilter(cal.id, store.viewStartTime, store.viewEndTime))
+		const { calendar } = await fetchDayPlan(formatDateForApi(date))
+		if (calendar === null) {
+			return 0
+		}
+		// The count follows the visible time window, which the server's filter owns (`InTimeWindow`).
+		const tasks = await fetchFiltered(new PlannerTaskFilter(calendar.id, store.viewStartTime, store.viewEndTime))
 		return tasks.filter(t => !t.isBackground).length
 	}
 
