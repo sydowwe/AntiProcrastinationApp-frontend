@@ -38,6 +38,14 @@ export const useDayPlannerSettingsStore = defineStore(
 		const defaultConflictResolution = ref<ApplyTemplateConflictResolution>(ApplyTemplateConflictResolution.Ignore)
 		const defaultApplyPreviewMode = ref(true)
 		const loaded = ref(false)
+		/**
+		 * The request the server holds, as last loaded or saved. `saveSettings()` sends nothing when the fields
+		 * still match it. The settings view's debounced watcher sees `loadSettings()` assign every field, and by
+		 * the time it runs `loaded` is already true, so every visit to the page used to PUT back exactly what it
+		 * had just read. That was an extra write on each visit, and one that could overwrite a change made
+		 * elsewhere in between (another tab, or a test setting a row through the API) with the page's copy.
+		 */
+		let savedRequestJson: string | null = null
 
 		// In-memory only (see the `persist: false` note at the bottom). Guards against re-fetching on
 		// every navigation between the planner views; does not survive a reload, which is the point.
@@ -55,6 +63,7 @@ export const useDayPlannerSettingsStore = defineStore(
 			defaultApplyTemplateId.value = settings.defaultApplyTemplateId
 			defaultConflictResolution.value = settings.defaultConflictResolution
 			defaultApplyPreviewMode.value = settings.defaultApplyPreviewMode
+			savedRequestJson = JSON.stringify(currentRequest())
 			loaded.value = true
 		}
 
@@ -68,22 +77,31 @@ export const useDayPlannerSettingsStore = defineStore(
 			loaded.value = false
 		}
 
-		async function saveSettings() {
-			await updateSettings(
-				new UserPlannerSettingsRequest(
-					remindersEnabled.value,
-					reminderMinutesBefore.value,
-					autoReminderMode.value,
-					autoReminderMinImportance.value,
-					detailsPanelExpandedByDefault.value,
-					arrowKeyNavEnabled.value,
-					predefinedSkipReasons.value,
-					slotDurationMinutes.value,
-					defaultApplyTemplateId.value,
-					defaultConflictResolution.value,
-					defaultApplyPreviewMode.value,
-				),
+		function currentRequest(): UserPlannerSettingsRequest {
+			return new UserPlannerSettingsRequest(
+				remindersEnabled.value,
+				reminderMinutesBefore.value,
+				autoReminderMode.value,
+				autoReminderMinImportance.value,
+				detailsPanelExpandedByDefault.value,
+				arrowKeyNavEnabled.value,
+				// A copy, so the snapshot does not alias the live array.
+				[...predefinedSkipReasons.value],
+				slotDurationMinutes.value,
+				defaultApplyTemplateId.value,
+				defaultConflictResolution.value,
+				defaultApplyPreviewMode.value,
 			)
+		}
+
+		/** Sends the fields, unless they are what the server already holds (see `savedRequestJson`). */
+		async function saveSettings() {
+			const request = currentRequest()
+			const json = JSON.stringify(request)
+			if (json === savedRequestJson) return
+			await updateSettings(request)
+			// Only after the PUT succeeded, so a failed save is retried by the next change rather than forgotten.
+			savedRequestJson = json
 		}
 
 		return {
