@@ -6,7 +6,13 @@
 	>
 		<!-- Day Info Section -->
 		<div
-			v-if="calendar?.weather || calendar?.label || calendar?.notes || calendar?.holidayName"
+			v-if="
+				calendar?.weather ||
+				calendar?.label ||
+				calendar?.notes ||
+				calendar?.holidayName ||
+				calendar?.timeAwayName
+			"
 			class="d-flex flex-column ga-4"
 		>
 			<div class="d-flex ga-2 align-center">
@@ -16,12 +22,24 @@
 
 			<div
 				v-if="calendar"
-				class="d-flex align-center ga-2"
+				class="d-flex align-center flex-wrap ga-2"
 			>
 				<DayTypeChip
 					:dayType="calendar.dayType"
 					isTonal
 				/>
+				<!-- F4-02: the stretch this day belongs to, linked to the list where it can be changed. -->
+				<VChip
+					v-if="calendar.timeAwayName"
+					size="small"
+					variant="tonal"
+					color="secondaryOutline"
+					prependIcon="umbrella-beach"
+					:to="{ name: 'dayPlannerTimeAway' }"
+					:aria-label="$t('planner.timeAway.partOf', { name: calendar.timeAwayName })"
+				>
+					{{ calendar.timeAwayName }}
+				</VChip>
 				<span
 					v-if="calendar.location"
 					class="mt-1 d-flex align-start"

@@ -307,7 +307,9 @@
 
 	// `patternLabel` is the server's English enum name ("Thursday", "Workday"), so it is translated
 	// through the app's own keys and shown raw only if it is a name this client does not know.
+	// Type 4's label is the user's own name for a stretch of time away ("Barcelona"): shown as typed.
 	function patternLabel(s: TemplateSuggestionResponse): string {
+		if (s.patternType === 4) return s.patternLabel
 		const isWeekday = s.patternType === 0 || s.patternType === 2
 		const key = isWeekday ? `calendar.${s.patternLabel.toLowerCase()}` : `planner.dayType.${s.patternLabel}`
 		return te(key) ? t(key) : s.patternLabel
@@ -317,12 +319,14 @@
 		return s.patternType === 0 || s.patternType === 1
 	}
 
-	// History says what the user did; a settings match says what the template is set up for (B27).
+	// History says what the user did; a settings match says what the template is set up for (B27); a
+	// stretch of time away says what the user planned for it (F4-02).
 	const PATTERN_SENTENCE_KEYS = {
 		0: 'planner.templateSuggestions.usedOn',
 		1: 'planner.templateSuggestions.usedOn',
 		2: 'planner.templateSuggestions.scheduledFor',
 		3: 'planner.templateSuggestions.suggestedFor',
+		4: 'planner.templateSuggestions.plannedFor',
 	} as const
 
 	function patternSentence(s: TemplateSuggestionResponse): string {

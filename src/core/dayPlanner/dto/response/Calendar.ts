@@ -25,7 +25,16 @@ export class Calendar {
 		public totalTasks: number,
 		public completedTasks: number,
 		public readonly location: Location | null = null,
+		// F4-02: the stretch of time away the day belongs to, both null outside one. Read `dayType`, not
+		// these, for "is this day away": a day inside a stretch can keep a type of the user's own.
+		public readonly timeAwayId: number | null = null,
+		public readonly timeAwayName: string | null = null,
 	) {}
+
+	// `ICalendar.spanName`: the framework's cell header shows it as a chip.
+	get spanName() {
+		return this.timeAwayName
+	}
 
 	public get completionRate() {
 		return this.totalTasks === 0 ? 0 : Math.round((this.completedTasks / this.totalTasks) * 100)
@@ -61,6 +70,8 @@ export class Calendar {
 			json.totalTasks,
 			json.completedTasks,
 			json.location ?? null,
+			json.timeAwayId ?? null,
+			json.timeAwayName ?? null,
 		)
 	}
 }

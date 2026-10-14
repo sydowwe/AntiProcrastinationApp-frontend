@@ -6,6 +6,7 @@ import TemplateListView from '@/core/dayPlanner/view/TemplateListView.vue'
 import TemplateSplitView from '@/core/dayPlanner/view/TemplateSplitView.vue'
 import TemplateDayPlannerView from '@/core/dayPlanner/view/TemplateDayPlannerView.vue'
 import PlannerTaskLinkView from '@/core/dayPlanner/view/PlannerTaskLinkView.vue'
+import TimeAwayListView from '@/core/dayPlanner/view/TimeAwayListView.vue'
 
 export const dayPlannerRoutes: RouteRecordRaw[] = [
 	{
@@ -17,6 +18,13 @@ export const dayPlannerRoutes: RouteRecordRaw[] = [
 		path: '/day-planner/settings',
 		name: 'dayPlannerSettings',
 		component: DayPlannerSettingsView,
+	},
+	{
+		// F4-02: stretches of time away. Reached from the calendar, not from /user/settings — a stretch
+		// is data, not a preference. A static segment, so it outranks `/day-planner/:date` below.
+		path: '/day-planner/time-away',
+		name: 'dayPlannerTimeAway',
+		component: TimeAwayListView,
 	},
 	{
 		// Two segments, so it can never be confused with `/day-planner/:date` below. Resolves a bare

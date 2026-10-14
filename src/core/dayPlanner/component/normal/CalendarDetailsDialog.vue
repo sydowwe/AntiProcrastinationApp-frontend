@@ -62,6 +62,35 @@
 					/>
 					<span>{{ $t('planner.calendar.awayDayHint') }}</span>
 				</div>
+				<!-- F4-02: a stretch is marked once for all its days, so it opens its own dialog rather than
+				     being a field of this one. -->
+				<div class="d-flex align-center flex-wrap ga-2">
+					<template v-if="current?.timeAwayId != null">
+						<VIconSmall icon="umbrella-beach" />
+						<span class="text-body-2">
+							{{ $t('planner.timeAway.partOf', { name: current.timeAwayName }) }}
+						</span>
+						<VBtn
+							variant="text"
+							color="secondaryOutline"
+							size="small"
+							:loading="timeAwayBusy"
+							@click="editTimeAway"
+						>
+							{{ $t('planner.timeAway.edit') }}
+						</VBtn>
+					</template>
+					<VBtn
+						v-else
+						variant="tonal"
+						color="secondaryOutline"
+						prependIcon="umbrella-beach"
+						:loading="timeAwayBusy"
+						@click="markTimeAway"
+					>
+						{{ $t('planner.timeAway.markAction') }}
+					</VBtn>
+				</div>
 				<VTextField
 					v-model="data.weather"
 					:label="$t('planner.calendar.weatherLabel')"
@@ -98,6 +127,10 @@
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useI18n } from 'vue-i18n'
 	import { useDisplay } from 'vuetify'
+	import { parseDateFromApi } from '@/_common/utils/DateTimeHelper.ts'
+	import { useTimeAwayCrud } from '@/core/dayPlanner/api/timeAwayApi.ts'
+	import { useTimeAwayDialog } from '@/core/dayPlanner/composable/useTimeAwayDialog.ts'
+	import type { TimeAwayStamp } from '@/core/dayPlanner/dto/response/TimeAwayStamp.ts'
 
 	const props = defineProps<{
 		calendar?: Calendar
@@ -106,13 +139,19 @@
 		updated: [updatedEntity: Calendar]
 	}>()
 	const model = defineModel<boolean>({ required: true })
-	const { updateWithResponse } = useCalendarQuery()
+	const { updateWithResponse, fetchById: fetchCalendarById } = useCalendarQuery()
+	const { fetchById: fetchTimeAwayById } = useTimeAwayCrud()
+	const { openTimeAwayDialog } = useTimeAwayDialog()
 	const { showErrorSnackbar } = useSnackbar()
 	const { t } = useI18n()
 	const { smAndUp } = useDisplay()
 
 	const form = ref<InstanceType<typeof VForm>>()
 	const data = ref<CalendarRequest>(new CalendarRequest())
+	// The day as last read: the prop, or the server's copy after a stretch was marked from here. The
+	// calendar grid does not hand back a new prop after its refresh, so the prop alone would go stale.
+	const current = ref<Calendar>()
+	const timeAwayBusy = ref(false)
 
 	const locationOptions = Object.values(Location).map(v => ({ title: t(`planner.location.${v}`), value: v }))
 	const overrideDayTypes = [DayType.Vacation, DayType.SickDay, DayType.Special]
@@ -137,11 +176,47 @@
 		() => props.calendar,
 		calendar => {
 			if (calendar) {
+				current.value = calendar
 				data.value = CalendarRequest.fromResponse(calendar)
 			}
 		},
 		{ immediate: true },
 	)
+
+	async function markTimeAway() {
+		const date = current.value ? parseDateFromApi(current.value.date) : null
+		if (!date) return
+		await afterStamp(await openTimeAwayDialog({ start: date, end: date }))
+	}
+
+	async function editTimeAway() {
+		const timeAwayId = current.value?.timeAwayId
+		if (timeAwayId == null) return
+		timeAwayBusy.value = true
+		// A failed read has already raised the interceptor's snackbar.
+		const timeAway = await fetchTimeAwayById(timeAwayId).catch(() => null)
+		timeAwayBusy.value = false
+		if (!timeAway) return
+		await afterStamp(await openTimeAwayDialog({ timeAway }))
+	}
+
+	// The stamp changed this day's type (and maybe its location) on the server. Re-read it, so a Save
+	// here cannot write the old type back over the stretch's, and tell the parent to refresh.
+	async function afterStamp(stamp: TimeAwayStamp | null) {
+		const id = current.value?.id
+		if (!stamp || id == null) return
+		timeAwayBusy.value = true
+		try {
+			const fresh = await fetchCalendarById(id)
+			current.value = fresh
+			data.value = CalendarRequest.fromResponse(fresh)
+			emit('updated', fresh)
+		} catch {
+			// The stretch is saved; only this re-read failed, and the interceptor has said so.
+		} finally {
+			timeAwayBusy.value = false
+		}
+	}
 
 	async function save() {
 		const isValid = await form.value?.validate()

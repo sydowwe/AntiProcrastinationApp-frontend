@@ -37,6 +37,14 @@
 			>
 				{{ $t('planner.calendar.applyTemplate') }}
 			</VBtn>
+			<VBtn
+				color="secondaryOutline"
+				variant="outlined"
+				prependIcon="umbrella-beach"
+				:to="{ name: 'dayPlannerTimeAway' }"
+			>
+				{{ $t('planner.timeAway.listLink') }}
+			</VBtn>
 		</template>
 
 		<template #day-cell-content="{ day }">
@@ -74,6 +82,7 @@
 		@changeDayType="executeBulkDayTypeChange"
 		@openApplyTemplate="openBulkApplyDialog"
 		@openCopyDay="openCopyDayDialog"
+		@markTimeAway="markTimeAwayForSelection"
 	/>
 
 	<CalendarDetailsDialog
@@ -105,7 +114,12 @@
 	import ApplyTemplateActionBar from '@/core/dayPlanner/component/calendar/ApplyTemplateActionBar.vue'
 	import BulkSelectActionBar from '@/core/dayPlanner/component/calendar/BulkSelectActionBar.vue'
 	import router from '@/router.ts'
-	import { formatDateForApi, formatToDate, usStringToUrlString } from '@/_common/utils/DateTimeHelper.ts'
+	import {
+		formatDateForApi,
+		formatToDate,
+		parseDateFromApi,
+		usStringToUrlString,
+	} from '@/_common/utils/DateTimeHelper.ts'
 	import { useTaskPlannerCrud } from '@/core/dayPlanner/api/plannerTaskApi.ts'
 	import { useTaskPlannerDayTemplateTaskCrud } from '@/core/dayPlanner/api/taskPlannerDayTemplateApi.ts'
 	import { useTemplatePlannerTaskCrud } from '@/core/dayPlanner/api/templatePlannerTaskApi.ts'
@@ -127,6 +141,7 @@
 	import { useCalendarModes } from '@/core/dayPlanner/composable/useCalendarModes.ts'
 	import { useCalendarUrlState } from '@/core/dayPlanner/composable/useCalendarUrlState.ts'
 	import { useBulkTaskAction } from '@/core/dayPlanner/composable/useBulkTaskAction.ts'
+	import { useTimeAwayDialog } from '@/core/dayPlanner/composable/useTimeAwayDialog.ts'
 	import { useI18n } from 'vue-i18n'
 
 	const { t } = useI18n()
@@ -136,6 +151,7 @@
 	const settingsStore = useDayPlannerSettingsStore()
 	const { firstDayOfWeek } = useUserPreferences()
 	const { openDialog } = useDialog()
+	const { openTimeAwayDialog } = useTimeAwayDialog()
 	const { copyToDays, fetchPlanVsActualTrend, fetchSkipSummary } = useTaskPlannerCrud()
 	const { fetchAll: fetchAllTemplates } = useTaskPlannerDayTemplateTaskCrud()
 	const { fetchFiltered: fetchTemplateTasks } = useTemplatePlannerTaskCrud()
@@ -386,6 +402,23 @@
 		})
 		if (!result) return
 		await executeCopyDay(result.sourceDate)
+	}
+
+	// The selection's first and last day become the stretch's range. A gappy selection still prefills its
+	// whole span: a stretch has no holes, and the dialog shows the range before anything is written.
+	async function markTimeAwayForSelection() {
+		const dates = calendarDays.value
+			.filter(d => selectedDayIds.value.includes(d.id))
+			.map(d => d.date)
+			.sort()
+		if (dates.length === 0) return
+		const stamp = await openTimeAwayDialog({
+			start: parseDateFromApi(dates[0]),
+			end: parseDateFromApi(dates[dates.length - 1]),
+		})
+		if (!stamp) return
+		keepOnlyFailedSelected([])
+		refresh()
 	}
 
 	async function executeBulkApply(templateId: number, conflictResolution: ApplyTemplateConflictResolution) {

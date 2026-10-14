@@ -9,3 +9,6 @@ import { DayType } from '@/_common/dto/enum/DayType.ts'
 export function isAwayDayType(dayType: DayType | null | undefined): boolean {
 	return dayType === DayType.Vacation || dayType === DayType.SickDay
 }
+
+/** The two kinds a stretch of time away (F4-02) can be; the server refuses the other three. */
+export const awayDayTypes = [DayType.Vacation, DayType.SickDay] as const

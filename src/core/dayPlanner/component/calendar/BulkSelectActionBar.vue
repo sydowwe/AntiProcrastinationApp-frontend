@@ -39,6 +39,15 @@
 		>
 			{{ $t('planner.calendar.copyDay') }}
 		</VBtn>
+		<!-- F4-02: one named stretch for the whole selection, instead of a day type stamped day by day. -->
+		<VBtn
+			color="secondary"
+			prependIcon="umbrella-beach"
+			:disabled="selectedCount === 0"
+			@click="emit('markTimeAway')"
+		>
+			{{ $t('planner.timeAway.markAction') }}
+		</VBtn>
 	</ActionBar>
 </template>
 
@@ -62,6 +71,7 @@
 		changeDayType: [dayType: DayType]
 		openApplyTemplate: []
 		openCopyDay: []
+		markTimeAway: []
 	}>()
 
 	const { t } = useI18n()
