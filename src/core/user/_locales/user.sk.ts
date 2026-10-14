@@ -22,6 +22,8 @@ const user = {
 			wakeUp: `Vstávanie`,
 			bedTime: `Spánok`,
 			hint: `Každý deň v plánovači začína s týmito časmi a „preplánovať zvyšok dňa“ končí pri čase spánku. Zmena upraví dnešok a ďalšie dni, okrem dní, kde ste si časy nastavili sami.`,
+			// P3-01 — zobrazí sa len vtedy, keď sa tiché hodiny riadia spánkom.
+			quietHoursFollow: `Vaše tiché hodiny sa riadia týmito časmi — každá noc trvá od času spánku daného dňa po ďalšie vstávanie.`,
 		},
 		// P2-01 — jedna notifikácia na začiatku dňa, načasovaná podľa času vstávania vyššie. Nápoveda
 		// spomína pripomienku rutín, lebo vypnutie prehľadu ju vráti.

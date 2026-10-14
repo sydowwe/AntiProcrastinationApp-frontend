@@ -19,6 +19,8 @@ const user = {
 			wakeUp: `Wake up`,
 			bedTime: `Bed time`,
 			hint: `Every day in the planner starts with these, and "re-plan the rest of today" stops at your bed time. Changing them updates today and later days, except days where you set the times yourself.`,
+			// P3-01 — shown only when quiet hours follow the sleep schedule.
+			quietHoursFollow: `Your quiet hours follow these times — each night from that day's bed time to the next wake-up.`,
 		},
 		// P2-01 — one notification at the start of the day, timed off the wake-up time above. The hint names
 		// the routine reminder because turning the briefing off is what brings that one back.

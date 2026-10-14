@@ -20,6 +20,17 @@
 			/>
 		</div>
 		<div class="text-medium-emphasis mt-2 text-caption">{{ i18n.t('user.sleepWindow.hint') }}</div>
+		<div
+			v-if="quietHoursFollow"
+			class="text-medium-emphasis mt-1 text-caption"
+		>
+			<VIcon
+				icon="moon"
+				size="14"
+				class="me-1"
+			/>
+			{{ i18n.t('user.sleepWindow.quietHoursFollow') }}
+		</div>
 	</div>
 </template>
 <script setup lang="ts">
@@ -31,6 +42,7 @@
 	import { useUserStore } from '@/_common/modules/user/store/authStore.ts'
 	import { useSnackbar } from '@/_common/composable/general/SnackbarComposable.ts'
 	import { useUserPreferences } from '@/core/user/composable/useUserPreferences.ts'
+	import { fetchQuietHours } from '@/_common/modules/notifications/api/QuietHoursApi.ts'
 
 	// FO10: when the user's day usually starts and ends. Every calendar day the server creates starts
 	// with this window, and a change moves every day from today on that the user has not given a window
@@ -58,6 +70,14 @@
 	watchDebounced(bedTimeDraft, next => save('defaultBedTime', next, defaultBedTime.value), {
 		debounce: SAVE_DEBOUNCE_MS,
 	})
+
+	// P3-01: when quiet hours follow the sleep schedule, these times decide when notifications go quiet
+	// too, and nothing else on this screen would say so. Silent and best-effort: a failed read only
+	// costs the line.
+	const quietHoursFollow = ref(false)
+	fetchQuietHours(true)
+		.then(state => (quietHoursFollow.value = state.quietHours?.followsSleepSchedule === true))
+		.catch(() => {})
 
 	// One field per PUT: the server leaves an unsent field unchanged, on the user and on their days.
 	async function save(field: 'defaultWakeUpTime' | 'defaultBedTime', next: Time, stored: Time) {
